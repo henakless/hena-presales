@@ -62,28 +62,6 @@ function CitedList({ items }: { items: CitedClaim[] }) {
   );
 }
 
-function BriefTile({
-  className,
-  index,
-  title,
-  children,
-  priority,
-}: {
-  className: string;
-  index: string;
-  title: string;
-  children: React.ReactNode;
-  priority?: boolean;
-}) {
-  return (
-    <section className={`brief-tile ${className}${priority ? " priority-tile" : ""}`}>
-      <span className="block-index">{index}</span>
-      <h4>{title}</h4>
-      {children}
-    </section>
-  );
-}
-
 export default function Home() {
   const [lens, setLens] = useState<Lens>("balanced");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -112,11 +90,9 @@ export default function Home() {
         throw new Error("The generated brief did not pass validation.");
       }
 
-      setLens("balanced");
       setBrief(payload.brief);
       setGeneration(payload.generation);
     } catch {
-      setLens("balanced");
       setBrief(CURATED_BRIEF);
       setGeneration({
         mode: "fallback",
@@ -217,34 +193,53 @@ export default function Home() {
               </div>
             </div>
 
-            <article className="case-source-card">
-              <div className="source-topline">
-                <EvidenceBadge kind="requirement">Anonymized customer case</EvidenceBadge>
-                <span>{CRISIS_CASE.userScope}</span>
-              </div>
-              <h3>{CRISIS_CASE.title}</h3>
-              <p>{CRISIS_CASE.summary}</p>
-              <div className="driver-tags" aria-label="PoV drivers">
-                {CRISIS_CASE.drivers.map((driver) => <span key={driver}>{driver}</span>)}
-              </div>
-            </article>
+            <div className="scenario-presets" aria-label="Prepared scenarios">
+              <button type="button" className="preset active" aria-pressed="true">
+                Crisis communications
+              </button>
+              <button type="button" className="preset" disabled title="Not connected to the validated live endpoint yet">
+                Regulated service AI
+              </button>
+              <button type="button" className="preset" disabled title="Not connected to the validated live endpoint yet">
+                Pilot blocked by trust
+              </button>
+            </div>
 
-            <section className="discovery-record" aria-labelledby="discovery-title">
-              <div className="record-heading">
-                <span>Documented discovery</span>
-                <strong id="discovery-title">Questions → customer requirements</strong>
+            <label className="sr-only" htmlFor="scenario-input">Prepared enterprise scenario</label>
+            <textarea
+              id="scenario-input"
+              value="A security-sensitive enterprise needs its crisis team to remain operational when Microsoft 365 and the primary identity stack are unavailable or no longer trusted."
+              rows={7}
+              readOnly
+            />
+            <div className="input-meta">
+              <span>No personal information required</span>
+              <span>Prepared source case</span>
+            </div>
+
+            <div className="form-step lens-step">
+              <span className="step-number">02</span>
+              <div>
+                <h3>Select the decision lens</h3>
+                <p>The full brief stays intact; the selected lens changes emphasis.</p>
               </div>
-              {CRISIS_CASE.discovery.map((item, index) => (
-                <div className="discovery-pair" key={item.question}>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  <div>
-                    <strong>{item.question}</strong>
-                    <p>{item.answer}</p>
-                    <SourceRefs sourceIds={[...item.sourceIds]} />
-                  </div>
-                </div>
+            </div>
+
+            <div className="lens-grid" role="radiogroup" aria-label="Decision lens">
+              {LENSES.map((item) => (
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={lens === item.id}
+                  className={lens === item.id ? "lens active" : "lens"}
+                  onClick={() => setLens(item.id)}
+                  key={item.id}
+                >
+                  <strong>{item.label}</strong>
+                  <small>{item.detail}</small>
+                </button>
               ))}
-            </section>
+            </div>
 
             <button className="button primary generate" type="submit" disabled={isGenerating}>
               {isGenerating ? "Structuring the evidence…" : hasGenerated ? "Rebuild grounded decision brief" : "Build grounded decision brief"}
@@ -295,93 +290,106 @@ export default function Home() {
 
                 {generation?.notice && <p className="generation-notice">{generation.notice}</p>}
 
-                <div className={`focus-card focus-${lens}`}>
-                  <span className="focus-label">{LENS_LABELS[lens]} · evidence-backed synthesis</span>
-                  <h3>{focus.headline.text}</h3>
-                  <SourceRefs sourceIds={focus.headline.sourceIds} />
-                  <p>{focus.recommendation.text}</p>
-                  <SourceRefs sourceIds={focus.recommendation.sourceIds} />
-                  <div>
-                    <strong>Next decision</strong>
-                    <span>{focus.nextDecision.text}<SourceRefs sourceIds={focus.nextDecision.sourceIds} /></span>
-                  </div>
-                </div>
-
-                <div className="lens-explorer">
-                  <div>
-                    <strong>Select the decision lens</strong>
-                    <span>The full brief stays intact; the selected lens changes emphasis.</span>
-                  </div>
-                  <div className="lens-grid" role="radiogroup" aria-label="Stakeholder view">
-                    {LENSES.map((item) => (
-                      <button
-                        type="button"
-                        role="radio"
-                        aria-checked={lens === item.id}
-                        className={lens === item.id ? "lens active" : "lens"}
-                        onClick={() => setLens(item.id)}
-                        key={item.id}
-                      >
-                        <strong>{item.label}</strong>
-                        <small>{item.detail}</small>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <p className="lens-note">{LENS_LABELS[lens]} · evidence-backed synthesis</p>
 
                 <div className="brief-summary">
                   <p>{activeBrief.executiveSummary.text}</p>
                   <SourceRefs sourceIds={activeBrief.executiveSummary.sourceIds} />
                 </div>
 
-                <div className={`brief-tiles lens-${lens}`}>
-                  <BriefTile className="tile-value" index="01" title="Business value" priority={lens === "business"}>
-                    <EvidenceBadge kind="synthesis">Decision synthesis</EvidenceBadge>
+                <section className="brief-block emphasized">
+                  <span className="block-index">01</span>
+                  <div>
+                    <h4>What I would clarify first</h4>
+                    <ul className="brief-list cited-list">
+                      {CRISIS_CASE.discovery.map((item) => (
+                        <li key={item.question}>
+                          <span>{item.question}</span>
+                          <SourceRefs sourceIds={[...item.sourceIds]} />
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </section>
+
+                <section className="brief-block split-block">
+                  <div>
+                    <span className="block-index">02</span>
+                    <h4>Highest-value use case</h4>
+                    <p>{focus.recommendation.text}</p>
+                    <SourceRefs sourceIds={focus.recommendation.sourceIds} />
+                  </div>
+                  <div>
+                    <span className="block-index">03</span>
+                    <h4>Value hypothesis</h4>
                     <CitedList items={activeBrief.businessValue} />
-                  </BriefTile>
+                  </div>
+                </section>
 
-                  <BriefTile className="tile-technical" index="02" title="Architecture direction" priority={lens === "technical"}>
-                    <EvidenceBadge kind="requirement">Documented requirement</EvidenceBadge>
-                    <CitedList items={activeBrief.architectureDirection} />
-                  </BriefTile>
+                <section className="brief-block">
+                  <span className="block-index">04</span>
+                  <div className="full-width">
+                    <h4>Architecture direction</h4>
+                    <div className="architecture-flow">
+                      {activeBrief.architectureDirection.map((item, index) => (
+                        <div key={item.text}>
+                          <span>{String(index + 1).padStart(2, "0")}</span>
+                          <strong>{item.text}</strong>
+                          <SourceRefs sourceIds={item.sourceIds} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
 
-                  <BriefTile className="tile-discovery" index="03" title="PoV success criteria" priority={lens === "balanced"}>
-                    <EvidenceBadge kind="requirement">Agreed test basis</EvidenceBadge>
+                <section className="brief-block split-block">
+                  <div>
+                    <span className="block-index">05</span>
+                    <h4>PoV plan</h4>
                     <CitedList items={activeBrief.successCriteria} />
-                  </BriefTile>
-
-                  <BriefTile className="tile-trust" index="04" title="Trust & enterprise readiness" priority={lens === "trust"}>
-                    <EvidenceBadge kind="synthesis">Readiness recommendation</EvidenceBadge>
+                  </div>
+                  <div className="trust-column">
+                    <span className="block-index">06</span>
+                    <h4>Trust & readiness</h4>
                     <CitedList items={activeBrief.trustReadiness} />
-                  </BriefTile>
-                </div>
-
-                <section className="turning-point-card">
-                  <div>
-                    <EvidenceBadge kind="observed">Validated observation</EvidenceBadge>
-                    <span>Technical turning point</span>
-                    <h4>The blocker became diagnosable.</h4>
-                    <CitedList items={activeBrief.technicalTurningPoint} />
-                  </div>
-                  <div>
-                    <EvidenceBadge kind="pending">Pending validation</EvidenceBadge>
-                    <span>Current decision status</span>
-                    <h4>Technical fit largely validated.</h4>
-                    <CitedList items={activeBrief.currentStatus} />
                   </div>
                 </section>
 
-                <section className="contribution-card">
-                  <div>
-                    <span>My contribution</span>
-                    <h4>What I personally owned in the PoV</h4>
-                  </div>
-                  <CitedList items={activeBrief.personalContribution} />
-                </section>
-
-                <details className="brief-details open-questions" open={lens === "trust"}>
-                  <summary>Open questions kept out of the fact base</summary>
+                <section className="assumptions">
+                  <strong>Still to resolve</strong>
                   <CitedList items={activeBrief.openQuestions} />
+                </section>
+
+                <aside className="evidence-inline">
+                  <span>Related evidence from my work</span>
+                  <p>Hena supported this PoV for a European industrial group, translating resilience requirements into tests and isolating a desktop and web issue to customer-side proxy and SSL-inspection settings.</p>
+                  <p><strong>Next decision:</strong> {focus.nextDecision.text} <SourceRefs sourceIds={focus.nextDecision.sourceIds} /></p>
+                  <a href="/Crisis_Communications_Case_Study.pdf" target="_blank" rel="noreferrer">Review the case study <ArrowIcon /></a>
+                </aside>
+
+                <details className="brief-details evidence-details">
+                  <summary>Validated findings, contribution, and current status</summary>
+                  <section className="turning-point-card">
+                    <div>
+                      <EvidenceBadge kind="observed">Validated observation</EvidenceBadge>
+                      <span>Technical turning point</span>
+                      <h4>The blocker became diagnosable.</h4>
+                      <CitedList items={activeBrief.technicalTurningPoint} />
+                    </div>
+                    <div>
+                      <EvidenceBadge kind="pending">Pending validation</EvidenceBadge>
+                      <span>Current decision status</span>
+                      <h4>Technical fit largely validated.</h4>
+                      <CitedList items={activeBrief.currentStatus} />
+                    </div>
+                  </section>
+                  <section className="contribution-card">
+                    <div>
+                      <span>My contribution</span>
+                      <h4>What I personally owned in the PoV</h4>
+                    </div>
+                    <CitedList items={activeBrief.personalContribution} />
+                  </section>
                 </details>
 
                 <details className="brief-details source-catalog">
@@ -396,16 +404,6 @@ export default function Home() {
                   </div>
                 </details>
 
-                <aside className="evidence-inline">
-                  <div className="grounding-legend">
-                    <EvidenceBadge kind="requirement">Requirement</EvidenceBadge>
-                    <EvidenceBadge kind="observed">Observed</EvidenceBadge>
-                    <EvidenceBadge kind="pending">Pending</EvidenceBadge>
-                    <EvidenceBadge kind="synthesis">Synthesis</EvidenceBadge>
-                  </div>
-                  <p>Every generated statement is schema-valid, cites an approved source ID, and has passed the server-side outcome checks.</p>
-                  <a href="/Crisis_Communications_Case_Study.pdf" target="_blank" rel="noreferrer">Read the anonymized case study <ArrowIcon /></a>
-                </aside>
               </div>
             )}
           </article>
