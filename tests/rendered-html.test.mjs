@@ -30,13 +30,13 @@ test("server-renders the application experience", async () => {
   const html = await response.text();
   assert.match(html, /Hena Kless · Enterprise Solutions Engineering/i);
   assert.match(html, /From complex requirements to/i);
-  assert.match(html, /One real PoV\. One grounded decision brief/i);
+  assert.match(html, /Bring me an enterprise problem/i);
   assert.match(html, /What must remain independent/i);
   assert.match(html, /Build grounded decision brief/i);
   assert.match(html, /Microsoft-independent crisis communications/i);
   assert.match(html, /Server-side OpenAI/i);
   assert.match(html, /structured output/i);
-  assert.match(html, /Keeping a Crisis Team connected/i);
+  assert.match(html, /Keeping a Crisis Team Connected/i);
   assert.match(html, /Final network validation pending/i);
   assert.match(html, /Evidence, not claims/i);
   assert.doesNotMatch(html, /Governed enterprise agents/i);

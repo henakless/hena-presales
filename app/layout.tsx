@@ -9,7 +9,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const origin = `${protocol}://${host}`;
   const title = "Hena Kless · Enterprise Solutions Engineering";
   const description =
-    "A grounded Solutions Engineering proof of work: one real Crisis Communications PoV transformed into a decision-ready enterprise brief.";
+    "An applied Solutions Engineering proof of work: enterprise discovery, business value, architecture, Proof-of-Value design, and trust.";
 
   return {
     title,

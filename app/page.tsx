@@ -13,10 +13,10 @@ import {
 } from "./lib/decision-brief";
 
 const LENSES: Array<{ id: Lens; label: string; detail: string }> = [
-  { id: "balanced", label: "Balanced", detail: "Connected decision view" },
-  { id: "business", label: "Business", detail: "Resilience and value" },
-  { id: "technical", label: "Technical", detail: "Architecture and validation" },
-  { id: "trust", label: "Trust", detail: "Controls and readiness" },
+  { id: "balanced", label: "Balanced", detail: "Decision-ready view" },
+  { id: "business", label: "Business impact", detail: "Value and priority" },
+  { id: "technical", label: "Technical depth", detail: "Architecture and tests" },
+  { id: "trust", label: "Trust & readiness", detail: "Risk and governance" },
 ];
 
 const LENS_LABELS: Record<Lens, string> = {
@@ -140,7 +140,7 @@ export default function Home() {
           </span>
         </a>
         <nav aria-label="Primary navigation">
-          <a href="#golden-path">Golden path</a>
+          <a href="#scenario">Scenario</a>
           <a href="#evidence">Evidence</a>
           <a href="#experience">Experience</a>
           <a className="nav-cta" href="/Hena_Kless_CV_2026.pdf" download>
@@ -156,55 +156,54 @@ export default function Home() {
             From complex requirements to <em>credible decisions.</em>
           </h1>
           <p className="hero-lede">
-            One real customer case becomes a grounded, decision-ready brief.
+            I turn enterprise ambiguity into solutions that are valuable, testable, and ready for real-world constraints.
           </p>
           <p className="hero-support">
-            The source is an anonymized Crisis Communications PoV from my work at Wire. The applied-AI layer is the structured transformation of approved evidence into a stakeholder-ready recommendation — not a claim that I delivered an enterprise AI project.
+            Six-plus years in technical pre-sales across secure SaaS and regulated environments — spanning discovery, tailored demos, Proof-of-Value design, security reviews, and executive decision-making.
           </p>
           <div className="hero-actions">
-            <a className="button primary" href="#golden-path">
-              Explore the Golden Path <span aria-hidden="true">↓</span>
+            <a className="button primary" href="#scenario">
+              Explore an enterprise scenario <span aria-hidden="true">↓</span>
             </a>
-            <a className="button text-button" href="#evidence">
-              Follow the evidence <ArrowIcon />
+            <a className="button text-button" href="#experience">
+              View my experience <ArrowIcon />
             </a>
           </div>
         </div>
 
-        <aside className="decision-map" aria-label="Crisis Communications PoV decision path">
+        <aside className="decision-map" aria-label="Solutions engineering decision path">
           <div className="map-topline">
-            <span>Crisis Communications PoV</span>
-            <span className="status-dot">Real case</span>
+            <span>Decision path</span>
+            <span className="status-dot">Applied</span>
           </div>
           <ol>
-            <li><span>01</span><div><strong>Frame the risk</strong><small>Outage · compromise · loss of trust</small></div></li>
-            <li><span>02</span><div><strong>Define evidence</strong><small>Success criteria · owners · constraints</small></div></li>
-            <li><span>03</span><div><strong>Validate end to end</strong><small>Identity · clients · network · workflow</small></div></li>
-            <li><span>04</span><div><strong>Diagnose precisely</strong><small>Observation · cause · corrective action</small></div></li>
-            <li><span>05</span><div><strong>Document the decision</strong><small>Fit · gaps · next validation</small></div></li>
+            <li><span>01</span><div><strong>Discover</strong><small>Outcome · people · constraints</small></div></li>
+            <li><span>02</span><div><strong>Prioritize</strong><small>Value · feasibility · risk</small></div></li>
+            <li><span>03</span><div><strong>Design</strong><small>Architecture · controls · trade-offs</small></div></li>
+            <li><span>04</span><div><strong>Validate</strong><small>PoV · evidence · next decision</small></div></li>
           </ol>
-          <p>Grounded in one real PoV. Known facts, observed results, and pending validation remain visibly separate.</p>
+          <p>One connected brief for business, technical, and trust stakeholders.</p>
         </aside>
       </section>
 
       <section className="proof-band" aria-label="Selected experience highlights">
         <div className="proof-grid shell">
           <div><strong>6+</strong><span>years technical pre-sales</span></div>
-          <div><strong>€542K</strong><span>ARR contribution · LastPass 2024</span></div>
-          <div><strong>235%</strong><span>year-two ARR growth · LastPass</span></div>
+          <div><strong>€542K</strong><span>ARR contribution in 2024</span></div>
+          <div><strong>235%</strong><span>ARR growth in year two</span></div>
           <div><strong>35+</strong><span>talks and webinars</span></div>
-          <div><strong>0→1</strong><span>second member of Wire’s SE team</span></div>
+          <div><strong>4</strong><span>professional languages</span></div>
         </div>
       </section>
 
-      <section className="scenario-section shell" id="golden-path">
+      <section className="scenario-section shell" id="scenario">
         <div className="section-intro">
           <div>
-            <SectionLabel>Golden Path · Crisis Communications</SectionLabel>
-            <h2>One real PoV. One grounded decision brief.</h2>
+            <SectionLabel>Interactive proof of work · live and grounded</SectionLabel>
+            <h2>Bring me an enterprise problem.</h2>
           </div>
           <p>
-            Review the customer evidence, then let the live application synthesize it. Optional stakeholder views reprioritize the same facts without changing them.
+            I’ll structure it as a decision-ready brief — from discovery and business value to architecture, PoV design, and enterprise trust.
           </p>
         </div>
 
@@ -213,8 +212,8 @@ export default function Home() {
             <div className="form-step">
               <span className="step-number">01</span>
               <div>
-                <h3>Start with the source case</h3>
-                <p>The visitor reviews my actual discovery logic — they do not have to role-play the Solutions Engineer.</p>
+                <h3>Review the prepared scenario</h3>
+                <p>The first live path uses a real, anonymized case and requires no confidential visitor data.</p>
               </div>
             </div>
 
@@ -252,15 +251,15 @@ export default function Home() {
               {!isGenerating && <span aria-hidden="true">→</span>}
             </button>
             <p className="prototype-note">
-              Server-side OpenAI · structured output · source validation · curated fallback
+              Live server-side OpenAI generation with structured output, source validation, and a curated fallback.
             </p>
           </form>
 
           <article className={`brief-panel ${isGenerating ? "loading" : hasGenerated ? "ready" : "idle"}`} aria-live="polite" aria-busy={isGenerating}>
             <div className="brief-header">
               <div>
-                <span>Decision brief · Crisis Communications</span>
-                <h3>{isGenerating ? "Generating and validating the brief" : hasGenerated ? "From discovery to the next decision" : "Grounded synthesis, ready when you are"}</h3>
+                <span>Solution brief · Crisis Communications</span>
+                <h3>{isGenerating ? "Structuring the scenario" : hasGenerated ? "A path from ambiguity to evidence" : "A grounded path to the next decision"}</h3>
               </div>
               <span className="brief-version">V1.0</span>
             </div>
@@ -273,9 +272,9 @@ export default function Home() {
             ) : !hasGenerated ? (
               <div className="idle-state">
                 <span>One source of truth</span>
-                <h3>One real PoV. One grounded brief.</h3>
+                <h3>From enterprise context to a decision-ready brief.</h3>
                 <p>
-                  Build the brief to connect the customer’s business risk, architecture, PoV criteria, technical turning point, current status, and my contribution.
+                  Build the brief to connect discovery, business value, architecture, PoV criteria, trust, technical findings, and the next decision.
                 </p>
                 <div className="grounding-preview" aria-label="Evidence types">
                   <EvidenceBadge kind="requirement">Documented requirement</EvidenceBadge>
@@ -310,8 +309,8 @@ export default function Home() {
 
                 <div className="lens-explorer">
                   <div>
-                    <strong>Explore the same facts by stakeholder view</strong>
-                    <span>The evidence stays fixed; only the decision emphasis changes.</span>
+                    <strong>Select the decision lens</strong>
+                    <span>The full brief stays intact; the selected lens changes emphasis.</span>
                   </div>
                   <div className="lens-grid" role="radiogroup" aria-label="Stakeholder view">
                     {LENSES.map((item) => (
@@ -418,49 +417,39 @@ export default function Home() {
           <div className="section-intro light-intro">
             <div>
               <SectionLabel>Evidence, not claims</SectionLabel>
-              <h2>The proof is the chain of reasoning.</h2>
+              <h2>Real enterprise work behind the framework.</h2>
             </div>
             <p>
-              This is one anonymized customer case, not three loosely connected stories. The strength comes from following it from requirement to the next decision.
+              An anonymized case from a security- and compliance-sensitive environment, with verified findings and unresolved work kept clearly separate.
             </p>
           </div>
 
           <div className="evidence-grid">
             <article className="evidence-story feature-story">
-              <div className="case-number">Golden case</div>
+              <div className="case-number">Case 01</div>
               <div className="case-main">
                 <p className="case-meta">European industrial group · Crisis Management · ISO/NIS2</p>
-                <h3>Keeping a Crisis Team connected when the primary stack fails.</h3>
+                <h3>Keeping a Crisis Team Connected When the Primary Collaboration Stack Fails</h3>
                 <p>
-                  I translated resilience and identity-independence requirements into a structured PoV, guided testing across mobile, web, and desktop, and helped isolate a real-time communications issue to customer-side proxy and SSL-inspection settings.
+                  I translated resilience and identity-independence requirements into test scenarios, guided validation across mobile, web, and desktop, and helped isolate a real-time communications issue to customer-side proxy and SSL-inspection settings.
                 </p>
-                <div className="tag-row"><span>Discovery</span><span>PoV design</span><span>Enterprise networking</span><span>Trust</span><span>Technical diagnosis</span></div>
+                <div className="tag-row"><span>PoV design</span><span>Enterprise networking</span><span>Security & compliance</span><span>Cross-functional troubleshooting</span></div>
               </div>
               <div className="case-side">
                 <span className="status-label">Technical fit largely validated</span>
-                <p>Final network validation pending. The case is deliberately not presented as a completed deployment or a published customer reference.</p>
+                <p>Final network validation pending. Not presented as a closed-won deployment.</p>
                 <a className="button light-button" href="/Crisis_Communications_Case_Study.pdf" target="_blank" rel="noreferrer">Read the case study <ArrowIcon /></a>
               </div>
             </article>
           </div>
-
-          <div className="proof-chain" aria-label="Crisis Communications PoV evidence chain">
-            <div><span>01</span><strong>Discover</strong><p>Independent fallback required by audit and resilience drivers.</p></div>
-            <div><span>02</span><strong>Define</strong><p>Success criteria across identity, communication, clients, and network.</p></div>
-            <div><span>03</span><strong>Test</strong><p>Mobile successful; web and desktop constrained in the customer environment.</p></div>
-            <div><span>04</span><strong>Diagnose</strong><p>Proxy and SSL inspection isolated as the source of the observed issue.</p></div>
-            <div><span>05</span><strong>Decide</strong><p>Retest after global network adjustment; no inflated outcome claim.</p></div>
-          </div>
-
-          <p className="confidentiality-note">This case is anonymized and intentionally generalized. Employer review is required before public publication.</p>
         </div>
       </section>
 
       <section className="experience-section shell" id="experience">
         <div className="section-intro">
           <div>
-            <SectionLabel>Experience behind the case</SectionLabel>
-            <h2>Six-plus years between customers, technology, Security, and Product.</h2>
+            <SectionLabel>Experience</SectionLabel>
+            <h2>Six-plus years at the customer–technology boundary.</h2>
           </div>
           <a className="button outline" href="/Hena_Kless_CV_2026.pdf" download>Download CV <ArrowIcon /></a>
         </div>
@@ -471,7 +460,7 @@ export default function Home() {
             <div>
               <p>Wire · Munich</p>
               <h3>Senior Solutions Engineer</h3>
-              <p>Second member of the Solutions Engineering team, leading discovery, PoVs, security conversations, and technical validation for regulated and compliance-sensitive organizations.</p>
+              <p>Discovery, solution design, security conversations, and structured PoVs for regulated organizations across banking, justice, public sector, and government.</p>
             </div>
           </article>
           <article>
@@ -479,7 +468,7 @@ export default function Home() {
             <div>
               <p>LastPass · Munich</p>
               <h3>Solutions Consultant → Senior Solutions Consultant</h3>
-              <p>Secure SaaS pre-sales across administrators, Security teams, executives, partners, and Product — including risk reviews, test environments, new-product discovery, and measurable commercial impact.</p>
+              <p>Secure SaaS pre-sales across administrators, security teams, executives, and partners — with measurable commercial impact and extensive public enablement.</p>
             </div>
           </article>
           <article>
@@ -487,7 +476,7 @@ export default function Home() {
             <div>
               <p>Lombego Systems · Weimar</p>
               <h3>Solution Consultant</h3>
-              <p>International customer onboarding, consultations, tailored training, support, and knowledge development — connecting technology with adoption from the beginning of my career.</p>
+              <p>International customer onboarding, consultations, tailored training, technical support, and knowledge development for event technology.</p>
             </div>
           </article>
         </div>
@@ -498,35 +487,35 @@ export default function Home() {
           <SectionLabel>Focused FAQ</SectionLabel>
           <h2>A few useful questions.</h2>
           <details open>
-            <summary>What did you build here?</summary>
-            <p>A server-side OpenAI workflow that turns one grounded customer case into a structured decision brief. The model produces all four stakeholder views in one schema-constrained response; the server verifies every source ID and rejects inflated outcomes before the result reaches the browser.</p>
-          </details>
-          <details>
-            <summary>Where is the applied AI?</summary>
-            <p>In the transformation layer: approved evidence is sent to the Responses API, separated into requirements, observations, pending validation, and synthesis, then reorganized for different stakeholder decisions. Structured Output defines the contract; application-level evaluations check traceability and outcome integrity.</p>
-          </details>
-          <details>
             <summary>How technical is your role?</summary>
-            <p>I work where customer requirements, product capabilities, architecture, security, and business decisions meet — from APIs and identity to enterprise networks, risk reviews, PoV design, testing, and a clean handoff to Delivery.</p>
+            <p>I work where customer requirements, product capabilities, architecture, security, and business decisions meet — from technical discovery and APIs to identity, networks, risk reviews, and PoV design.</p>
+          </details>
+          <details>
+            <summary>How do you work with security and compliance teams?</summary>
+            <p>I translate requirements into answerable questions, documented controls, practical tests, and clear escalation paths. I separate what is verified from what is assumed or needs specialist review.</p>
           </details>
           <details>
             <summary>Why OpenAI?</summary>
-            <p>OpenAI combines the work I do best — translating uncertain enterprise problems, demonstrating technical value, and earning trust across stakeholders — with a rapidly changing technology platform. I am especially motivated by the opportunity to help build the Munich team’s local standards, customer practice, and culture in a zero-to-one environment.</p>
+            <p>OpenAI combines the work I do best — translating complex enterprise needs, demonstrating technical value, and earning trust across stakeholders — with a platform changing how organizations build and operate.</p>
+          </details>
+          <details>
+            <summary>What did you build here?</summary>
+            <p>A live Solutions Engineering application that converts an approved enterprise case into structured discovery, value, architecture, PoV, and trust briefs. The server constrains the model output, validates every source reference, and falls back to a curated brief if a result does not pass evaluation.</p>
           </details>
         </div>
 
         <aside className="build-note" id="build">
           <SectionLabel>Behind the build</SectionLabel>
-          <h2>Trust starts with saying what is real.</h2>
-          <p>One controlled source case feeds one structured output contract and four stakeholder views. The facts remain fixed while the recommendation changes emphasis.</p>
+          <h2>Designed as a trustworthy AI system.</h2>
+          <p>The live application uses a server-side OpenAI integration with structured output, curated evidence, schema validation, and anti-fabrication evaluations.</p>
           <div className="build-flow" aria-label="Application architecture">
             <span>Approved evidence</span><b>→</b><span>Server</span><b>→</b><span>OpenAI</span><b>→</b><span>Validated brief</span>
           </div>
           <ul>
-            <li>API key remains server-side and never reaches the browser</li>
-            <li>JSON Schema constrains every section, label, and source ID</li>
-            <li>Facts, synthesis, and unresolved validation remain separate</li>
-            <li>Unsupported outcome claims trigger the curated fallback</li>
+            <li>No visitor profile scraping</li>
+            <li>No personal data required</li>
+            <li>Facts separated from assumptions</li>
+            <li>Evidence limited to approved case sources</li>
           </ul>
         </aside>
       </section>
@@ -534,8 +523,8 @@ export default function Home() {
       <section className="closing">
         <div className="shell closing-inner">
           <SectionLabel>OpenAI · Solutions Engineer, Large Enterprise</SectionLabel>
-          <h2>I bring the customer evidence, technical judgment, and ownership that turn possibility into a credible next decision.</h2>
-          <p>I would like to bring that way of working to OpenAI’s enterprise customers in Germany.</p>
+          <h2>I built this to show how I combine discovery, technical depth, and enterprise trust.</h2>
+          <p>And how I would bring that approach to OpenAI’s Large Enterprise customers.</p>
           <div className="closing-actions">
             <a className="button closing-primary" href="mailto:hena.kless@outlook.com">Start a conversation <ArrowIcon /></a>
             <a className="button closing-secondary" href="/Hena_Kless_CV_2026.pdf" download>Download CV</a>
