@@ -20,16 +20,19 @@ const ctx = {
   passThroughOnException() {},
 };
 
-test("decision brief API returns the validated fallback without a server key", async () => {
+test("decision answer API returns a grounded fallback without a server key", async () => {
   const builtWorker = await worker();
   const response = await builtWorker.fetch(
-    new Request("http://localhost/api/decision-brief", {
+    new Request("http://localhost/api/decision-answer", {
       method: "POST",
       headers: {
         "content-type": "application/json",
         origin: "http://localhost",
       },
-      body: JSON.stringify({ caseId: "crisis-comms-v1" }),
+      body: JSON.stringify({
+        caseId: "crisis-comms-v1",
+        question: "What is the biggest hidden risk in this PoV?",
+      }),
     }),
     env,
     ctx,
@@ -41,38 +44,26 @@ test("decision brief API returns the validated fallback without a server key", a
   const payload = await response.json();
   assert.equal(payload.generation.mode, "fallback");
   assert.equal(payload.generation.validated, true);
-  assert.equal(payload.generation.model, "gpt-5.6-terra");
-  assert.equal(payload.brief.successCriteria.length, 5);
-  assert.equal(payload.brief.personalContribution.length, 4);
-  assert.match(
-    payload.brief.currentStatus.map((claim) => claim.text).join(" "),
-    /not Closed Won/i,
-  );
-
-  const allClaims = [
-    payload.brief.executiveSummary,
-    ...payload.brief.businessValue,
-    ...payload.brief.architectureDirection,
-    ...payload.brief.successCriteria,
-    ...payload.brief.trustReadiness,
-    ...payload.brief.technicalTurningPoint,
-    ...payload.brief.currentStatus,
-    ...payload.brief.personalContribution,
-    ...payload.brief.openQuestions,
-  ];
-  assert.ok(allClaims.every((claim) => claim.sourceIds.length > 0));
+  assert.equal(payload.generation.model, "gpt-5.6");
+  assert.equal(payload.answer.evidence.length, 2);
+  assert.match(payload.answer.recommendation.text, /hidden dependency/i);
+  assert.ok(payload.answer.recommendation.sourceIds.length > 0);
+  assert.ok(payload.answer.uncertainty.sourceIds.includes("pending-retest"));
 });
 
-test("decision brief API rejects arbitrary cases", async () => {
+test("decision answer API rejects arbitrary cases", async () => {
   const builtWorker = await worker();
   const response = await builtWorker.fetch(
-    new Request("http://localhost/api/decision-brief", {
+    new Request("http://localhost/api/decision-answer", {
       method: "POST",
       headers: {
         "content-type": "application/json",
         origin: "http://localhost",
       },
-      body: JSON.stringify({ caseId: "invented-case" }),
+      body: JSON.stringify({
+        caseId: "invented-case",
+        question: "What should happen next?",
+      }),
     }),
     env,
     ctx,
@@ -82,3 +73,21 @@ test("decision brief API rejects arbitrary cases", async () => {
   assert.deepEqual(await response.json(), { error: "Unknown case." });
 });
 
+test("decision answer API rejects vague questions", async () => {
+  const builtWorker = await worker();
+  const response = await builtWorker.fetch(
+    new Request("http://localhost/api/decision-answer", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: "http://localhost",
+      },
+      body: JSON.stringify({ caseId: "crisis-comms-v1", question: "Why?" }),
+    }),
+    env,
+    ctx,
+  );
+
+  assert.equal(response.status, 400);
+  assert.match((await response.json()).error, /between 8 and 240/i);
+});

@@ -1,107 +1,107 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { CRISIS_CASE, SOURCE_BY_ID } from "./lib/crisis-case";
 import {
-  CURATED_BRIEF,
-  type BriefApiResponse,
-  type BriefGeneration,
+  DEFAULT_ANSWER,
+  DEFAULT_QUESTION,
+  fallbackAnswerForQuestion,
+  type AnswerGeneration,
   type CitedClaim,
-  type DecisionBrief,
-  type EvidenceKind,
-  type Lens,
-} from "./lib/decision-brief";
+  type DecisionAnswer,
+  type DecisionAnswerApiResponse,
+} from "./lib/decision-answer";
 
-const LENSES: Array<{ id: Lens; label: string; detail: string }> = [
-  { id: "balanced", label: "Balanced", detail: "Decision-ready view" },
-  { id: "business", label: "Business impact", detail: "Value and priority" },
-  { id: "technical", label: "Technical depth", detail: "Architecture and tests" },
-  { id: "trust", label: "Trust & readiness", detail: "Risk and governance" },
+const SUGGESTED_QUESTIONS = [
+  "What should happen next before a buying decision?",
+  "What is the biggest hidden risk?",
+  "Where is the business value in this PoV?",
 ];
 
-const LENS_LABELS: Record<Lens, string> = {
-  balanced: "Balanced decision",
-  business: "Business priority",
-  technical: "Technical priority",
-  trust: "Trust priority",
-};
-
-function ArrowIcon() {
+function Arrow() {
   return <span aria-hidden="true">↗</span>;
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="section-label">{children}</p>;
-}
-
-function EvidenceBadge({ kind, children }: { kind: EvidenceKind; children: React.ReactNode }) {
-  return <span className={`evidence-badge badge-${kind}`}>{children}</span>;
 }
 
 function SourceRefs({ sourceIds }: { sourceIds: string[] }) {
   return (
-    <span className="source-refs" aria-label={`Sources ${sourceIds.map((id) => SOURCE_BY_ID[id]?.label ?? id).join(", ")}`}>
+    <span
+      className="source-refs"
+      aria-label={`Sources: ${sourceIds.map((id) => SOURCE_BY_ID[id]?.title ?? id).join(", ")}`}
+    >
       {sourceIds.map((sourceId) => {
         const source = SOURCE_BY_ID[sourceId];
-        return <span key={sourceId} title={source?.title}>{source?.label ?? sourceId}</span>;
+        return (
+          <span key={sourceId} title={`${source?.title}: ${source?.fact}`}>
+            {source?.label ?? sourceId}
+          </span>
+        );
       })}
     </span>
   );
 }
 
-function CitedList({ items }: { items: CitedClaim[] }) {
+function Claim({ claim }: { claim: CitedClaim }) {
   return (
-    <ul className="brief-list cited-list">
-      {items.map((item, index) => (
-        <li key={`${item.text}-${index}`}>
-          <span>{item.text}</span>
-          <SourceRefs sourceIds={item.sourceIds} />
-        </li>
-      ))}
-    </ul>
+    <>
+      <p>{claim.text}</p>
+      <SourceRefs sourceIds={claim.sourceIds} />
+    </>
   );
 }
 
 export default function Home() {
-  const [lens, setLens] = useState<Lens>("balanced");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [brief, setBrief] = useState<DecisionBrief | null>(null);
-  const [generation, setGeneration] = useState<BriefGeneration | null>(null);
-  const hasGenerated = brief !== null;
-  const activeBrief = brief ?? CURATED_BRIEF;
-  const focus = activeBrief.stakeholderViews[lens];
+  const [question, setQuestion] = useState(DEFAULT_QUESTION);
+  const [askedQuestion, setAskedQuestion] = useState(DEFAULT_QUESTION);
+  const [answer, setAnswer] = useState<DecisionAnswer>(DEFAULT_ANSWER);
+  const [generation, setGeneration] = useState<AnswerGeneration | null>(null);
+  const [isThinking, setIsThinking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  async function submitCase(event: FormEvent<HTMLFormElement>) {
+  const usedSourceIds = useMemo(
+    () => Array.from(new Set([
+      ...answer.recommendation.sourceIds,
+      ...answer.evidence.flatMap((item) => item.sourceIds),
+      ...answer.uncertainty.sourceIds,
+      ...answer.nextStep.sourceIds,
+    ])),
+    [answer],
+  );
+
+  async function askEvidence(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setIsGenerating(true);
-    setBrief(null);
-    setGeneration(null);
+    const trimmedQuestion = question.trim();
+    if (trimmedQuestion.length < 8) {
+      setError("Ask a little more specifically so the evidence can be useful.");
+      return;
+    }
+
+    setIsThinking(true);
+    setError(null);
+    setAskedQuestion(trimmedQuestion);
 
     try {
-      const response = await fetch("/api/decision-brief", {
+      const response = await fetch("/api/decision-answer", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ caseId: CRISIS_CASE.id }),
+        body: JSON.stringify({ caseId: CRISIS_CASE.id, question: trimmedQuestion }),
       });
-      if (!response.ok) throw new Error(`Request failed with ${response.status}`);
-
-      const payload = (await response.json()) as BriefApiResponse;
-      if (!payload.brief || !payload.generation?.validated) {
-        throw new Error("The generated brief did not pass validation.");
+      const payload = (await response.json()) as DecisionAnswerApiResponse & { error?: string };
+      if (!response.ok || !payload.answer || !payload.generation?.validated) {
+        throw new Error(payload.error ?? "The answer could not be validated.");
       }
-
-      setBrief(payload.brief);
+      setAnswer(payload.answer);
       setGeneration(payload.generation);
-    } catch {
-      setBrief(CURATED_BRIEF);
+    } catch (requestError) {
+      setAnswer(fallbackAnswerForQuestion(trimmedQuestion));
       setGeneration({
         mode: "fallback",
-        model: "gpt-5.6-terra",
+        model: "gpt-5.6",
         validated: true,
-        notice: "The live request could not be completed, so the source-validated curated brief is shown.",
+        notice: "The live request could not be completed. A source-validated answer is shown instead.",
       });
+      setError(requestError instanceof Error ? requestError.message : "The live request was unavailable.");
     } finally {
-      setIsGenerating(false);
+      setIsThinking(false);
     }
   }
 
@@ -110,430 +110,238 @@ export default function Home() {
       <header className="site-header">
         <a className="brand" href="#top" aria-label="Hena Kless, home">
           <span className="brand-mark">HK</span>
-          <span>
-            <strong>Hena Kless</strong>
-            <small>Solutions Engineer · Munich</small>
-          </span>
+          <span className="brand-name">Hena Kless</span>
         </a>
         <nav aria-label="Primary navigation">
-          <a href="#scenario">Scenario</a>
-          <a href="#evidence">Evidence</a>
+          <a href="#decision-room">AI proof</a>
+          <a href="#work">Work</a>
           <a href="#experience">Experience</a>
           <a className="nav-cta" href="/Hena_Kless_CV_2026.pdf" download>
-            CV <ArrowIcon />
+            CV <Arrow />
           </a>
         </nav>
       </header>
 
       <section className="hero shell" id="top">
         <div className="hero-copy">
-          <SectionLabel>Enterprise solutions engineering for applied AI</SectionLabel>
-          <h1>
-            From complex requirements to <em>credible decisions.</em>
-          </h1>
+          <p className="eyebrow">Enterprise solutions engineering · Applied AI</p>
+          <h1>I make complex AI decisions easier to trust.</h1>
           <p className="hero-lede">
-            I turn enterprise ambiguity into solutions that are valuable, testable, and ready for real-world constraints.
-          </p>
-          <p className="hero-support">
-            Six-plus years in technical pre-sales across secure SaaS and regulated environments — spanning discovery, tailored demos, Proof-of-Value design, security reviews, and executive decision-making.
+            I turn ambiguous requirements into a clear solution, a credible test, and the evidence people need to move forward.
           </p>
           <div className="hero-actions">
-            <a className="button primary" href="#scenario">
-              Explore an enterprise scenario <span aria-hidden="true">↓</span>
-            </a>
-            <a className="button text-button" href="#experience">
-              View my experience <ArrowIcon />
-            </a>
+            <a className="button primary" href="#decision-room">See how I work <span aria-hidden="true">↓</span></a>
+            <a className="button quiet" href="/Hena_Kless_CV_2026.pdf" download>Download CV <Arrow /></a>
           </div>
         </div>
 
-        <aside className="decision-map" aria-label="Solutions engineering decision path">
-          <div className="map-topline">
-            <span>Decision path</span>
-            <span className="status-dot">Applied</span>
-          </div>
-          <ol>
-            <li><span>01</span><div><strong>Discover</strong><small>Outcome · people · constraints</small></div></li>
-            <li><span>02</span><div><strong>Prioritize</strong><small>Value · feasibility · risk</small></div></li>
-            <li><span>03</span><div><strong>Design</strong><small>Architecture · controls · trade-offs</small></div></li>
-            <li><span>04</span><div><strong>Validate</strong><small>PoV · evidence · next decision</small></div></li>
-          </ol>
-          <p>One connected brief for business, technical, and trust stakeholders.</p>
+        <aside className="hero-note" aria-label="Selected experience">
+          <p>Solutions Engineer based in Munich</p>
+          <dl>
+            <div><dt>6+</dt><dd>years in technical pre-sales</dd></div>
+            <div><dt>€542K</dt><dd>ARR contribution in 2024</dd></div>
+            <div><dt>35+</dt><dd>talks and webinars</dd></div>
+          </dl>
+          <p className="hero-note-foot">Secure SaaS · Regulated environments · Four languages</p>
         </aside>
       </section>
 
-      <section className="proof-band" aria-label="Selected experience highlights">
-        <div className="proof-grid shell">
-          <div><strong>6+</strong><span>years technical pre-sales</span></div>
-          <div><strong>€542K</strong><span>ARR contribution in 2024</span></div>
-          <div><strong>235%</strong><span>ARR growth in year two</span></div>
-          <div><strong>35+</strong><span>talks and webinars</span></div>
-          <div><strong>4</strong><span>professional languages</span></div>
-        </div>
-      </section>
-
-      <section className="scenario-section shell" id="scenario">
-        <div className="section-intro">
-          <div>
-            <SectionLabel>Interactive proof of work · live and grounded</SectionLabel>
-            <h2>Bring me an enterprise problem.</h2>
-          </div>
-          <p>
-            I’ll structure it as a decision-ready brief — from discovery and business value to architecture, PoV design, and enterprise trust.
-          </p>
-        </div>
-
-        <div className="scenario-workspace">
-          <form className="scenario-form" onSubmit={submitCase}>
-            <div className="form-step">
-              <span className="step-number">01</span>
-              <div>
-                <h3>Review the prepared scenario</h3>
-                <p>The first live path uses a real, anonymized case and requires no confidential visitor data.</p>
-              </div>
-            </div>
-
-            <div className="scenario-presets" aria-label="Prepared scenarios">
-              <button type="button" className="preset active" aria-pressed="true">
-                Crisis communications
-              </button>
-              <button type="button" className="preset" disabled title="Not connected to the validated live endpoint yet">
-                Regulated service AI
-              </button>
-              <button type="button" className="preset" disabled title="Not connected to the validated live endpoint yet">
-                Pilot blocked by trust
-              </button>
-            </div>
-
-            <label className="sr-only" htmlFor="scenario-input">Prepared enterprise scenario</label>
-            <textarea
-              id="scenario-input"
-              value="A security-sensitive enterprise needs its crisis team to remain operational when Microsoft 365 and the primary identity stack are unavailable or no longer trusted."
-              rows={7}
-              readOnly
-            />
-            <div className="input-meta">
-              <span>No personal information required</span>
-              <span>Prepared source case</span>
-            </div>
-
-            <div className="form-step lens-step">
-              <span className="step-number">02</span>
-              <div>
-                <h3>Select the decision lens</h3>
-                <p>The full brief stays intact; the selected lens changes emphasis.</p>
-              </div>
-            </div>
-
-            <div className="lens-grid" role="radiogroup" aria-label="Decision lens">
-              {LENSES.map((item) => (
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={lens === item.id}
-                  className={lens === item.id ? "lens active" : "lens"}
-                  onClick={() => setLens(item.id)}
-                  key={item.id}
-                >
-                  <strong>{item.label}</strong>
-                  <small>{item.detail}</small>
-                </button>
-              ))}
-            </div>
-
-            <button className="button primary generate" type="submit" disabled={isGenerating}>
-              {isGenerating ? "Structuring the evidence…" : hasGenerated ? "Rebuild grounded decision brief" : "Build grounded decision brief"}
-              {!isGenerating && <span aria-hidden="true">→</span>}
-            </button>
-            <p className="prototype-note">
-              Live server-side OpenAI generation with structured output, source validation, and a curated fallback.
-            </p>
-          </form>
-
-          <article className={`brief-panel ${isGenerating ? "loading" : hasGenerated ? "ready" : "idle"}`} aria-live="polite" aria-busy={isGenerating}>
-            <div className="brief-header">
-              <div>
-                <span>Solution brief · Crisis Communications</span>
-                <h3>{isGenerating ? "Structuring the scenario" : hasGenerated ? "A path from ambiguity to evidence" : "A grounded path to the next decision"}</h3>
-              </div>
-              <span className="brief-version">V1.0</span>
-            </div>
-
-            {isGenerating ? (
-              <div className="loading-state" role="status">
-                <span /><span /><span />
-                <p>Calling OpenAI, applying the output schema, and validating every source reference…</p>
-              </div>
-            ) : !hasGenerated ? (
-              <div className="idle-state">
-                <span>One source of truth</span>
-                <h3>From enterprise context to a decision-ready brief.</h3>
-                <p>
-                  Build the brief to connect discovery, business value, architecture, PoV criteria, trust, technical findings, and the next decision.
-                </p>
-                <div className="grounding-preview" aria-label="Evidence types">
-                  <EvidenceBadge kind="requirement">Documented requirement</EvidenceBadge>
-                  <EvidenceBadge kind="observed">Validated observation</EvidenceBadge>
-                  <EvidenceBadge kind="pending">Pending validation</EvidenceBadge>
-                  <EvidenceBadge kind="synthesis">Decision synthesis</EvidenceBadge>
-                </div>
-              </div>
-            ) : (
-              <div className="brief-content">
-                <div className={`generation-status status-${generation?.mode ?? "fallback"}`}>
-                  <div>
-                    <span className="generation-pulse" aria-hidden="true" />
-                    <strong>{generation?.mode === "live" ? "Live OpenAI generation" : "Curated fallback"}</strong>
-                  </div>
-                  <span>{generation?.model ?? "gpt-5.6-terra"} · source-validated</span>
-                </div>
-
-                {generation?.notice && <p className="generation-notice">{generation.notice}</p>}
-
-                <p className="lens-note">{LENS_LABELS[lens]} · evidence-backed synthesis</p>
-
-                <div className="brief-summary">
-                  <p>{activeBrief.executiveSummary.text}</p>
-                  <SourceRefs sourceIds={activeBrief.executiveSummary.sourceIds} />
-                </div>
-
-                <section className="brief-block emphasized">
-                  <span className="block-index">01</span>
-                  <div>
-                    <h4>What I would clarify first</h4>
-                    <ul className="brief-list cited-list">
-                      {CRISIS_CASE.discovery.map((item) => (
-                        <li key={item.question}>
-                          <span>{item.question}</span>
-                          <SourceRefs sourceIds={[...item.sourceIds]} />
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </section>
-
-                <section className="brief-block split-block">
-                  <div>
-                    <span className="block-index">02</span>
-                    <h4>Highest-value use case</h4>
-                    <p>{focus.recommendation.text}</p>
-                    <SourceRefs sourceIds={focus.recommendation.sourceIds} />
-                  </div>
-                  <div>
-                    <span className="block-index">03</span>
-                    <h4>Value hypothesis</h4>
-                    <CitedList items={activeBrief.businessValue} />
-                  </div>
-                </section>
-
-                <section className="brief-block">
-                  <span className="block-index">04</span>
-                  <div className="full-width">
-                    <h4>Architecture direction</h4>
-                    <div className="architecture-flow">
-                      {activeBrief.architectureDirection.map((item, index) => (
-                        <div key={item.text}>
-                          <span>{String(index + 1).padStart(2, "0")}</span>
-                          <strong>{item.text}</strong>
-                          <SourceRefs sourceIds={item.sourceIds} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </section>
-
-                <section className="brief-block split-block">
-                  <div>
-                    <span className="block-index">05</span>
-                    <h4>PoV plan</h4>
-                    <CitedList items={activeBrief.successCriteria} />
-                  </div>
-                  <div className="trust-column">
-                    <span className="block-index">06</span>
-                    <h4>Trust & readiness</h4>
-                    <CitedList items={activeBrief.trustReadiness} />
-                  </div>
-                </section>
-
-                <section className="assumptions">
-                  <strong>Still to resolve</strong>
-                  <CitedList items={activeBrief.openQuestions} />
-                </section>
-
-                <aside className="evidence-inline">
-                  <span>Related evidence from my work</span>
-                  <p>Hena supported this PoV for a European industrial group, translating resilience requirements into tests and isolating a desktop and web issue to customer-side proxy and SSL-inspection settings.</p>
-                  <p><strong>Next decision:</strong> {focus.nextDecision.text} <SourceRefs sourceIds={focus.nextDecision.sourceIds} /></p>
-                  <a href="/Crisis_Communications_Case_Study.pdf" target="_blank" rel="noreferrer">Review the case study <ArrowIcon /></a>
-                </aside>
-
-                <details className="brief-details evidence-details">
-                  <summary>Validated findings, contribution, and current status</summary>
-                  <section className="turning-point-card">
-                    <div>
-                      <EvidenceBadge kind="observed">Validated observation</EvidenceBadge>
-                      <span>Technical turning point</span>
-                      <h4>The blocker became diagnosable.</h4>
-                      <CitedList items={activeBrief.technicalTurningPoint} />
-                    </div>
-                    <div>
-                      <EvidenceBadge kind="pending">Pending validation</EvidenceBadge>
-                      <span>Current decision status</span>
-                      <h4>Technical fit largely validated.</h4>
-                      <CitedList items={activeBrief.currentStatus} />
-                    </div>
-                  </section>
-                  <section className="contribution-card">
-                    <div>
-                      <span>My contribution</span>
-                      <h4>What I personally owned in the PoV</h4>
-                    </div>
-                    <CitedList items={activeBrief.personalContribution} />
-                  </section>
-                </details>
-
-                <details className="brief-details source-catalog">
-                  <summary>Trace every source label</summary>
-                  <div className="source-map">
-                    {CRISIS_CASE.sources.map((source) => (
-                      <div key={source.id}>
-                        <span className={`source-key source-${source.kind}`}>{source.label}</span>
-                        <p><strong>{source.title}</strong>{source.fact}</p>
-                      </div>
-                    ))}
-                  </div>
-                </details>
-
-              </div>
-            )}
-          </article>
-        </div>
-      </section>
-
-      <section className="evidence-section" id="evidence">
+      <section className="decision-section" id="decision-room">
         <div className="shell">
-          <div className="section-intro light-intro">
-            <div>
-              <SectionLabel>Evidence, not claims</SectionLabel>
-              <h2>Real enterprise work behind the framework.</h2>
-            </div>
+          <div className="section-heading">
+            <p className="eyebrow">A small, useful AI proof</p>
+            <h2>One question. One grounded answer.</h2>
             <p>
-              An anonymized case from a security- and compliance-sensitive environment, with verified findings and unresolved work kept clearly separate.
+              The AI does not invent a new case study. It interprets approved evidence, makes one recommendation, and shows exactly where confidence ends.
             </p>
           </div>
 
-          <div className="evidence-grid">
-            <article className="evidence-story feature-story">
-              <div className="case-number">Case 01</div>
-              <div className="case-main">
-                <p className="case-meta">European industrial group · Crisis Management · ISO/NIS2</p>
-                <h3>Keeping a Crisis Team Connected When the Primary Collaboration Stack Fails</h3>
-                <p>
-                  I translated resilience and identity-independence requirements into test scenarios, guided validation across mobile, web, and desktop, and helped isolate a real-time communications issue to customer-side proxy and SSL-inspection settings.
-                </p>
-                <div className="tag-row"><span>PoV design</span><span>Enterprise networking</span><span>Security & compliance</span><span>Cross-functional troubleshooting</span></div>
+          <div className="decision-room">
+            <aside className="case-card">
+              <div className="case-card-topline">
+                <span>Prepared case</span>
+                <span className="case-status">PoV in progress</span>
               </div>
-              <div className="case-side">
-                <span className="status-label">Technical fit largely validated</span>
-                <p>Final network validation pending. Not presented as a closed-won deployment.</p>
-                <a className="button light-button" href="/Crisis_Communications_Case_Study.pdf" target="_blank" rel="noreferrer">Read the case study <ArrowIcon /></a>
-              </div>
-            </article>
+              <h3>Microsoft-independent crisis communications</h3>
+              <p>{CRISIS_CASE.summary}</p>
+              <dl className="case-facts">
+                <div>
+                  <dt>Need</dt>
+                  <dd>Keep roughly 30 crisis users connected when the primary stack is unavailable or untrusted.</dd>
+                </div>
+                <div>
+                  <dt>Known</dt>
+                  <dd>Mobile passed. The web and desktop issue was isolated to proxy and SSL inspection.</dd>
+                </div>
+                <div>
+                  <dt>Unknown</dt>
+                  <dd>The final network-adjusted retest is pending. This is not a Closed Won deployment.</dd>
+                </div>
+              </dl>
+              <a href="/Crisis_Communications_Case_Study.pdf" target="_blank" rel="noreferrer">
+                Read the full case study <Arrow />
+              </a>
+            </aside>
+
+            <div className="question-workspace">
+              <form onSubmit={askEvidence} className="question-form">
+                <label htmlFor="decision-question">Ask a decision question about this case</label>
+                <div className="question-suggestions" aria-label="Suggested questions">
+                  {SUGGESTED_QUESTIONS.map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      className={question === suggestion ? "active" : ""}
+                      onClick={() => {
+                        setQuestion(suggestion);
+                        setError(null);
+                      }}
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+                <div className="question-input-row">
+                  <textarea
+                    id="decision-question"
+                    value={question}
+                    onChange={(event) => setQuestion(event.target.value)}
+                    rows={2}
+                    maxLength={240}
+                    aria-describedby="question-guardrail"
+                  />
+                  <button className="button primary ask-button" type="submit" disabled={isThinking}>
+                    {isThinking ? "Reading evidence…" : "Ask the evidence"}
+                    {!isThinking && <span aria-hidden="true">→</span>}
+                  </button>
+                </div>
+                <div className="question-meta" id="question-guardrail">
+                  <span>AI can interpret and recommend. It cannot add facts.</span>
+                  <span>{question.length}/240</span>
+                </div>
+                {error && <p className="form-error" role="alert">{error}</p>}
+              </form>
+
+              <article className={`answer-panel ${isThinking ? "is-thinking" : ""}`} aria-live="polite" aria-busy={isThinking}>
+                <div className="answer-topline">
+                  <span>{generation?.mode === "live" ? "Live AI answer" : generation ? "Validated fallback" : "Example answer"}</span>
+                  <span>{generation?.model ?? "gpt-5.6"} · source-bound</span>
+                </div>
+                <p className="asked-question">“{askedQuestion}”</p>
+
+                {isThinking ? (
+                  <div className="thinking-state" role="status">
+                    <span /><span /><span />
+                    <p>Finding the decision, the evidence, and the honest unknown.</p>
+                  </div>
+                ) : (
+                  <>
+                    {generation?.notice && <p className="generation-note">{generation.notice}</p>}
+                    <section className="recommendation">
+                      <span>Recommendation</span>
+                      <Claim claim={answer.recommendation} />
+                    </section>
+                    <div className="answer-grid">
+                      <section>
+                        <span>Evidence</span>
+                        {answer.evidence.map((item, index) => (
+                          <div className="evidence-item" key={`${item.text}-${index}`}>
+                            <Claim claim={item} />
+                          </div>
+                        ))}
+                      </section>
+                      <section>
+                        <span>What remains unknown</span>
+                        <Claim claim={answer.uncertainty} />
+                      </section>
+                    </div>
+                    <section className="next-step">
+                      <span>Next test</span>
+                      <Claim claim={answer.nextStep} />
+                    </section>
+                    <div className="source-legend">
+                      <span>Sources used</span>
+                      <SourceRefs sourceIds={usedSourceIds} />
+                      <small>R = requirement · O = observed · P = pending</small>
+                    </div>
+                  </>
+                )}
+              </article>
+            </div>
           </div>
+        </div>
+      </section>
+
+      <section className="work-section" id="work">
+        <div className="shell work-grid">
+          <div>
+            <p className="eyebrow">Selected work</p>
+            <h2>The evidence behind the interaction.</h2>
+          </div>
+          <article className="work-story">
+            <p className="work-meta">European industrial group · Crisis management · Anonymized</p>
+            <h3>Keeping a crisis team connected when the primary collaboration stack fails.</h3>
+            <p>
+              I translated resilience and identity-independence requirements into test scenarios, guided validation across mobile, web, and desktop, and helped isolate the network issue blocking the PoV.
+            </p>
+            <div className="work-outcome">
+              <span>Result so far</span>
+              <p>Technical fit largely validated. Final network validation remains pending.</p>
+            </div>
+            <a className="button light" href="/Crisis_Communications_Case_Study.pdf" target="_blank" rel="noreferrer">
+              Read the case study <Arrow />
+            </a>
+          </article>
         </div>
       </section>
 
       <section className="experience-section shell" id="experience">
-        <div className="section-intro">
+        <div className="section-heading compact-heading">
+          <p className="eyebrow">Experience</p>
+          <h2>Six years at the customer–technology boundary.</h2>
+        </div>
+        <div className="experience-grid">
+          <div className="timeline">
+            <article>
+              <time>2026—NOW</time>
+              <div><span>Wire · Munich</span><h3>Senior Solutions Engineer</h3></div>
+            </article>
+            <article>
+              <time>2022—2025</time>
+              <div><span>LastPass · Munich</span><h3>Solutions Consultant → Senior Solutions Consultant</h3></div>
+            </article>
+            <article>
+              <time>2019—2022</time>
+              <div><span>Lombego Systems · Weimar</span><h3>Solution Consultant</h3></div>
+            </article>
+          </div>
+          <aside className="working-style">
+            <h3>How I work</h3>
+            <ol>
+              <li><span>01</span><p><strong>Find the real decision.</strong> Align people, outcomes, and constraints before reaching for a demo.</p></li>
+              <li><span>02</span><p><strong>Make uncertainty testable.</strong> Turn requirements and risk into a proof plan with clear success criteria.</p></li>
+              <li><span>03</span><p><strong>Keep claims honest.</strong> Separate what is required, observed, inferred, and still pending.</p></li>
+            </ol>
+          </aside>
+        </div>
+      </section>
+
+      <section className="contact-section">
+        <div className="shell contact-inner">
           <div>
-            <SectionLabel>Experience</SectionLabel>
-            <h2>Six-plus years at the customer–technology boundary.</h2>
+            <p className="eyebrow">OpenAI · Solutions Engineer</p>
+            <h2>Let’s make the next decision clearer.</h2>
           </div>
-          <a className="button outline" href="/Hena_Kless_CV_2026.pdf" download>Download CV <ArrowIcon /></a>
-        </div>
-
-        <div className="timeline">
-          <article>
-            <span className="timeline-year">2026—NOW</span>
-            <div>
-              <p>Wire · Munich</p>
-              <h3>Senior Solutions Engineer</h3>
-              <p>Discovery, solution design, security conversations, and structured PoVs for regulated organizations across banking, justice, public sector, and government.</p>
-            </div>
-          </article>
-          <article>
-            <span className="timeline-year">2022—2025</span>
-            <div>
-              <p>LastPass · Munich</p>
-              <h3>Solutions Consultant → Senior Solutions Consultant</h3>
-              <p>Secure SaaS pre-sales across administrators, security teams, executives, and partners — with measurable commercial impact and extensive public enablement.</p>
-            </div>
-          </article>
-          <article>
-            <span className="timeline-year">2019—2022</span>
-            <div>
-              <p>Lombego Systems · Weimar</p>
-              <h3>Solution Consultant</h3>
-              <p>International customer onboarding, consultations, tailored training, technical support, and knowledge development for event technology.</p>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section className="faq-build shell">
-        <div className="faq" id="faq">
-          <SectionLabel>Focused FAQ</SectionLabel>
-          <h2>A few useful questions.</h2>
-          <details open>
-            <summary>How technical is your role?</summary>
-            <p>I work where customer requirements, product capabilities, architecture, security, and business decisions meet — from technical discovery and APIs to identity, networks, risk reviews, and PoV design.</p>
-          </details>
-          <details>
-            <summary>How do you work with security and compliance teams?</summary>
-            <p>I translate requirements into answerable questions, documented controls, practical tests, and clear escalation paths. I separate what is verified from what is assumed or needs specialist review.</p>
-          </details>
-          <details>
-            <summary>Why OpenAI?</summary>
-            <p>OpenAI combines the work I do best — translating complex enterprise needs, demonstrating technical value, and earning trust across stakeholders — with a platform changing how organizations build and operate.</p>
-          </details>
-          <details>
-            <summary>What did you build here?</summary>
-            <p>A live Solutions Engineering application that converts an approved enterprise case into structured discovery, value, architecture, PoV, and trust briefs. The server constrains the model output, validates every source reference, and falls back to a curated brief if a result does not pass evaluation.</p>
-          </details>
-        </div>
-
-        <aside className="build-note" id="build">
-          <SectionLabel>Behind the build</SectionLabel>
-          <h2>Designed as a trustworthy AI system.</h2>
-          <p>The live application uses a server-side OpenAI integration with structured output, curated evidence, schema validation, and anti-fabrication evaluations.</p>
-          <div className="build-flow" aria-label="Application architecture">
-            <span>Approved evidence</span><b>→</b><span>Server</span><b>→</b><span>OpenAI</span><b>→</b><span>Validated brief</span>
-          </div>
-          <ul>
-            <li>No visitor profile scraping</li>
-            <li>No personal data required</li>
-            <li>Facts separated from assumptions</li>
-            <li>Evidence limited to approved case sources</li>
-          </ul>
-        </aside>
-      </section>
-
-      <section className="closing">
-        <div className="shell closing-inner">
-          <SectionLabel>OpenAI · Solutions Engineer, Large Enterprise</SectionLabel>
-          <h2>I built this to show how I combine discovery, technical depth, and enterprise trust.</h2>
-          <p>And how I would bring that approach to OpenAI’s Large Enterprise customers.</p>
-          <div className="closing-actions">
-            <a className="button closing-primary" href="mailto:hena.kless@outlook.com">Start a conversation <ArrowIcon /></a>
-            <a className="button closing-secondary" href="/Hena_Kless_CV_2026.pdf" download>Download CV</a>
-            <a className="button closing-secondary" href="https://www.linkedin.com/in/henakless/" target="_blank" rel="noreferrer">LinkedIn <ArrowIcon /></a>
+          <div className="contact-actions">
+            <a className="button contact-primary" href="mailto:hena.kless@outlook.com">Start a conversation <Arrow /></a>
+            <a className="button contact-secondary" href="https://www.linkedin.com/in/henakless/" target="_blank" rel="noreferrer">LinkedIn <Arrow /></a>
           </div>
         </div>
       </section>
 
       <footer className="site-footer shell">
         <span>© 2026 Hena Kless</span>
-        <span>Built as an applied Solutions Engineering proof of work.</span>
+        <span>Munich, Germany</span>
         <a href="mailto:hena.kless@outlook.com">hena.kless@outlook.com</a>
       </footer>
     </main>

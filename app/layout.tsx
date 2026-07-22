@@ -7,9 +7,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const origin = `${protocol}://${host}`;
-  const title = "Hena Kless · Enterprise Solutions Engineering";
+  const title = "Hena Kless · Solutions Engineering for Applied AI";
   const description =
-    "An applied Solutions Engineering proof of work: enterprise discovery, business value, architecture, Proof-of-Value design, and trust.";
+    "Enterprise solutions engineering that turns ambiguous AI requirements into credible tests, grounded decisions, and clear next steps.";
 
   return {
     title,
@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
       url: origin,
       title,
       description,
-      images: [{ url: `${origin}/og.png`, width: 1736, height: 911, alt: "Hena Kless — From complex requirements to credible decisions." }],
+      images: [{ url: `${origin}/og.png`, width: 1200, height: 630, alt: "Hena Kless — I make complex AI decisions easier to trust." }],
     },
     twitter: {
       card: "summary_large_image",
