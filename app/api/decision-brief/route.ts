@@ -33,11 +33,48 @@ const CLAIM_SCHEMA = {
       type: "array",
       minItems: 1,
       maxItems: 6,
-      uniqueItems: true,
       items: { type: "string", enum: SOURCE_IDS },
     },
   },
 } as const;
+
+function specializedClaimSchema(
+  evidenceKinds: EvidenceKind[],
+  allowedSourceIds: string[],
+) {
+  return {
+    ...CLAIM_SCHEMA,
+    properties: {
+      ...CLAIM_SCHEMA.properties,
+      evidenceKind: { type: "string", enum: evidenceKinds },
+      sourceIds: {
+        type: "array",
+        minItems: 1,
+        maxItems: 6,
+        items: { type: "string", enum: allowedSourceIds },
+      },
+    },
+  } as const;
+}
+
+const REQUIREMENT_CLAIM_SCHEMA = specializedClaimSchema(
+  ["requirement"],
+  CRISIS_CASE.sources
+    .filter((source) => source.kind === "requirement")
+    .map((source) => source.id),
+);
+
+const OBSERVATION_CLAIM_SCHEMA = specializedClaimSchema(
+  ["observed"],
+  ["obs-mobile", "obs-network"],
+);
+
+const CONTRIBUTION_CLAIM_SCHEMA = specializedClaimSchema(
+  ["observed"],
+  CRISIS_CASE.sources
+    .filter((source) => source.id.startsWith("contribution-"))
+    .map((source) => source.id),
+);
 
 const VIEW_SCHEMA = {
   type: "object",
@@ -50,12 +87,12 @@ const VIEW_SCHEMA = {
   },
 } as const;
 
-function claimsArraySchema(itemCount: number) {
+function claimsArraySchema(itemCount: number, items = CLAIM_SCHEMA) {
   return {
     type: "array",
     minItems: itemCount,
     maxItems: itemCount,
-    items: CLAIM_SCHEMA,
+    items,
   } as const;
 }
 
@@ -88,12 +125,12 @@ const DECISION_BRIEF_SCHEMA = {
     },
     executiveSummary: CLAIM_SCHEMA,
     businessValue: claimsArraySchema(2),
-    architectureDirection: claimsArraySchema(4),
-    successCriteria: claimsArraySchema(5),
+    architectureDirection: claimsArraySchema(4, REQUIREMENT_CLAIM_SCHEMA),
+    successCriteria: claimsArraySchema(5, REQUIREMENT_CLAIM_SCHEMA),
     trustReadiness: claimsArraySchema(3),
-    technicalTurningPoint: claimsArraySchema(2),
+    technicalTurningPoint: claimsArraySchema(2, OBSERVATION_CLAIM_SCHEMA),
     currentStatus: claimsArraySchema(3),
-    personalContribution: claimsArraySchema(4),
+    personalContribution: claimsArraySchema(4, CONTRIBUTION_CLAIM_SCHEMA),
     openQuestions: claimsArraySchema(2),
   },
 } as const;
@@ -213,8 +250,9 @@ async function generateLiveBrief(apiKey: string): Promise<DecisionBrief> {
 
     if (!response.ok) {
       const requestId = response.headers.get("x-request-id");
+      const errorMessage = await extractOpenAIError(response);
       throw new Error(
-        `OpenAI returned ${response.status}${requestId ? ` (${requestId})` : ""}`,
+        `OpenAI returned ${response.status}${requestId ? ` (${requestId})` : ""}${errorMessage ? `: ${errorMessage}` : ""}`,
       );
     }
 
@@ -227,6 +265,18 @@ async function generateLiveBrief(apiKey: string): Promise<DecisionBrief> {
     return validateDecisionBrief(JSON.parse(outputText) as unknown);
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+async function extractOpenAIError(response: Response): Promise<string | null> {
+  try {
+    const payload = (await response.json()) as unknown;
+    if (!isRecord(payload) || !isRecord(payload.error)) return null;
+    const message = typeof payload.error.message === "string" ? payload.error.message : null;
+    const param = typeof payload.error.param === "string" ? payload.error.param : null;
+    return [message, param ? `parameter: ${param}` : null].filter(Boolean).join(" · ") || null;
+  } catch {
+    return null;
   }
 }
 
@@ -311,16 +361,28 @@ function validateDecisionBrief(value: unknown): DecisionBrief {
     }
   }
 
-  const allText = allClaims
-    .map((item) => item.text.toLowerCase().replace(/[-–—]/g, " "))
-    .join(" ")
-    .replaceAll("not closed won", "");
-  const inflatedOutcome = /\bclosed won\b|\bproduction deployment\b|\bsuccessful deployment\b|\brolled out\b|\bpurchased\b|\bsigned contract\b/;
-  if (inflatedOutcome.test(allText)) {
+  if (containsUnsupportedOutcome(allClaims.map((item) => item.text))) {
     throw new Error("Decision brief contains an unsupported outcome claim.");
   }
 
   return value as DecisionBrief;
+}
+
+function containsUnsupportedOutcome(claims: string[]): boolean {
+  const outcomeTerms = [
+    /\bclosed won\b/,
+    /\bproduction deployment\b/,
+    /\bsuccessful deployment\b/,
+    /\brolled out\b/,
+    /\bpurchased\b/,
+    /\bsigned contract\b/,
+  ];
+  const negation = /\bnot\b|\bno\b|\bwithout\b|\bnever\b|\bhasn't\b|\bhadn't\b|\bwasn't\b|\bisn't\b/;
+
+  return claims.some((claim) => {
+    const normalized = claim.toLowerCase().replace(/[-–—]/g, " ");
+    return outcomeTerms.some((term) => term.test(normalized)) && !negation.test(normalized);
+  });
 }
 
 function validateClaim(value: unknown, path: string): CitedClaim {
@@ -364,8 +426,11 @@ function validateEvidenceKind(
   if (evidenceKind === "requirement" && sourceKinds.some((kind) => kind !== "requirement")) {
     throw new Error(`${path} labels non-requirement evidence as a requirement.`);
   }
-  if (evidenceKind === "observed" && sourceKinds.some((kind) => kind !== "observed")) {
-    throw new Error(`${path} labels non-observed evidence as observed.`);
+  if (
+    evidenceKind === "observed" &&
+    (!sourceKinds.includes("observed") || sourceKinds.includes("pending"))
+  ) {
+    throw new Error(`${path} labels a claim observed without valid observed evidence.`);
   }
   if (evidenceKind === "pending" && !sourceKinds.includes("pending")) {
     throw new Error(`${path} labels a claim pending without pending evidence.`);
