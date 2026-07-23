@@ -42,10 +42,13 @@ test("server-renders the discovery experience without live AI", async () => {
   assert.match(html, /Model Citizens Bank/i);
   assert.match(html, /Token Transit Group/i);
   assert.match(html, /We’re looking for an AI tool for 6,000 people/i);
-  assert.match(html, /Prepare me for the meeting/i);
+  assert.match(html, /Get the briefing you deserve/i);
   assert.match(html, /Download the full CV/i);
-  assert.match(html, /most talented Pre-Sales consultant/i);
+  assert.match(html, /best person for the job/i);
+  assert.match(html, /Mario Platt, Chief Information Security Officer at LastPass/i);
   assert.match(html, /mario-platt-linkedin-reference\.jpg/i);
+  assert.match(html, /Let’s chat! I’d love to work together/i);
+  assert.doesNotMatch(html, /€542K|ARR contribution in 2024/i);
   assert.doesNotMatch(html, /Paraphrased from memory|replace this paraphrase/i);
   assert.doesNotMatch(html, /Ask the evidence/i);
   assert.doesNotMatch(html, /decision-answer/i);

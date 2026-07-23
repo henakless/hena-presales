@@ -242,7 +242,7 @@ export default function Home() {
 
         <div className="portrait-column" data-reveal>
           <div className="portrait-frame">
-            <img src="/hena-kless-portrait.png" alt="Hena Kless" />
+            <img src="/hena-kless-portrait.png" alt="Hena Kless" width={800} height={800} />
             <span className="portrait-caption">SOLUTIONS<br />ENGINEER</span>
           </div>
           <div className="portrait-label">
@@ -384,7 +384,7 @@ export default function Home() {
               <small>{message.length}/280 · Edit this to change the stated trigger.</small>
             </label>
             <button className="prepare-button" type="submit" disabled={isPreparing || message.trim().length < 10}>
-              <span>{isPreparing ? "Preparing the room…" : "Prepare me for the meeting"}</span>
+              <span>{isPreparing ? "Building your briefing…" : "Get the briefing you deserve"}</span>
               <Arrow direction="right" />
             </button>
             <p className="fiction-note">All customer names, companies, and scenario events in this prototype are fictional.</p>
@@ -546,7 +546,6 @@ export default function Home() {
             <div className="cv-summary">
               <p>Senior Solutions Engineer with 6+ years turning complex enterprise requirements into secure, commercially viable solutions—from discovery and architecture through PoV, security review, and expansion.</p>
               <dl>
-                <div><dt>€542K</dt><dd>ARR contribution in 2024</dd></div>
                 <div><dt>235%</dt><dd>ARR growth in year two</dd></div>
                 <div><dt>35+</dt><dd>talks and webinars</dd></div>
               </dl>
@@ -570,31 +569,25 @@ export default function Home() {
         <aside className="reference-card" aria-label="Recommendation from Mario Platt">
           <div className="reference-stamp">THE RECEIPTS</div>
           <div className="reference-copy">
-            <p className="reference-label">Words I’ll happily keep on file</p>
+            <p className="reference-label">Don’t take my word for it</p>
             <blockquote>
-              “Hena Kless is the most talented Pre-Sales consultant I’ve ever had the pleasure of
-              working with in my professional career.”
+              You’re looking for the best person for the job, but you don’t know me yet. Hear it
+              from someone who does: <strong>Mario Platt, Chief Information Security Officer at
+              LastPass.</strong>
             </blockquote>
-            <p className="reference-encore">“Do listen to what she has to say 🙂”</p>
-            <p>
-              <a href="https://www.linkedin.com/in/marioplatt/" target="_blank" rel="noreferrer">
-                Mario Platt ↗
-              </a>
-              {' '}· VP CISO at LastPass at the time of posting
-            </p>
+            <span className="reference-arrow" aria-hidden="true">→</span>
           </div>
           <figure className="reference-proof">
             <img
               src="/mario-platt-linkedin-reference.jpg"
               alt="LinkedIn screenshot of Mario Platt recommending Hena Kless"
             />
-            <figcaption>LinkedIn recommendation · screenshot provided by Hena</figcaption>
           </figure>
         </aside>
       </section>
 
       <footer className="site-footer">
-        <div className="footer-statement"><span className="footer-dot" /><p>Good discovery makes the meeting feel less like a guess.</p></div>
+        <div className="footer-statement"><span className="footer-dot" /><p>Let’s chat! I’d love to work together.</p></div>
         <div className="footer-actions">
           <a href="https://www.linkedin.com/in/henakless/" target="_blank" rel="noreferrer">LinkedIn ↗</a>
           <a href="mailto:hena.kless@outlook.com">Email ↗</a>
