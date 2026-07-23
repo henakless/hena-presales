@@ -29,6 +29,12 @@ type Company = {
   motionDetail: string;
 };
 
+type PromptInjectionGuardrail = {
+  kind: "prompt_injection";
+  title: string;
+  message: string;
+};
+
 const CONTACTS: Contact[] = [
   {
     id: "entor",
@@ -165,12 +171,13 @@ export default function Home() {
   const [message, setMessage] = useState(DEFAULT_MESSAGE);
   const [isPreparing, setIsPreparing] = useState(false);
   const [briefing, setBriefing] = useState<Briefing | null>(null);
+  const [guardrail, setGuardrail] = useState<PromptInjectionGuardrail | null>(null);
   const [error, setError] = useState("");
   const briefingRef = useRef<HTMLElement>(null);
   const requestRef = useRef<AbortController | null>(null);
   const contact = CONTACTS.find((item) => item.id === contactId) ?? CONTACTS[0];
   const company = COMPANIES.find((item) => item.id === companyId) ?? COMPANIES[0];
-  const isReady = briefing !== null;
+  const isReady = briefing !== null || guardrail !== null;
 
   useEffect(() => {
     const elements = document.querySelectorAll<HTMLElement>("[data-reveal]");
@@ -193,6 +200,7 @@ export default function Home() {
     requestRef.current?.abort();
     requestRef.current = null;
     setBriefing(null);
+    setGuardrail(null);
     setError("");
     setIsPreparing(false);
   }
@@ -205,6 +213,7 @@ export default function Home() {
     const controller = new AbortController();
     requestRef.current = controller;
     setBriefing(null);
+    setGuardrail(null);
     setError("");
     setIsPreparing(true);
 
@@ -215,7 +224,17 @@ export default function Home() {
         signal: controller.signal,
         body: JSON.stringify({ contactId, companyId, message: message.trim() }),
       });
-      const result = (await response.json()) as { briefing?: Briefing; error?: string };
+      const result = (await response.json()) as {
+        briefing?: Briefing;
+        guardrail?: PromptInjectionGuardrail;
+        error?: string;
+      };
+
+      if (result.guardrail?.kind === "prompt_injection") {
+        setGuardrail(result.guardrail);
+        window.setTimeout(() => briefingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+        return;
+      }
 
       if (!response.ok || !result.briefing) {
         throw new Error(result.error ?? "The briefing could not be generated.");
@@ -419,6 +438,8 @@ export default function Home() {
                   <div className="typing-row"><i /><i /><i /><p>Sure, let’s do some discovery together.</p></div>
                 ) : error ? (
                   <p>I hit a snag while preparing that briefing.</p>
+                ) : guardrail ? (
+                  <p>That inquiry wandered a little too far from discovery.</p>
                 ) : (
                   <p>Here’s the one-page view I’d walk into the meeting with.</p>
                 )}
@@ -430,6 +451,25 @@ export default function Home() {
             <div className="brief-error" role="alert">
               <div><strong>Briefing interrupted</strong><p>{error}</p></div>
               <button type="submit" form="lead-builder">Try again →</button>
+            </div>
+          )}
+
+          {guardrail && (
+            <div className="guardrail-result" role="status">
+              <span aria-hidden="true">↳</span>
+              <div>
+                <strong>{guardrail.title}</strong>
+                <p>{guardrail.message}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  resetBriefing();
+                  document.querySelector<HTMLTextAreaElement>("#lead-message")?.focus();
+                }}
+              >
+                Edit inquiry →
+              </button>
             </div>
           )}
 
