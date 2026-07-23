@@ -567,14 +567,29 @@ export default function Home() {
           </aside>
         </div>
 
-        <aside className="reference-card">
+        <aside className="reference-card" aria-label="Recommendation from Mario Platt">
           <div className="reference-stamp">THE RECEIPTS</div>
-          <div>
-            <p className="reference-label">A previous CISO once said, approximately…</p>
-            <blockquote>“Hena is the best Solution Consultant ever.”</blockquote>
-            <p>Paraphrased from memory · Mario Platt, former CISO colleague</p>
+          <div className="reference-copy">
+            <p className="reference-label">Words I’ll happily keep on file</p>
+            <blockquote>
+              “Hena Kless is the most talented Pre-Sales consultant I’ve ever had the pleasure of
+              working with in my professional career.”
+            </blockquote>
+            <p className="reference-encore">“Do listen to what she has to say 🙂”</p>
+            <p>
+              <a href="https://www.linkedin.com/in/marioplatt/" target="_blank" rel="noreferrer">
+                Mario Platt ↗
+              </a>
+              {' '}· VP CISO at LastPass at the time of posting
+            </p>
           </div>
-          <span className="reference-note">Original screenshot / post link to replace this paraphrase.</span>
+          <figure className="reference-proof">
+            <img
+              src="/mario-platt-linkedin-reference.jpg"
+              alt="LinkedIn screenshot of Mario Platt recommending Hena Kless"
+            />
+            <figcaption>LinkedIn recommendation · screenshot provided by Hena</figcaption>
+          </figure>
         </aside>
       </section>
 
