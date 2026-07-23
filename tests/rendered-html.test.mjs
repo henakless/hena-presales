@@ -116,13 +116,13 @@ test("generates a structured briefing through the server endpoint", async () => 
     assert.equal(String(input), "https://api.openai.com/v1/responses");
     assert.equal(init?.method, "POST");
     const requestBody = JSON.parse(String(init?.body));
-    assert.equal(requestBody.model, "gpt-5.6-sol");
+    assert.equal(requestBody.model, "gpt-5.6-terra");
     assert.equal(requestBody.store, false);
     assert.equal(requestBody.text.format.type, "json_schema");
     assert.equal(requestBody.text.format.strict, true);
 
     return Response.json({
-      model: "gpt-5.6-sol",
+      model: "gpt-5.6-terra",
       output: [
         {
           type: "message",
@@ -156,7 +156,7 @@ test("generates a structured briefing through the server endpoint", async () => 
     assert.equal(response.status, 200);
     const body = await response.json();
     assert.deepEqual(body.briefing, MOCK_BRIEFING);
-    assert.equal(body.model, "gpt-5.6-sol");
+    assert.equal(body.model, "gpt-5.6-terra");
   } finally {
     globalThis.fetch = originalFetch;
     if (originalApiKey === undefined) delete process.env.OPENAI_API_KEY;
