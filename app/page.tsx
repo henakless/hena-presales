@@ -242,7 +242,7 @@ export default function Home() {
 
         <div className="portrait-column" data-reveal>
           <div className="portrait-frame">
-            <img src="/hena-kless-linkedin.jpg" alt="Hena Kless" />
+            <img src="/hena-kless-portrait.png" alt="Hena Kless" />
             <span className="portrait-caption">SOLUTIONS<br />ENGINEER</span>
           </div>
           <div className="portrait-label">

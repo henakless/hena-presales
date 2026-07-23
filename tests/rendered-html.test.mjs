@@ -31,6 +31,7 @@ test("server-renders the discovery experience without live AI", async () => {
   const html = await response.text();
   assert.match(html, /Meet Hena · I built this experience just for you/i);
   assert.match(html, /I built this experience just for you/i);
+  assert.match(html, /hena-kless-portrait\.png/i);
   assert.match(html, /background is in cybersecurity/i);
   assert.match(html, /super promising/i);
   assert.match(html, /Discovery starts before the meeting/i);
