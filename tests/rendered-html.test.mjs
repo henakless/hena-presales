@@ -102,6 +102,9 @@ test("server-renders the AI discovery experience", async () => {
   assert.match(pageSource, /Risks to qualify/i);
   assert.match(pageSource, /Best discovery questions/i);
   assert.match(pageSource, /walk into the meeting with/i);
+  assert.match(pageSource, /Hena is typing/i);
+  assert.match(pageSource, /Alright, let&apos;s do this\./i);
+  assert.match(pageSource, /A little more about Hena/i);
   assert.match(pageSource, /guardrail-result/i);
   assert.match(pageSource, /<h2>A brief summary of <span>Hena Kless\.<\/span><\/h2>/i);
   const credentialsIndex = pageSource.indexOf("<h3>Credentials</h3>");
