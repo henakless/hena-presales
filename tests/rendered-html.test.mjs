@@ -34,7 +34,9 @@ test("server-renders the discovery experience without live AI", async () => {
   assert.match(html, /hena-kless-portrait\.png/i);
   assert.match(html, /background is in cybersecurity/i);
   assert.match(html, /super promising/i);
+  assert.doesNotMatch(html, /SUPER PROMISING/);
   assert.match(html, /Discovery starts before the meeting/i);
+  assert.match(html, /Select the inbound lead you want to use for the briefing/i);
   assert.match(html, /Entor Price/i);
   assert.match(html, /Paige Turner/i);
   assert.match(html, /Al Gorithm/i);
@@ -43,6 +45,7 @@ test("server-renders the discovery experience without live AI", async () => {
   assert.match(html, /Token Transit Group/i);
   assert.match(html, /We’re looking for an AI tool for 6,000 people/i);
   assert.match(html, /Get the briefing you deserve/i);
+  assert.match(html, /A brief summary of Hena Kless/i);
   assert.match(html, /Download the full CV/i);
   assert.match(html, /best person for the job/i);
   assert.match(html, /Mario Platt, Chief Information Security Officer at LastPass/i);
@@ -62,4 +65,9 @@ test("server-renders the discovery experience without live AI", async () => {
   assert.match(pageSource, /Regulatory & compliance/i);
   assert.match(pageSource, /Risks to qualify/i);
   assert.match(pageSource, /Best discovery questions/i);
+  assert.match(pageSource, /walk into the meeting with/i);
+  const credentialsIndex = pageSource.indexOf("<h3>Credentials</h3>");
+  const communityIndex = pageSource.indexOf("<h3>Community</h3>");
+  const educationIndex = pageSource.indexOf("<h3>Education</h3>");
+  assert.ok(credentialsIndex < communityIndex && communityIndex < educationIndex);
 });
