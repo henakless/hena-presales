@@ -91,7 +91,7 @@ export async function POST(request: Request) {
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
-  const model = process.env.OPENAI_MODEL?.trim() || "gpt-5.6-sol";
+  const model = process.env.OPENAI_MODEL?.trim() || "gpt-5.6-terra";
   if (!apiKey) {
     return json({ error: "The AI briefing service is not configured yet." }, 503);
   }
