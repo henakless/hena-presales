@@ -173,7 +173,9 @@ export default function Home() {
   const [briefing, setBriefing] = useState<Briefing | null>(null);
   const [guardrail, setGuardrail] = useState<PromptInjectionGuardrail | null>(null);
   const [error, setError] = useState("");
+  const [closingPhase, setClosingPhase] = useState<"idle" | "typing" | "sent">("idle");
   const briefingRef = useRef<HTMLElement>(null);
+  const closingChatRef = useRef<HTMLElement>(null);
   const requestRef = useRef<AbortController | null>(null);
   const contact = CONTACTS.find((item) => item.id === contactId) ?? CONTACTS[0];
   const company = COMPANIES.find((item) => item.id === companyId) ?? COMPANIES[0];
@@ -195,6 +197,38 @@ export default function Home() {
     },
     [],
   );
+
+  useEffect(() => {
+    if (!briefing) {
+      setClosingPhase("idle");
+      return;
+    }
+
+    const closingChat = closingChatRef.current;
+    if (!closingChat) return;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setClosingPhase("sent");
+      return;
+    }
+
+    let replyTimer: number | undefined;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setClosingPhase("typing");
+        replyTimer = window.setTimeout(() => setClosingPhase("sent"), 1600);
+        observer.disconnect();
+      },
+      { threshold: 0.45 },
+    );
+
+    observer.observe(closingChat);
+    return () => {
+      observer.disconnect();
+      if (replyTimer) window.clearTimeout(replyTimer);
+    };
+  }, [briefing]);
 
   function resetBriefing() {
     requestRef.current?.abort();
@@ -600,6 +634,49 @@ export default function Home() {
           </div>
         </details>
       </section>
+
+      {briefing && (
+        <section
+          className={`closing-chat ${closingPhase === "sent" ? "is-sent" : ""}`}
+          ref={closingChatRef}
+          aria-label="Hena replies to the meeting request"
+        >
+          <div className="closing-chat-grid" aria-hidden="true" />
+          <p className="closing-scene-label">Tuesday · 4:59 PM · briefing ready</p>
+
+          <div className="closing-thread">
+            <div className="closing-sender">
+              <span className="closing-avatar">HK</span>
+              <span>
+                <strong>Hena</strong>
+                <small>{closingPhase === "sent" ? "just now" : "typing…"}</small>
+              </span>
+            </div>
+
+            <div className="closing-live-region" aria-live="polite" aria-atomic="true">
+              {closingPhase === "sent" ? (
+                <div className="closing-message" role="status">
+                  <blockquote>Alright, let&apos;s do this.</blockquote>
+                  <span>4:59 PM · Delivered</span>
+                </div>
+              ) : (
+                <div className="closing-typing" role="status">
+                  <span className="sr-only">Hena is typing</span>
+                  <i aria-hidden="true" />
+                  <i aria-hidden="true" />
+                  <i aria-hidden="true" />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {closingPhase === "sent" && (
+            <a className="closing-continuation" href="#cv">
+              A little more about Hena <Arrow />
+            </a>
+          )}
+        </section>
+      )}
 
       <section className="cv-section" id="cv">
         <header className="cv-heading" data-reveal>
