@@ -1,348 +1,476 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import { CRISIS_CASE, SOURCE_BY_ID } from "./lib/crisis-case";
-import {
-  DEFAULT_ANSWER,
-  DEFAULT_QUESTION,
-  fallbackAnswerForQuestion,
-  type AnswerGeneration,
-  type CitedClaim,
-  type DecisionAnswer,
-  type DecisionAnswerApiResponse,
-} from "./lib/decision-answer";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
-const SUGGESTED_QUESTIONS = [
-  "What should happen next before a buying decision?",
-  "What is the biggest hidden risk?",
-  "Where is the business value in this PoV?",
+type Lead = {
+  id: string;
+  initials: string;
+  name: string;
+  role: string;
+  company: string;
+  industry: string;
+  employees: string;
+  footprint: string;
+  trigger: string;
+  stack: string;
+  profile: string;
+  workflows: string[];
+  motion: string;
+  motionDetail: string;
+  guardrails: string[];
+};
+
+const LEADS: Lead[] = [
+  {
+    id: "arkada",
+    initials: "EP",
+    name: "Enton Price",
+    role: "VP, Digital Workplace",
+    company: "Arkada Mobility",
+    industry: "Industrial mobility",
+    employees: "38,000 employees",
+    footprint: "12 markets · EU + US",
+    trigger: "Global AI enablement program entering vendor review",
+    stack: "Microsoft 365 · Snowflake · ServiceNow",
+    profile:
+      "A global manufacturer modernizing knowledge work across engineering, operations, and corporate teams.",
+    workflows: [
+      "Give engineers a governed assistant for technical standards, maintenance history, and quality documentation.",
+      "Reduce the time operations teams spend turning incident notes into structured root-cause summaries.",
+      "Help commercial teams draft localized RFP responses from approved product and policy sources.",
+    ],
+    motion: "ChatGPT Enterprise + API Platform",
+    motionDetail:
+      "A broad workforce motion is plausible, with API-based workflows where actions need to reach ServiceNow or manufacturing knowledge systems.",
+    guardrails: ["Product IP boundaries", "EU works council", "Data residency", "Role-based access"],
+  },
+  {
+    id: "northstar",
+    initials: "EL",
+    name: "Elise Laurent",
+    role: "Chief Data & Automation Officer",
+    company: "Northstar Bank",
+    industry: "Financial services",
+    employees: "16,800 employees",
+    footprint: "DACH + Benelux",
+    trigger: "Board mandate to move three AI pilots into production",
+    stack: "Azure · Databricks · Salesforce",
+    profile:
+      "A regional bank consolidating scattered copilots into a governed automation and model strategy.",
+    workflows: [
+      "Turn relationship-manager call notes into policy-aligned follow-ups without exposing customer data to unapproved tools.",
+      "Let operations analysts investigate exception queues across procedures, tickets, and transaction metadata.",
+      "Accelerate controlled software modernization with coding agents that respect internal repositories and review gates.",
+    ],
+    motion: "API Platform + Codex",
+    motionDetail:
+      "The production mandate points to governed applications first; Codex may support the engineering teams building and maintaining them.",
+    guardrails: ["DORA controls", "Auditability", "PII handling", "Model risk management"],
+  },
+  {
+    id: "solaire",
+    initials: "MO",
+    name: "Dr. Mira Osei",
+    role: "Chief Information Officer",
+    company: "Solaire Health Network",
+    industry: "Healthcare",
+    employees: "21,500 staff",
+    footprint: "34 sites · UK + EU",
+    trigger: "Clinician capacity program has executive funding",
+    stack: "Epic · Google Cloud · Workday",
+    profile:
+      "A multi-site care provider looking to reduce administrative burden without putting patient trust at risk.",
+    workflows: [
+      "Convert clinician-approved consultation notes into draft patient instructions in the appropriate language and reading level.",
+      "Help care coordinators summarize long referral histories while preserving links to the source record.",
+      "Use speech and Realtime capabilities for an accessible, multilingual appointment-navigation assistant.",
+    ],
+    motion: "API Platform + multimodal application",
+    motionDetail:
+      "Patient-adjacent workflows need a purpose-built application and careful human review; a general seat rollout may be a later motion.",
+    guardrails: ["Clinical safety", "Health data privacy", "Human review", "Accessibility"],
+  },
 ];
 
-function Arrow() {
-  return <span aria-hidden="true">↗</span>;
-}
+const DEFAULT_MESSAGE = "We’re looking for an AI tool for 6,000 people.";
 
-function SourceRefs({ sourceIds }: { sourceIds: string[] }) {
-  return (
-    <span
-      className="source-refs"
-      aria-label={`Sources: ${sourceIds.map((id) => SOURCE_BY_ID[id]?.title ?? id).join(", ")}`}
-    >
-      {sourceIds.map((sourceId) => {
-        const source = SOURCE_BY_ID[sourceId];
-        return (
-          <span key={sourceId} title={`${source?.title}: ${source?.fact}`}>
-            {source?.label ?? sourceId}
-          </span>
-        );
-      })}
-    </span>
-  );
-}
+const RESEARCH_OBJECTIVES = [
+  "Person, company, and likely buying authority",
+  "Business trigger behind the inquiry",
+  "Specific, valuable AI workflows",
+  "Best-fit OpenAI product motion",
+  "Technical, security, data, and compliance needs",
+  "Risks, objections, competitors, and buying process",
+  "A focused first-discovery meeting plan",
+];
 
-function Claim({ claim }: { claim: CitedClaim }) {
-  return (
-    <>
-      <p>{claim.text}</p>
-      <SourceRefs sourceIds={claim.sourceIds} />
-    </>
-  );
+function Arrow({ direction = "down" }: { direction?: "down" | "right" }) {
+  return <span aria-hidden="true">{direction === "down" ? "↓" : "→"}</span>;
 }
 
 export default function Home() {
-  const [question, setQuestion] = useState(DEFAULT_QUESTION);
-  const [askedQuestion, setAskedQuestion] = useState(DEFAULT_QUESTION);
-  const [answer, setAnswer] = useState<DecisionAnswer>(DEFAULT_ANSWER);
-  const [generation, setGeneration] = useState<AnswerGeneration | null>(null);
-  const [isThinking, setIsThinking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [leadId, setLeadId] = useState(LEADS[0].id);
+  const [message, setMessage] = useState(DEFAULT_MESSAGE);
+  const [isPreparing, setIsPreparing] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const briefingRef = useRef<HTMLElement>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lead = LEADS.find((item) => item.id === leadId) ?? LEADS[0];
 
-  const usedSourceIds = useMemo(
-    () => Array.from(new Set([
-      ...answer.recommendation.sourceIds,
-      ...answer.evidence.flatMap((item) => item.sourceIds),
-      ...answer.uncertainty.sourceIds,
-      ...answer.nextStep.sourceIds,
-    ])),
-    [answer],
+  useEffect(() => {
+    const elements = document.querySelectorAll<HTMLElement>("[data-reveal]");
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) entry.target.classList.add("is-visible");
+        });
+      },
+      { threshold: 0.2 },
+    );
+
+    elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    [],
   );
 
-  async function askEvidence(event: FormEvent<HTMLFormElement>) {
+  function changeLead(id: string) {
+    setLeadId(id);
+    setIsReady(false);
+    setIsPreparing(false);
+    if (timerRef.current) clearTimeout(timerRef.current);
+  }
+
+  function prepareBriefing(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const trimmedQuestion = question.trim();
-    if (trimmedQuestion.length < 8) {
-      setError("Ask a little more specifically so the evidence can be useful.");
-      return;
-    }
+    if (message.trim().length < 10) return;
 
-    setIsThinking(true);
-    setError(null);
-    setAskedQuestion(trimmedQuestion);
-
-    try {
-      const response = await fetch("/api/decision-answer", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ caseId: CRISIS_CASE.id, question: trimmedQuestion }),
-      });
-      const payload = (await response.json()) as DecisionAnswerApiResponse & { error?: string };
-      if (!response.ok || !payload.answer || !payload.generation?.validated) {
-        throw new Error(payload.error ?? "The answer could not be validated.");
-      }
-      setAnswer(payload.answer);
-      setGeneration(payload.generation);
-    } catch (requestError) {
-      setAnswer(fallbackAnswerForQuestion(trimmedQuestion));
-      setGeneration({
-        mode: "fallback",
-        model: "gpt-5.6",
-        validated: true,
-        notice: "The live request could not be completed. A source-validated answer is shown instead.",
-      });
-      setError(requestError instanceof Error ? requestError.message : "The live request was unavailable.");
-    } finally {
-      setIsThinking(false);
-    }
+    setIsReady(false);
+    setIsPreparing(true);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setIsPreparing(false);
+      setIsReady(true);
+      window.setTimeout(() => briefingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+    }, 1550);
   }
 
   return (
-    <main>
+    <main id="top">
       <header className="site-header">
-        <a className="brand" href="#top" aria-label="Hena Kless, home">
-          <span className="brand-mark">HK</span>
-          <span className="brand-name">Hena Kless</span>
+        <a className="wordmark" href="#top" aria-label="Hena Kless, start">
+          <span className="wordmark-dot" aria-hidden="true" />
+          Hena Kless
         </a>
-        <nav aria-label="Primary navigation">
-          <a href="#decision-room">AI proof</a>
-          <a href="#work">Work</a>
-          <a href="#experience">Experience</a>
-          <a className="nav-cta" href="/Hena_Kless_CV_2026.pdf" download>
-            CV <Arrow />
-          </a>
+        <nav aria-label="Experience sections">
+          <a href="#hello"><span>01</span> Hello</a>
+          <a href="#discovery"><span>02</span> Discovery</a>
         </nav>
+        <a className="header-cta" href="#lead-builder">Take the meeting <Arrow direction="right" /></a>
       </header>
 
-      <section className="hero shell" id="top">
-        <div className="hero-copy">
-          <p className="eyebrow">Enterprise solutions engineering · Applied AI</p>
-          <h1>I make complex AI decisions easier to trust.</h1>
-          <p className="hero-lede">
-            I turn ambiguous requirements into a clear solution, a credible test, and the evidence people need to move forward.
-          </p>
-          <div className="hero-actions">
-            <a className="button primary" href="#decision-room">See how I work <span aria-hidden="true">↓</span></a>
-            <a className="button quiet" href="/Hena_Kless_CV_2026.pdf" download>Download CV <Arrow /></a>
+      <section className="intro" id="hello">
+        <div className="intro-rail" aria-hidden="true">
+          <span>01</span>
+          <div />
+          <span>SCROLL TO MEET HENA</span>
+        </div>
+
+        <div className="portrait-column" data-reveal>
+          <div className="portrait-frame" aria-label="Placeholder for a portrait of Hena Kless">
+            <div className="portrait-orbit portrait-orbit-one" />
+            <div className="portrait-orbit portrait-orbit-two" />
+            <span className="portrait-monogram">HK</span>
+            <span className="portrait-caption">YOUR PHOTO<br />GOES HERE</span>
+          </div>
+          <div className="portrait-label">
+            <span>Hena Kless</span>
+            <span>Munich · 48.14° N</span>
           </div>
         </div>
 
-        <aside className="hero-note" aria-label="Selected experience">
-          <p>Solutions Engineer based in Munich</p>
-          <dl>
-            <div><dt>6+</dt><dd>years in technical pre-sales</dd></div>
-            <div><dt>€542K</dt><dd>ARR contribution in 2024</dd></div>
-            <div><dt>35+</dt><dd>talks and webinars</dd></div>
-          </dl>
-          <p className="hero-note-foot">Secure SaaS · Regulated environments · Four languages</p>
-        </aside>
-      </section>
-
-      <section className="decision-section" id="decision-room">
-        <div className="shell">
-          <div className="section-heading">
-            <p className="eyebrow">A small, useful AI proof</p>
-            <h2>One question. One grounded answer.</h2>
+        <div className="intro-copy" data-reveal>
+          <p className="kicker">Hi, future colleague.</p>
+          <h1>I built this experience so you can get to know me.</h1>
+          <div className="intro-body">
             <p>
-              The AI does not invent a new case study. It interprets approved evidence, makes one recommendation, and shows exactly where confidence ends.
+              I’m Hena—a solutions engineer who likes the moment when an ambiguous enterprise problem
+              starts becoming a clear, testable path forward.
+            </p>
+            <p>
+              For the past six years, I’ve worked across technical pre-sales, secure SaaS, and customer
+              adoption. I lead discovery, shape solutions, run credible proofs of value, and make sure
+              technical depth never loses sight of the human decision behind it.
             </p>
           </div>
+          <p className="turn-line">
+            I love that every day brings a new challenge to face. But there are some things I’d rather
+            avoid. Like this…
+          </p>
+          <a className="scroll-cue" href="#calendar-message">
+            Keep scrolling <Arrow />
+          </a>
+        </div>
+      </section>
 
-          <div className="decision-room">
-            <aside className="case-card">
-              <div className="case-card-topline">
-                <span>Prepared case</span>
-                <span className="case-status">PoV in progress</span>
+      <section className="interruption" id="calendar-message">
+        <div className="interruption-grid" aria-hidden="true" />
+        <p className="scene-label">Tuesday · 4:42 PM · the calendar ambush</p>
+
+        <div className="message-wrap" data-reveal>
+          <div className="message-meta">
+            <span className="avatar-small">AM</span>
+            <span><strong>Alex · Sales</strong><small>just now</small></span>
+          </div>
+          <blockquote>
+            “Hey Hena, this <em>super promising</em> opp came in today and your calendar looks free at
+            5 pm. Can you jump in a meeting with them?”
+          </blockquote>
+          <span className="message-time">4:42 PM</span>
+        </div>
+
+        <div className="moderator" data-reveal>
+          <span>MODERATOR’S NOTE</span>
+          <p>A “super promising” opportunity sounds like a great, qualified lead.</p>
+          <strong>Right? …right?</strong>
+        </div>
+
+        <a className="accept-brief" href="#discovery">
+          Let’s find out <Arrow />
+        </a>
+      </section>
+
+      <section className="discovery" id="discovery">
+        <header className="discovery-heading" data-reveal>
+          <div>
+            <p className="section-index">02 / THE EXPERIENCE</p>
+            <h2>Discovery starts before the meeting.</h2>
+          </div>
+          <p>
+            Pick the lead that just landed in my calendar. This mockup uses prepared content—no AI,
+            no external research, and no invented live data.
+          </p>
+        </header>
+
+        <div className="lead-builder" id="lead-builder">
+          <aside className="lead-list" aria-label="Choose a sample lead">
+            <div className="panel-label"><span>A</span> Choose your lead</div>
+            {LEADS.map((item, index) => (
+              <button
+                className={`lead-option ${leadId === item.id ? "is-active" : ""}`}
+                type="button"
+                key={item.id}
+                onClick={() => changeLead(item.id)}
+                aria-pressed={leadId === item.id}
+              >
+                <span className="lead-number">0{index + 1}</span>
+                <span className="lead-avatar">{item.initials}</span>
+                <span className="lead-option-copy">
+                  <strong>{item.name}</strong>
+                  <small>{item.role}</small>
+                  <em>{item.company}</em>
+                </span>
+                <span className="radio-mark" aria-hidden="true" />
+              </button>
+            ))}
+            <p className="fiction-note">All names and companies in this prototype are fictional.</p>
+          </aside>
+
+          <form className="lead-form" onSubmit={prepareBriefing}>
+            <div className="panel-label"><span>B</span> Read the room</div>
+            <div className="company-card">
+              <div className="company-card-top">
+                <div className="company-symbol">{lead.company.charAt(0)}</div>
+                <div>
+                  <span className="mock-tag">Fictional enterprise profile</span>
+                  <h3>{lead.company}</h3>
+                  <p>{lead.profile}</p>
+                </div>
               </div>
-              <h3>Microsoft-independent crisis communications</h3>
-              <p>{CRISIS_CASE.summary}</p>
-              <dl className="case-facts">
-                <div>
-                  <dt>Need</dt>
-                  <dd>Keep roughly 30 crisis users connected when the primary stack is unavailable or untrusted.</dd>
-                </div>
-                <div>
-                  <dt>Known</dt>
-                  <dd>Mobile passed. The web and desktop issue was isolated to proxy and SSL inspection.</dd>
-                </div>
-                <div>
-                  <dt>Unknown</dt>
-                  <dd>The final network-adjusted retest is pending. This is not a Closed Won deployment.</dd>
-                </div>
+              <dl className="company-facts">
+                <div><dt>Sector</dt><dd>{lead.industry}</dd></div>
+                <div><dt>Scale</dt><dd>{lead.employees}</dd></div>
+                <div><dt>Footprint</dt><dd>{lead.footprint}</dd></div>
+                <div><dt>Signal</dt><dd>{lead.trigger}</dd></div>
+                <div className="wide"><dt>Likely stack</dt><dd>{lead.stack}</dd></div>
               </dl>
-              <a href="/Crisis_Communications_Case_Study.pdf" target="_blank" rel="noreferrer">
-                Read the full case study <Arrow />
-              </a>
-            </aside>
+            </div>
 
-            <div className="question-workspace">
-              <form onSubmit={askEvidence} className="question-form">
-                <label htmlFor="decision-question">Ask a decision question about this case</label>
-                <div className="question-suggestions" aria-label="Suggested questions">
-                  {SUGGESTED_QUESTIONS.map((suggestion) => (
-                    <button
-                      key={suggestion}
-                      type="button"
-                      className={question === suggestion ? "active" : ""}
-                      onClick={() => {
-                        setQuestion(suggestion);
-                        setError(null);
-                      }}
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-                <div className="question-input-row">
-                  <textarea
-                    id="decision-question"
-                    value={question}
-                    onChange={(event) => setQuestion(event.target.value)}
-                    rows={2}
-                    maxLength={240}
-                    aria-describedby="question-guardrail"
-                  />
-                  <button className="button primary ask-button" type="submit" disabled={isThinking}>
-                    {isThinking ? "Reading evidence…" : "Ask the evidence"}
-                    {!isThinking && <span aria-hidden="true">→</span>}
-                  </button>
-                </div>
-                <div className="question-meta" id="question-guardrail">
-                  <span>AI can interpret and recommend. It cannot add facts.</span>
-                  <span>{question.length}/240</span>
-                </div>
-                {error && <p className="form-error" role="alert">{error}</p>}
-              </form>
+            <label className="message-field" htmlFor="lead-message">
+              <span>Inbound message</span>
+              <textarea
+                id="lead-message"
+                value={message}
+                onChange={(event) => {
+                  setMessage(event.target.value);
+                  setIsReady(false);
+                }}
+                rows={4}
+                maxLength={280}
+              />
+              <small>{message.length}/280 · Edit this to change the trigger in the mock briefing.</small>
+            </label>
 
-              <article className={`answer-panel ${isThinking ? "is-thinking" : ""}`} aria-live="polite" aria-busy={isThinking}>
-                <div className="answer-topline">
-                  <span>{generation?.mode === "live" ? "Live AI answer" : generation ? "Validated fallback" : "Example answer"}</span>
-                  <span>{generation?.model ?? "gpt-5.6"} · source-bound</span>
-                </div>
-                <p className="asked-question">“{askedQuestion}”</p>
+            <button className="prepare-button" type="submit" disabled={isPreparing || message.trim().length < 10}>
+              <span>{isPreparing ? "Preparing the room…" : "Prepare me for the meeting"}</span>
+              <Arrow direction="right" />
+            </button>
+          </form>
+        </div>
 
-                {isThinking ? (
-                  <div className="thinking-state" role="status">
-                    <span /><span /><span />
-                    <p>Finding the decision, the evidence, and the honest unknown.</p>
+        <section className={`briefing-stage ${isReady ? "is-ready" : ""}`} ref={briefingRef} aria-live="polite">
+          {(isPreparing || isReady) && (
+            <div className="hena-response">
+              <div className="hena-avatar">HK</div>
+              <div className="hena-bubble">
+                <span>Hena</span>
+                {isPreparing ? (
+                  <div className="typing-row">
+                    <i /><i /><i />
+                    <p>Sure, let’s do some discovery together.</p>
                   </div>
                 ) : (
-                  <>
-                    {generation?.notice && <p className="generation-note">{generation.notice}</p>}
-                    <section className="recommendation">
-                      <span>Recommendation</span>
-                      <Claim claim={answer.recommendation} />
-                    </section>
-                    <div className="answer-grid">
-                      <section>
-                        <span>Evidence</span>
-                        {answer.evidence.map((item, index) => (
-                          <div className="evidence-item" key={`${item.text}-${index}`}>
-                            <Claim claim={item} />
-                          </div>
-                        ))}
-                      </section>
-                      <section>
-                        <span>What remains unknown</span>
-                        <Claim claim={answer.uncertainty} />
-                      </section>
-                    </div>
-                    <section className="next-step">
-                      <span>Next test</span>
-                      <Claim claim={answer.nextStep} />
-                    </section>
-                    <div className="source-legend">
-                      <span>Sources used</span>
-                      <SourceRefs sourceIds={usedSourceIds} />
-                      <small>R = requirement · O = observed · P = pending</small>
-                    </div>
-                  </>
+                  <p>Here’s the one-page view I’d walk into the room with.</p>
                 )}
-              </article>
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
+          )}
 
-      <section className="work-section" id="work">
-        <div className="shell work-grid">
-          <div>
-            <p className="eyebrow">Selected work</p>
-            <h2>The evidence behind the interaction.</h2>
-          </div>
-          <article className="work-story">
-            <p className="work-meta">European industrial group · Crisis management · Anonymized</p>
-            <h3>Keeping a crisis team connected when the primary collaboration stack fails.</h3>
-            <p>
-              I translated resilience and identity-independence requirements into test scenarios, guided validation across mobile, web, and desktop, and helped isolate the network issue blocking the PoV.
-            </p>
-            <div className="work-outcome">
-              <span>Result so far</span>
-              <p>Technical fit largely validated. Final network validation remains pending.</p>
+          {isReady && (
+            <article className="brief-paper">
+              <header className="brief-header">
+                <div>
+                  <span className="brief-kicker">FIRST DISCOVERY · STATIC MOCK BRIEF</span>
+                  <h3>{lead.company}</h3>
+                  <p>{lead.name} · {lead.role}</p>
+                </div>
+                <div className="brief-date"><span>MEETING</span><strong>Today · 17:00</strong><small>45 minutes</small></div>
+              </header>
+
+              <div className="brief-trigger">
+                <span>THE INQUIRY</span>
+                <p>“{message.trim()}”</p>
+              </div>
+
+              <div className="brief-layout">
+                <div className="brief-main">
+                  <section>
+                    <h4>01 · Executive read</h4>
+                    <p>
+                      {lead.name} likely has the authority to shape requirements and assemble the buying
+                      group, but budget ownership and the executive sponsor still need confirmation. The
+                      stated scale makes governance, adoption, and measurable value as important as model quality.
+                    </p>
+                  </section>
+
+                  <section>
+                    <h4>02 · Three workflows worth testing</h4>
+                    <ol className="workflow-list">
+                      {lead.workflows.map((workflow) => <li key={workflow}>{workflow}</li>)}
+                    </ol>
+                  </section>
+
+                  <section className="motion-section">
+                    <h4>03 · Likely OpenAI motion</h4>
+                    <strong>{lead.motion}</strong>
+                    <p>{lead.motionDetail}</p>
+                    <small>Working hypothesis—not a recommendation until discovery validates it.</small>
+                  </section>
+
+                  <section>
+                    <h4>04 · Questions I’d use to open discovery</h4>
+                    <ul className="question-list">
+                      <li>What changed internally that made this a priority now?</li>
+                      <li>Which 6,000 people—and what do they repeatedly lose time on today?</li>
+                      <li>What would need to be true 90 days from now for this to be called valuable?</li>
+                      <li>Which systems, data classes, and actions would the first workflow touch?</li>
+                      <li>Who can approve budget, security, and a change in how people work?</li>
+                    </ul>
+                  </section>
+                </div>
+
+                <aside className="brief-aside">
+                  <section>
+                    <h4>WHY NOW?</h4>
+                    <p>{lead.trigger}.</p>
+                    <span className="evidence-needed">Needs external validation</span>
+                  </section>
+                  <section>
+                    <h4>GUARDRAILS TO TEST</h4>
+                    <ul>{lead.guardrails.map((item) => <li key={item}>{item}</li>)}</ul>
+                  </section>
+                  <section>
+                    <h4>BUYING GROUP</h4>
+                    <p>Business sponsor<br />IT + architecture<br />Security + privacy<br />Procurement<br />End-user champion</p>
+                  </section>
+                  <section>
+                    <h4>45-MINUTE PLAN</h4>
+                    <dl className="meeting-plan">
+                      <div><dt>05</dt><dd>Context</dd></div>
+                      <div><dt>15</dt><dd>Workflows</dd></div>
+                      <div><dt>10</dt><dd>Constraints</dd></div>
+                      <div><dt>10</dt><dd>Value + process</dd></div>
+                      <div><dt>05</dt><dd>Next step</dd></div>
+                    </dl>
+                  </section>
+                </aside>
+              </div>
+
+              <footer className="brief-footer">
+                <span>Prepared for Hena Kless</span>
+                <span>Mock output · no AI or live research</span>
+                <span>01 / 01</span>
+              </footer>
+            </article>
+          )}
+
+          {isReady && (
+            <div className="brief-actions">
+              <button type="button" onClick={() => {
+                setIsReady(false);
+                document.querySelector("#lead-builder")?.scrollIntoView({ behavior: "smooth" });
+              }}>← Edit the lead</button>
+              <span>In the next version, this briefing would be evidence-based and generated from live research.</span>
             </div>
-            <a className="button light" href="/Crisis_Communications_Case_Study.pdf" target="_blank" rel="noreferrer">
-              Read the case study <Arrow />
-            </a>
-          </article>
-        </div>
-      </section>
+          )}
+        </section>
 
-      <section className="experience-section shell" id="experience">
-        <div className="section-heading compact-heading">
-          <p className="eyebrow">Experience</p>
-          <h2>Six years at the customer–technology boundary.</h2>
-        </div>
-        <div className="experience-grid">
-          <div className="timeline">
-            <article>
-              <time>2026—NOW</time>
-              <div><span>Wire · Munich</span><h3>Senior Solutions Engineer</h3></div>
-            </article>
-            <article>
-              <time>2022—2025</time>
-              <div><span>LastPass · Munich</span><h3>Solutions Consultant → Senior Solutions Consultant</h3></div>
-            </article>
-            <article>
-              <time>2019—2022</time>
-              <div><span>Lombego Systems · Weimar</span><h3>Solution Consultant</h3></div>
-            </article>
-          </div>
-          <aside className="working-style">
-            <h3>How I work</h3>
+        <details className="research-recipe">
+          <summary>
+            <span><b>C</b> What the real research agent will investigate</span>
+            <span className="details-toggle">View briefing recipe +</span>
+          </summary>
+          <div className="recipe-content">
+            <div>
+              <p className="recipe-label">ROLE</p>
+              <h3>Enterprise sales researcher for a first discovery meeting.</h3>
+              <p>
+                Product fit stays open until the customer’s use case has been analyzed: ChatGPT Enterprise
+                or Business, Codex, the OpenAI API Platform, an agentic or multimodal application, Realtime,
+                or a combination.
+              </p>
+              <span className="page-limit">Maximum output: one A4 page</span>
+            </div>
             <ol>
-              <li><span>01</span><p><strong>Find the real decision.</strong> Align people, outcomes, and constraints before reaching for a demo.</p></li>
-              <li><span>02</span><p><strong>Make uncertainty testable.</strong> Turn requirements and risk into a proof plan with clear success criteria.</p></li>
-              <li><span>03</span><p><strong>Keep claims honest.</strong> Separate what is required, observed, inferred, and still pending.</p></li>
+              {RESEARCH_OBJECTIVES.map((objective, index) => (
+                <li key={objective}><span>0{index + 1}</span>{objective}</li>
+              ))}
             </ol>
-          </aside>
-        </div>
+          </div>
+        </details>
       </section>
 
-      <section className="contact-section">
-        <div className="shell contact-inner">
-          <div>
-            <p className="eyebrow">OpenAI · Solutions Engineer</p>
-            <h2>Let’s make the next decision clearer.</h2>
-          </div>
-          <div className="contact-actions">
-            <a className="button contact-primary" href="mailto:hena.kless@outlook.com">Start a conversation <Arrow /></a>
-            <a className="button contact-secondary" href="https://www.linkedin.com/in/henakless/" target="_blank" rel="noreferrer">LinkedIn <Arrow /></a>
-          </div>
+      <footer className="site-footer">
+        <div>
+          <span className="footer-dot" />
+          <p>Good discovery makes the meeting feel less like a guess.</p>
         </div>
-      </section>
-
-      <footer className="site-footer shell">
-        <span>© 2026 Hena Kless</span>
-        <span>Munich, Germany</span>
-        <a href="mailto:hena.kless@outlook.com">hena.kless@outlook.com</a>
+        <a href="#top">Back to the top ↑</a>
       </footer>
     </main>
   );

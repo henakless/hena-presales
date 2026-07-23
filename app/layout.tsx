@@ -7,9 +7,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const origin = `${protocol}://${host}`;
-  const title = "Hena Kless · Solutions Engineering for Applied AI";
+  const title = "Meet Hena · Discovery before the meeting";
   const description =
-    "Enterprise solutions engineering that turns ambiguous AI requirements into credible tests, grounded decisions, and clear next steps.";
+    "An interactive introduction to Hena Kless and a mock enterprise discovery briefing experience.";
 
   return {
     title,
@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
       url: origin,
       title,
       description,
-      images: [{ url: `${origin}/og.png`, width: 1200, height: 630, alt: "Hena Kless — I make complex AI decisions easier to trust." }],
+      images: [{ url: `${origin}/og.png`, width: 1731, height: 909, alt: "Meet Hena — discovery starts before the meeting." }],
     },
     twitter: {
       card: "summary_large_image",
@@ -30,11 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
       <body>{children}</body>
