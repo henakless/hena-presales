@@ -7,7 +7,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const origin = `${protocol}://${host}`;
-  const title = "Meet Hena · Discovery before the meeting";
+  const title = "Meet Hena · I built this experience just for you";
   const description =
     "An interactive introduction to Hena Kless and a mock enterprise discovery briefing experience.";
 
@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
       url: origin,
       title,
       description,
-      images: [{ url: `${origin}/og.png`, width: 1731, height: 909, alt: "Meet Hena — discovery starts before the meeting." }],
+      images: [{ url: `${origin}/og.png`, width: 1730, height: 909, alt: "I built this experience just for you. Discovery starts before the meeting." }],
     },
     twitter: {
       card: "summary_large_image",

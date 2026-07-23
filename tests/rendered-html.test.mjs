@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 async function render() {
@@ -28,16 +29,30 @@ test("server-renders the discovery experience without live AI", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /Meet Hena · Discovery before the meeting/i);
-  assert.match(html, /I built this experience so you can get to know me/i);
+  assert.match(html, /Meet Hena · I built this experience just for you/i);
+  assert.match(html, /I built this experience just for you/i);
+  assert.match(html, /background is in cybersecurity/i);
   assert.match(html, /super promising/i);
   assert.match(html, /Discovery starts before the meeting/i);
-  assert.match(html, /Enton Price/i);
-  assert.match(html, /Arkada Mobility/i);
+  assert.match(html, /Entor Price/i);
+  assert.match(html, /Paige Turner/i);
+  assert.match(html, /Al Gorithm/i);
+  assert.match(html, /Prompt &amp; Circumstance Consulting/i);
+  assert.match(html, /Model Citizens Bank/i);
+  assert.match(html, /Token Transit Group/i);
   assert.match(html, /We’re looking for an AI tool for 6,000 people/i);
   assert.match(html, /Prepare me for the meeting/i);
-  assert.match(html, /no AI, no external research/i);
+  assert.match(html, /Download the full CV/i);
   assert.doesNotMatch(html, /Ask the evidence/i);
   assert.doesNotMatch(html, /decision-answer/i);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
+
+  const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(pageSource, /Executive summary/i);
+  assert.match(pageSource, /Person information/i);
+  assert.match(pageSource, /Company information/i);
+  assert.match(pageSource, /How OpenAI is relevant/i);
+  assert.match(pageSource, /Regulatory & compliance/i);
+  assert.match(pageSource, /Risks to qualify/i);
+  assert.match(pageSource, /Best discovery questions/i);
 });
