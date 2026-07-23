@@ -60,8 +60,8 @@ test("server-renders the AI discovery experience", async () => {
   assert.match(html, /Meet Hena · I built this experience just for you/i);
   assert.match(html, /I built this experience just for you/i);
   assert.match(html, /hena-kless-portrait\.png/i);
-  assert.match(html, /Curiosity gets me to the problem worth solving/i);
-  assert.match(html, /background in cybersecurity taught me/i);
+  assert.match(html, /Curiosity is what drives me everyday/i);
+  assert.match(html, /My background is in cybersecurity/i);
   assert.match(html, /super promising/i);
   assert.doesNotMatch(html, /SUPER PROMISING/);
   assert.match(html, /great, qualified lead with a proper briefing/i);

@@ -293,24 +293,25 @@ export default function Home() {
           <p className="kicker">Hi, future colleague.</p>
           <h1>I built this experience just for you.</h1>
           <p className="intro-lead">
-            Curiosity gets me to the problem worth solving. I turn complex enterprise needs into secure,
-            measurable solutions—and align customers, product, and delivery from discovery to adoption.
+            I’m Hena, a solutions engineer that would love to work with you in Munich! Curiosity is what drives me everyday and helps me turn complex enterprise needs into practical use cases, measurable business value and actionable next steps. My goal is to align customers, product, and delivery from discovery to adoption and beyond.
           </p>
           <div className="intro-body">
             <p>
-              My background in cybersecurity taught me to navigate fast-changing technical environments,
-              separate reliable signals from noise, and communicate clearly while the answer is still
-              emerging.
+              My background is in cybersecurity, but the operating environment is remarkably similar to
+              AI: constant change, a huge amount of noise, and yesterday’s assumptions needing to be
+              challenged continuously. It taught me to identify reliable signals, communicate responsibly
+              under uncertainty, and stay close to both customers and product teams.
             </p>
             <p>
-              At Wire and LastPass, I lead technical discovery, solution design, security validation, and
-              Proofs of Value—then turn recurring customer needs into product feedback and stay engaged
-              through adoption and expansion.
+              At Wire and LastPass, I have worked as the bridge between customers, product, and delivery—
+              validating valuable use cases, defining success criteria, influencing the roadmap, and helping
+              customers understand both the product today and the longer-term vision. AI expands that problem
+              space enormously: more room to experiment, build, and learn hands-on.
             </p>
           </div>
           <p className="turn-line">
-            Curiosity works best with context. Which is why this is my least favorite kind of calendar
-            invite…
+            I love that every day brings a new challenge to face. But there are some things I’d rather
+            avoid. Like this…
           </p>
           <a className="scroll-cue" href="#calendar-message">Keep scrolling <Arrow /></a>
         </div>
