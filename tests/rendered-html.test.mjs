@@ -22,24 +22,22 @@ async function render() {
   );
 }
 
-test("server-renders the application experience", async () => {
+test("server-renders the discovery experience without live AI", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /Hena Kless · Solutions Engineering for Applied AI/i);
-  assert.match(html, /I make complex AI decisions easier to trust/i);
-  assert.match(html, /One question\. One grounded answer/i);
-  assert.match(html, /Ask a decision question about this case/i);
-  assert.match(html, /Ask the evidence/i);
-  assert.match(html, /AI can interpret and recommend\. It cannot add facts/i);
-  assert.match(html, /Microsoft-independent crisis communications/i);
-  assert.match(html, /What remains unknown/i);
-  assert.match(html, /Final network validation remains pending/i);
-  assert.match(html, /Keeping a crisis team connected/i);
-  assert.doesNotMatch(html, /Select the decision lens/i);
-  assert.doesNotMatch(html, /Build grounded decision brief/i);
-  assert.doesNotMatch(html, /Regulated service AI/i);
+  assert.match(html, /Meet Hena · Discovery before the meeting/i);
+  assert.match(html, /I built this experience so you can get to know me/i);
+  assert.match(html, /super promising/i);
+  assert.match(html, /Discovery starts before the meeting/i);
+  assert.match(html, /Enton Price/i);
+  assert.match(html, /Arkada Mobility/i);
+  assert.match(html, /We’re looking for an AI tool for 6,000 people/i);
+  assert.match(html, /Prepare me for the meeting/i);
+  assert.match(html, /no AI, no external research/i);
+  assert.doesNotMatch(html, /Ask the evidence/i);
+  assert.doesNotMatch(html, /decision-answer/i);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
