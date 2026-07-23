@@ -291,7 +291,7 @@ export default function Home() {
           </div>
           <div className="message-wrap">
             <blockquote>
-              Hey Hena, this <em>SUPER PROMISING</em> opp came in today and your calendar looks free at
+              Hey Hena, this <em>super promising</em> opp came in today and your calendar looks free at
               5 pm. Can you jump in a meeting with them?
             </blockquote>
             <span className="message-time">4:42 PM · Delivered</span>
@@ -314,8 +314,9 @@ export default function Home() {
             <h2>Discovery starts before the meeting.</h2>
           </div>
           <p>
-            Combine any contact with any company, edit the inquiry, and see the prepared research lens.
-            Everything below is static mock content—no live AI or external customer research yet.
+            Select the inbound lead you want to use for the briefing. Choose the contact and company
+            independently, then edit their inquiry. Everything below is static mock content—no live AI
+            or external customer research yet.
           </p>
         </header>
 
@@ -400,7 +401,7 @@ export default function Home() {
                 {isPreparing ? (
                   <div className="typing-row"><i /><i /><i /><p>Sure, let’s do some discovery together.</p></div>
                 ) : (
-                  <p>Here’s the one-page view I’d walk into the room with.</p>
+                  <p>Here’s the one-page view I’d walk into the meeting with.</p>
                 )}
               </div>
             </div>
@@ -537,7 +538,7 @@ export default function Home() {
 
       <section className="cv-section" id="cv">
         <header className="cv-heading" data-reveal>
-          <div><p className="section-index">03 / THE SHORT VERSION</p><h2>Enough context to know where I’m coming from.</h2></div>
+          <div><p className="section-index">03 / THE SHORT VERSION</p><h2>A brief summary of Hena Kless.</h2></div>
           <a href="/Hena_Kless_CV_2026.pdf" download>Download the full CV ↓</a>
         </header>
 
@@ -560,9 +561,9 @@ export default function Home() {
 
           <aside className="cv-aside">
             <section><h3>Credentials</h3><p>CompTIA Security+ · Six Habits of Highly Effective Sales Engineers</p></section>
+            <section><h3>Community</h3><p>GTIA Executive Council DACH · Presales & Pretzels Munich · PreSales Collective</p></section>
             <section><h3>Education</h3><p>B.A. Communication Science, minor in Philosophy · University of Erfurt</p></section>
             <section><h3>Languages</h3><p>German · English · Dari · Pashto · Spanish</p></section>
-            <section><h3>Community</h3><p>GTIA Executive Council DACH · Presales & Pretzels Munich · PreSales Collective</p></section>
           </aside>
         </div>
 
