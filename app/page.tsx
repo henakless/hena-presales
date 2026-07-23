@@ -704,6 +704,7 @@ export default function Home() {
 
           <aside className="cv-aside">
             <section><h3>Credentials</h3><p>CompTIA Security+ · Six Habits of Highly Effective Sales Engineers</p></section>
+            <section><h3>Technical</h3><p>Cryptography · Encryption · Zero Trust · IdP · SSO · SCIM · REST APIs · JSON · NIS2 · GDPR · DORA</p></section>
             <section><h3>Community</h3><p>GTIA Executive Council DACH · Presales & Pretzels Munich · PreSales Collective</p></section>
             <section><h3>Education</h3><p>B.A. Communication Science, minor in Philosophy · University of Erfurt</p></section>
             <section><h3>Languages</h3><p>German · English · Dari · Pashto · Spanish</p></section>

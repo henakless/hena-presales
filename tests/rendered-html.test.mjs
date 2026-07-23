@@ -108,9 +108,11 @@ test("server-renders the AI discovery experience", async () => {
   assert.match(pageSource, /guardrail-result/i);
   assert.match(pageSource, /<h2>A brief summary of <span>Hena Kless\.<\/span><\/h2>/i);
   const credentialsIndex = pageSource.indexOf("<h3>Credentials</h3>");
+  const technicalIndex = pageSource.indexOf("<h3>Technical</h3>");
   const communityIndex = pageSource.indexOf("<h3>Community</h3>");
   const educationIndex = pageSource.indexOf("<h3>Education</h3>");
-  assert.ok(credentialsIndex < communityIndex && communityIndex < educationIndex);
+  assert.match(pageSource, /Cryptography · Encryption · Zero Trust · IdP · SSO · SCIM · REST APIs · JSON · NIS2 · GDPR · DORA/i);
+  assert.ok(credentialsIndex < technicalIndex && technicalIndex < communityIndex && communityIndex < educationIndex);
 });
 
 test("generates a structured briefing through the server endpoint", async () => {
