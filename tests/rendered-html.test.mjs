@@ -23,7 +23,35 @@ async function render() {
   );
 }
 
-test("server-renders the discovery experience without live AI", async () => {
+const MOCK_BRIEFING = {
+  executiveSummary: "A focused discovery summary.",
+  person: {
+    authority: "Likely technical sponsor; budget ownership must be validated.",
+    priorities: ["Developer velocity", "Operational resilience", "Secure knowledge access"],
+    unknowns: ["Economic buyer", "Security approval owner"],
+  },
+  company: {
+    profile: "A fictional global logistics operator.",
+    noteworthyEvents: ["Modernization program", "Contract backlog", "Operations refresh"],
+  },
+  openaiRelevance: {
+    motion: "API Platform + agentic workflows",
+    rationale: "The workflows are integrated and operational.",
+    workflows: ["Operations copilot", "Contract intake", "Multilingual service"],
+  },
+  compliance: ["Data residency", "Access controls", "Human oversight"],
+  risks: ["Data quality", "Unclear baseline", "Operational ownership"],
+  discoveryQuestions: [
+    "What changed now?",
+    "Who owns the outcome?",
+    "What is the baseline?",
+    "Which data is trusted?",
+    "Where is human approval required?",
+    "What decides a successful pilot?",
+  ],
+};
+
+test("server-renders the AI discovery experience", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -35,8 +63,10 @@ test("server-renders the discovery experience without live AI", async () => {
   assert.match(html, /background is in cybersecurity/i);
   assert.match(html, /super promising/i);
   assert.doesNotMatch(html, /SUPER PROMISING/);
+  assert.match(html, /great, qualified lead with a proper briefing/i);
   assert.match(html, /Discovery starts before the meeting/i);
-  assert.match(html, /Select the inbound lead you want to use for the briefing/i);
+  assert.match(html, /Help create the lead that came in through the website/i);
+  assert.match(html, /OpenAI will generate a fresh, seven-part briefing/i);
   assert.match(html, /Entor Price/i);
   assert.match(html, /Paige Turner/i);
   assert.match(html, /Al Gorithm/i);
@@ -45,10 +75,13 @@ test("server-renders the discovery experience without live AI", async () => {
   assert.match(html, /Token Transit Group/i);
   assert.match(html, /We’re looking for an AI tool for 6,000 people/i);
   assert.match(html, /Get the briefing you deserve/i);
-  assert.match(html, /A brief summary of Hena Kless/i);
+  assert.match(html, /A brief summary of/i);
+  assert.match(html, /Hena Kless\./i);
+  assert.match(html, /President’s Club/i);
   assert.match(html, /Download the full CV/i);
   assert.match(html, /best person for the job/i);
-  assert.match(html, /Mario Platt, Chief Information Security Officer at LastPass/i);
+  assert.match(html, /Mario Platt ↗/i);
+  assert.match(html, /VP CISO at LastPass at the time of posting/i);
   assert.match(html, /mario-platt-linkedin-reference\.jpg/i);
   assert.match(html, /Let’s chat! I’d love to work together/i);
   assert.doesNotMatch(html, /€542K|ARR contribution in 2024/i);
@@ -58,6 +91,7 @@ test("server-renders the discovery experience without live AI", async () => {
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 
   const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(pageSource, /fetch\("\/api\/briefing"/i);
   assert.match(pageSource, /Executive summary/i);
   assert.match(pageSource, /Person information/i);
   assert.match(pageSource, /Company information/i);
@@ -66,8 +100,66 @@ test("server-renders the discovery experience without live AI", async () => {
   assert.match(pageSource, /Risks to qualify/i);
   assert.match(pageSource, /Best discovery questions/i);
   assert.match(pageSource, /walk into the meeting with/i);
+  assert.match(pageSource, /<h2>A brief summary of <span>Hena Kless\.<\/span><\/h2>/i);
   const credentialsIndex = pageSource.indexOf("<h3>Credentials</h3>");
   const communityIndex = pageSource.indexOf("<h3>Community</h3>");
   const educationIndex = pageSource.indexOf("<h3>Education</h3>");
   assert.ok(credentialsIndex < communityIndex && communityIndex < educationIndex);
+});
+
+test("generates a structured briefing through the server endpoint", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalApiKey = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = "test-key";
+
+  globalThis.fetch = async (input, init) => {
+    assert.equal(String(input), "https://api.openai.com/v1/responses");
+    assert.equal(init?.method, "POST");
+    const requestBody = JSON.parse(String(init?.body));
+    assert.equal(requestBody.model, "gpt-5.6-sol");
+    assert.equal(requestBody.store, false);
+    assert.equal(requestBody.text.format.type, "json_schema");
+    assert.equal(requestBody.text.format.strict, true);
+
+    return Response.json({
+      model: "gpt-5.6-sol",
+      output: [
+        {
+          type: "message",
+          content: [{ type: "output_text", text: JSON.stringify(MOCK_BRIEFING) }],
+        },
+      ],
+    });
+  };
+
+  try {
+    const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+    workerUrl.searchParams.set("api-test", `${process.pid}-${Date.now()}`);
+    const { default: worker } = await import(workerUrl.href);
+    const response = await worker.fetch(
+      new Request("http://localhost/api/briefing", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-forwarded-for": "203.0.113.10" },
+        body: JSON.stringify({
+          contactId: "entor",
+          companyId: "token",
+          message: "We need an AI platform for 6,000 employees.",
+        }),
+      }),
+      {
+        OPENAI_API_KEY: "test-key",
+        ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) },
+      },
+      { waitUntil() {}, passThroughOnException() {} },
+    );
+
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.deepEqual(body.briefing, MOCK_BRIEFING);
+    assert.equal(body.model, "gpt-5.6-sol");
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalApiKey === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = originalApiKey;
+  }
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import type { Briefing } from "../lib/briefing";
 
 type Contact = {
   id: string;
@@ -154,16 +155,6 @@ const RESEARCH_OBJECTIVES = [
   "A focused first-discovery meeting plan",
 ];
 
-const DISCOVERY_QUESTIONS = [
-  "What changed now—and what happens if this remains unsolved for another twelve months?",
-  "Which users, decisions, and recurring tasks sit inside the stated population of 6,000?",
-  "Where does the trusted source material live, who owns it, and how is access controlled today?",
-  "What measurable baseline should the first workflow improve: time, quality, revenue, risk, or experience?",
-  "Which outputs can remain advisory, and which require human approval or a deterministic control?",
-  "Who owns budget, security approval, data governance, adoption, and the final go/no-go decision?",
-  "What has already been piloted—and what prevented it from reaching production or scale?",
-];
-
 function Arrow({ direction = "down" }: { direction?: "down" | "right" }) {
   return <span aria-hidden="true">{direction === "down" ? "↓" : "→"}</span>;
 }
@@ -173,11 +164,13 @@ export default function Home() {
   const [companyId, setCompanyId] = useState(COMPANIES[2].id);
   const [message, setMessage] = useState(DEFAULT_MESSAGE);
   const [isPreparing, setIsPreparing] = useState(false);
-  const [isReady, setIsReady] = useState(false);
+  const [briefing, setBriefing] = useState<Briefing | null>(null);
+  const [error, setError] = useState("");
   const briefingRef = useRef<HTMLElement>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestRef = useRef<AbortController | null>(null);
   const contact = CONTACTS.find((item) => item.id === contactId) ?? CONTACTS[0];
   const company = COMPANIES.find((item) => item.id === companyId) ?? COMPANIES[0];
+  const isReady = briefing !== null;
 
   useEffect(() => {
     const elements = document.querySelectorAll<HTMLElement>("[data-reveal]");
@@ -191,28 +184,54 @@ export default function Home() {
 
   useEffect(
     () => () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      requestRef.current?.abort();
     },
     [],
   );
 
   function resetBriefing() {
-    setIsReady(false);
+    requestRef.current?.abort();
+    requestRef.current = null;
+    setBriefing(null);
+    setError("");
     setIsPreparing(false);
-    if (timerRef.current) clearTimeout(timerRef.current);
   }
 
-  function prepareBriefing(event: FormEvent<HTMLFormElement>) {
+  async function prepareBriefing(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (message.trim().length < 10) return;
-    setIsReady(false);
+
+    requestRef.current?.abort();
+    const controller = new AbortController();
+    requestRef.current = controller;
+    setBriefing(null);
+    setError("");
     setIsPreparing(true);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setIsPreparing(false);
-      setIsReady(true);
+
+    try {
+      const response = await fetch("/api/briefing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({ contactId, companyId, message: message.trim() }),
+      });
+      const result = (await response.json()) as { briefing?: Briefing; error?: string };
+
+      if (!response.ok || !result.briefing) {
+        throw new Error(result.error ?? "The briefing could not be generated.");
+      }
+
+      setBriefing(result.briefing);
       window.setTimeout(() => briefingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
-    }, 1550);
+    } catch (requestError) {
+      if (requestError instanceof Error && requestError.name === "AbortError") return;
+      setError(requestError instanceof Error ? requestError.message : "The briefing could not be generated.");
+    } finally {
+      if (requestRef.current === controller) {
+        requestRef.current = null;
+        setIsPreparing(false);
+      }
+    }
   }
 
   return (
@@ -300,7 +319,7 @@ export default function Home() {
 
         <div className="moderator" data-reveal>
           <span>MODERATOR’S NOTE</span>
-          <p>A “super promising” opportunity sounds like a great, qualified lead.</p>
+          <p>A “super promising” opportunity sounds like a great, qualified lead with a proper briefing.</p>
           <strong>Right? …right?</strong>
         </div>
 
@@ -314,9 +333,9 @@ export default function Home() {
             <h2>Discovery starts before the meeting.</h2>
           </div>
           <p>
-            Select the inbound lead you want to use for the briefing. Choose the contact and company
-            independently, then edit their inquiry. Everything below is static mock content—no live AI
-            or external customer research yet.
+            <strong className="discovery-prompt">Help create the lead that came in through the website.</strong>
+            Choose the contact and company independently, then edit their inquiry. OpenAI will generate
+            a fresh, seven-part briefing from the fictional scenario you assemble.
           </p>
         </header>
 
@@ -378,7 +397,7 @@ export default function Home() {
               <textarea
                 id="lead-message"
                 value={message}
-                onChange={(event) => { setMessage(event.target.value); setIsReady(false); }}
+                onChange={(event) => { setMessage(event.target.value); resetBriefing(); }}
                 rows={3}
                 maxLength={280}
               />
@@ -388,18 +407,20 @@ export default function Home() {
               <span>{isPreparing ? "Building your briefing…" : "Get the briefing you deserve"}</span>
               <Arrow direction="right" />
             </button>
-            <p className="fiction-note">All customer names, companies, and scenario events in this prototype are fictional.</p>
+            <p className="fiction-note">All customer names, companies, and scenario events are fictional. AI-generated hypotheses still require validation.</p>
           </section>
         </form>
 
         <section className={`briefing-stage ${isReady ? "is-ready" : ""}`} ref={briefingRef} aria-live="polite">
-          {(isPreparing || isReady) && (
+          {(isPreparing || isReady || error) && (
             <div className="hena-response">
               <div className="hena-avatar">HK</div>
               <div className="hena-status">
                 <span>Hena</span>
                 {isPreparing ? (
                   <div className="typing-row"><i /><i /><i /><p>Sure, let’s do some discovery together.</p></div>
+                ) : error ? (
+                  <p>I hit a snag while preparing that briefing.</p>
                 ) : (
                   <p>Here’s the one-page view I’d walk into the meeting with.</p>
                 )}
@@ -407,11 +428,18 @@ export default function Home() {
             </div>
           )}
 
-          {isReady && (
+          {error && (
+            <div className="brief-error" role="alert">
+              <div><strong>Briefing interrupted</strong><p>{error}</p></div>
+              <button type="submit" form="lead-builder">Try again →</button>
+            </div>
+          )}
+
+          {briefing && (
             <article className="brief-paper">
               <header className="brief-header">
                 <div>
-                  <span className="brief-kicker">FIRST DISCOVERY · PREPARED MOCK BRIEF</span>
+                  <span className="brief-kicker">FIRST DISCOVERY · AI-GENERATED BRIEF</span>
                   <h3>{company.name}</h3>
                   <p>{contact.name} · {contact.role}</p>
                 </div>
@@ -425,13 +453,7 @@ export default function Home() {
                   <span>01</span>
                   <div>
                     <h4>Executive summary</h4>
-                    <p>
-                      This looks like a platform-scale inquiry, but “an AI tool for 6,000 people” is not yet a
-                      qualified use case. The first meeting should identify the business trigger, separate broad
-                      knowledge work from integrated operational workflows, and agree on one measurable path to
-                      value. {contact.name} is likely a strong sponsor, while the buying group still needs security,
-                      data governance, procurement, and an accountable business owner.
-                    </p>
+                    <p>{briefing.executiveSummary}</p>
                   </div>
                 </section>
 
@@ -441,9 +463,11 @@ export default function Home() {
                     <div>
                       <h4>Person information</h4>
                       <h5>{contact.name} · {contact.role}</h5>
-                      <p>{contact.authority}</p>
+                      <p>{briefing.person.authority}</p>
                       <h6>Likely priorities</h6>
-                      <ul>{contact.priorities.map((item) => <li key={item}>{item}</li>)}</ul>
+                      <ul>{briefing.person.priorities.map((item) => <li key={item}>{item}</li>)}</ul>
+                      <h6>To validate</h6>
+                      <ul>{briefing.person.unknowns.map((item) => <li key={item}>{item}</li>)}</ul>
                     </div>
                   </section>
                   <section className="brief-section">
@@ -451,9 +475,9 @@ export default function Home() {
                     <div>
                       <h4>Company information</h4>
                       <h5>{company.industry} · {company.scale}</h5>
-                      <p>{company.profile}</p>
+                      <p>{briefing.company.profile}</p>
                       <h6>Noteworthy scenario signals to validate</h6>
-                      <ul>{company.signals.map((item) => <li key={item}>{item}</li>)}</ul>
+                      <ul>{briefing.company.noteworthyEvents.map((item) => <li key={item}>{item}</li>)}</ul>
                     </div>
                   </section>
                 </div>
@@ -463,11 +487,11 @@ export default function Home() {
                   <div>
                     <h4>How OpenAI is relevant</h4>
                     <div className="motion-callout">
-                      <strong>{company.motion}</strong>
-                      <p>{company.motionDetail}</p>
+                      <strong>{briefing.openaiRelevance.motion}</strong>
+                      <p>{briefing.openaiRelevance.rationale}</p>
                     </div>
                     <h6>Workflows worth validating</h6>
-                    <ol>{company.workflows.map((item) => <li key={item}>{item}</li>)}</ol>
+                    <ol>{briefing.openaiRelevance.workflows.map((item) => <li key={item}>{item}</li>)}</ol>
                   </div>
                 </section>
 
@@ -476,7 +500,7 @@ export default function Home() {
                     <span>05</span>
                     <div>
                       <h4>Regulatory & compliance</h4>
-                      <ul>{company.compliance.map((item) => <li key={item}>{item}</li>)}</ul>
+                      <ul>{briefing.compliance.map((item) => <li key={item}>{item}</li>)}</ul>
                       <p className="brief-note">Confirm whether OpenAI is acting as a workplace platform, an application component, or both—the control model differs.</p>
                     </div>
                   </section>
@@ -484,7 +508,7 @@ export default function Home() {
                     <span>06</span>
                     <div>
                       <h4>Risks to qualify</h4>
-                      <ul>{company.risks.map((item) => <li key={item}>{item}</li>)}</ul>
+                      <ul>{briefing.risks.map((item) => <li key={item}>{item}</li>)}</ul>
                       <p className="brief-note">Also test the incumbent landscape, internal build appetite, decision timeline, and procurement route.</p>
                     </div>
                   </section>
@@ -494,30 +518,30 @@ export default function Home() {
                   <span>07</span>
                   <div>
                     <h4>Best discovery questions</h4>
-                    <ol>{DISCOVERY_QUESTIONS.map((item) => <li key={item}>{item}</li>)}</ol>
+                    <ol>{briefing.discoveryQuestions.map((item) => <li key={item}>{item}</li>)}</ol>
                   </div>
                 </section>
               </div>
 
               <footer className="brief-footer">
                 <span>Prepared for Hena Kless</span>
-                <span>Mock output · scenario evidence requires validation</span>
+                <span>Generated with OpenAI · fictional scenario hypotheses require validation</span>
                 <span>01 / 01</span>
               </footer>
             </article>
           )}
 
-          {isReady && (
+          {briefing && (
             <div className="brief-actions">
-              <button type="button" onClick={() => { setIsReady(false); document.querySelector("#lead-builder")?.scrollIntoView({ behavior: "smooth" }); }}>← Edit the brief</button>
-              <span>The production version would replace scenario signals with cited, current research.</span>
+              <button type="button" onClick={() => { resetBriefing(); document.querySelector("#lead-builder")?.scrollIntoView({ behavior: "smooth" }); }}>← Edit the brief</button>
+              <span>Change any selection or message to generate a different briefing.</span>
             </div>
           )}
         </section>
 
         <details className="research-recipe">
           <summary>
-            <span><b>D</b> What the real research agent will investigate</span>
+            <span><b>D</b> What the AI briefing considers</span>
             <span className="details-toggle">View briefing recipe +</span>
           </summary>
           <div className="recipe-content">
@@ -525,9 +549,11 @@ export default function Home() {
               <p className="recipe-label">ROLE</p>
               <h3>Enterprise sales researcher for a first discovery meeting.</h3>
               <p>
-                Product fit stays open until the customer’s use case has been analyzed: ChatGPT Enterprise
+                The live AI reasons over the fictional lead, company profile, scenario signals, and inquiry
+                you select. Product fit stays open until the use case has been analyzed: ChatGPT Enterprise
                 or Business, Codex, the OpenAI API Platform, an agentic or multimodal application, Realtime,
-                or a combination.
+                or a combination. Hypotheses are explicitly framed for validation rather than presented as
+                externally researched facts.
               </p>
               <span className="page-limit">Maximum output: one A4 page</span>
             </div>
@@ -538,7 +564,7 @@ export default function Home() {
 
       <section className="cv-section" id="cv">
         <header className="cv-heading" data-reveal>
-          <div><p className="section-index">03 / THE SHORT VERSION</p><h2>A brief summary of Hena Kless.</h2></div>
+          <div><p className="section-index">03 / THE SHORT VERSION</p><h2>A brief summary of <span>Hena Kless.</span></h2></div>
           <a href="/Hena_Kless_CV_2026.pdf" download>Download the full CV ↓</a>
         </header>
 
@@ -549,6 +575,7 @@ export default function Home() {
               <dl>
                 <div><dt>235%</dt><dd>ARR growth in year two</dd></div>
                 <div><dt>35+</dt><dd>talks and webinars</dd></div>
+                <div><dt>FY24</dt><dd>President’s Club</dd></div>
               </dl>
             </div>
 
@@ -573,10 +600,12 @@ export default function Home() {
             <p className="reference-label">Don’t take my word for it</p>
             <blockquote>
               You’re looking for the best person for the job, but you don’t know me yet. Hear it
-              from someone who does: <strong>Mario Platt, Chief Information Security Officer at
-              LastPass.</strong>
+              from someone who does:
             </blockquote>
-            <span className="reference-arrow" aria-hidden="true">→</span>
+            <p className="reference-attribution">
+              <strong>Mario Platt ↗</strong><span>· VP CISO at LastPass at the time of posting</span>
+            </p>
+            <span className="reference-arrow" aria-hidden="true" />
           </div>
           <figure className="reference-proof">
             <img
