@@ -60,7 +60,8 @@ test("server-renders the AI discovery experience", async () => {
   assert.match(html, /Meet Hena · I built this experience just for you/i);
   assert.match(html, /I built this experience just for you/i);
   assert.match(html, /hena-kless-portrait\.png/i);
-  assert.match(html, /background is in cybersecurity/i);
+  assert.match(html, /Curiosity gets me to the problem worth solving/i);
+  assert.match(html, /background in cybersecurity taught me/i);
   assert.match(html, /super promising/i);
   assert.doesNotMatch(html, /SUPER PROMISING/);
   assert.match(html, /great, qualified lead with a proper briefing/i);
@@ -80,8 +81,9 @@ test("server-renders the AI discovery experience", async () => {
   assert.match(html, /President’s Club/i);
   assert.match(html, /Download the full CV/i);
   assert.match(html, /best person for the job/i);
-  assert.match(html, /Mario Platt ↗/i);
-  assert.match(html, /VP CISO at LastPass at the time of posting/i);
+  assert.match(html, /Mario Platt/i);
+  assert.match(html, /Chief Information Security Officer at LastPass/i);
+  assert.doesNotMatch(html, /at the time of posting/i);
   assert.match(html, /mario-platt-linkedin-reference\.jpg/i);
   assert.match(html, /Let’s chat! I’d love to work together/i);
   assert.doesNotMatch(html, /€542K|ARR contribution in 2024/i);
@@ -157,6 +159,76 @@ test("generates a structured briefing through the server endpoint", async () => 
     const body = await response.json();
     assert.deepEqual(body.briefing, MOCK_BRIEFING);
     assert.equal(body.model, "gpt-5.6-terra");
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalApiKey === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = originalApiKey;
+  }
+});
+
+test("normalizes discovery questions that arrive serialized inside one item", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalApiKey = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = "test-key";
+
+  const malformedQuestions = [
+    "What changed now?",
+    "Who owns the outcome?",
+    "What is the baseline?",
+    "Which data is trusted?",
+    "Where is human approval required?",
+    'For employee support, what must escalate?", "For engineering, which tools are in scope?", "What outcome would justify expansion?"]}',
+  ];
+
+  globalThis.fetch = async () =>
+    Response.json({
+      model: "gpt-5.6-terra",
+      output: [
+        {
+          type: "message",
+          content: [
+            {
+              type: "output_text",
+              text: JSON.stringify({ ...MOCK_BRIEFING, discoveryQuestions: malformedQuestions }),
+            },
+          ],
+        },
+      ],
+    });
+
+  try {
+    const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+    workerUrl.searchParams.set("normalization-test", `${process.pid}-${Date.now()}`);
+    const { default: worker } = await import(workerUrl.href);
+    const response = await worker.fetch(
+      new Request("http://localhost/api/briefing", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-forwarded-for": "203.0.113.11" },
+        body: JSON.stringify({
+          contactId: "entor",
+          companyId: "token",
+          message: "We need an AI platform for 6,000 employees.",
+        }),
+      }),
+      {
+        OPENAI_API_KEY: "test-key",
+        ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) },
+      },
+      { waitUntil() {}, passThroughOnException() {} },
+    );
+
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.deepEqual(body.briefing.discoveryQuestions, [
+      "What changed now?",
+      "Who owns the outcome?",
+      "What is the baseline?",
+      "Which data is trusted?",
+      "Where is human approval required?",
+      "For employee support, what must escalate?",
+      "For engineering, which tools are in scope?",
+    ]);
+    assert.doesNotMatch(body.briefing.discoveryQuestions.join(" "), /[\[\]{}]|\"\s*,\s*\"/);
   } finally {
     globalThis.fetch = originalFetch;
     if (originalApiKey === undefined) delete process.env.OPENAI_API_KEY;
