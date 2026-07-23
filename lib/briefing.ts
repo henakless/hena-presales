@@ -19,6 +19,16 @@ export type Briefing = {
   discoveryQuestions: string[];
 };
 
+export type BriefingModelResult =
+  | {
+      outcome: "briefing";
+      briefing: Briefing;
+    }
+  | {
+      outcome: "prompt_injection";
+      briefing: null;
+    };
+
 const stringArray = (minItems: number, maxItems: number) => ({
   type: "array",
   items: { type: "string" },
@@ -75,6 +85,21 @@ export const BRIEFING_SCHEMA = {
   ],
 } as const;
 
+export const BRIEFING_RESULT_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    outcome: {
+      type: "string",
+      enum: ["briefing", "prompt_injection"],
+    },
+    briefing: {
+      anyOf: [BRIEFING_SCHEMA, { type: "null" }],
+    },
+  },
+  required: ["outcome", "briefing"],
+} as const;
+
 function isStringArray(value: unknown, minimum: number) {
   return Array.isArray(value) && value.length >= minimum && value.every((item) => typeof item === "string");
 }
@@ -99,6 +124,17 @@ export function isBriefing(value: unknown): value is Briefing {
     isStringArray(briefing.risks, 3) &&
     isStringArray(briefing.discoveryQuestions, 6)
   );
+}
+
+export function isBriefingModelResult(value: unknown): value is BriefingModelResult {
+  if (!value || typeof value !== "object") return false;
+  const result = value as Partial<BriefingModelResult>;
+
+  if (result.outcome === "prompt_injection") {
+    return result.briefing === null;
+  }
+
+  return result.outcome === "briefing" && isBriefing(result.briefing);
 }
 
 export function normalizeDiscoveryQuestions(items: string[]) {

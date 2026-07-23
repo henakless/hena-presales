@@ -171,6 +171,12 @@ p, h1, h2, h3, h4, h5, h6, blockquote, dl, dd, ol, ul { margin-top: 0; }
 .brief-error p { margin: 0; color: var(--muted); font-size: 12px; }
 .brief-error button { min-height: 40px; flex: 0 0 auto; padding: 9px 13px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); font-size: 10px; font-weight: 850; cursor: pointer; }
 .brief-error button:hover { background: var(--acid); color: var(--ink); }
+.guardrail-result { display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center; margin-bottom: 28px; padding: 28px 30px; border: 1px solid var(--ink); background: var(--acid); box-shadow: 7px 7px 0 var(--ink); animation: paperIn 400ms cubic-bezier(.2, .75, .2, 1) both; }
+.guardrail-result > span { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 50%; background: var(--ink); color: var(--acid); font-family: var(--serif); font-size: 22px; }
+.guardrail-result strong { display: block; margin-bottom: 5px; font-family: var(--serif); font-size: 30px; font-weight: 400; letter-spacing: -.03em; }
+.guardrail-result p { max-width: 680px; margin: 0; font-size: 12px; line-height: 1.55; }
+.guardrail-result button { min-height: 42px; padding: 10px 14px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); font-size: 10px; font-weight: 850; cursor: pointer; }
+.guardrail-result button:hover { background: var(--orange); }
 
 .brief-paper { background: #fffef9; border: 1px solid #bdbbb2; box-shadow: 0 28px 70px rgba(40, 39, 34, .14); animation: paperIn 500ms cubic-bezier(.2, .75, .2, 1) both; }
 @keyframes paperIn { from { opacity: 0; transform: translateY(24px) scale(.985); } }
@@ -360,6 +366,8 @@ p, h1, h2, h3, h4, h5, h6, blockquote, dl, dd, ol, ul { margin-top: 0; }
   .brief-actions { align-items: flex-start; flex-direction: column; }
   .brief-actions span { text-align: left; }
   .brief-error { align-items: flex-start; flex-direction: column; }
+  .guardrail-result { grid-template-columns: auto 1fr; padding: 24px 20px; }
+  .guardrail-result button { grid-column: 1 / -1; width: 100%; }
   .research-recipe summary { align-items: flex-start; }
   .details-toggle { max-width: 70px; text-align: right; }
   .recipe-content { padding-block: 38px; }
