@@ -100,3 +100,25 @@ export function isBriefing(value: unknown): value is Briefing {
     isStringArray(briefing.discoveryQuestions, 6)
   );
 }
+
+export function normalizeDiscoveryQuestions(items: string[]) {
+  const questions = items.flatMap((item) => {
+    const singleLine = item.replace(/\\n|\r?\n/g, " ").trim();
+    const matches = singleLine.match(/[^?]+\?/g);
+    return matches ?? [singleLine];
+  });
+
+  const cleaned = questions
+    .map((question) =>
+      question
+        .replace(/^\s*(?:discoveryQuestions\s*[:=]\s*)?/i, "")
+        .replace(/^[\s\[{"',]+/, "")
+        .replace(/[\s\]}"',]+$/, "")
+        .replace(/^\s*\d+[.)]\s*/, "")
+        .replace(/\s+/g, " ")
+        .trim(),
+    )
+    .filter((question) => question.length > 8 && question.endsWith("?"));
+
+  return [...new Set(cleaned)].slice(0, 7);
+}

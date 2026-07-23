@@ -274,26 +274,24 @@ export default function Home() {
           <p className="kicker">Hi, future colleague.</p>
           <h1>I built this experience just for you.</h1>
           <p className="intro-lead">
-            I’m Hena—a solutions engineer who enjoys turning a noisy, ambiguous enterprise problem into
-            a clear path that customers, product teams, and delivery teams can believe in.
+            Curiosity gets me to the problem worth solving. I turn complex enterprise needs into secure,
+            measurable solutions—and align customers, product, and delivery from discovery to adoption.
           </p>
           <div className="intro-body">
             <p>
-              My background is in cybersecurity, but the operating environment is remarkably similar to
-              AI: constant change, a huge amount of noise, and yesterday’s assumptions needing to be
-              challenged continuously. It taught me to identify reliable signals, communicate responsibly
-              under uncertainty, and stay close to both customers and product teams.
+              My background in cybersecurity taught me to navigate fast-changing technical environments,
+              separate reliable signals from noise, and communicate clearly while the answer is still
+              emerging.
             </p>
             <p>
-              At Wire and LastPass, I have worked as the bridge between customers, product, and delivery—
-              validating valuable use cases, defining success criteria, influencing the roadmap, and helping
-              customers understand both the product today and the longer-term vision. AI expands that problem
-              space enormously: more room to experiment, build, and learn hands-on.
+              At Wire and LastPass, I lead technical discovery, solution design, security validation, and
+              Proofs of Value—then turn recurring customer needs into product feedback and stay engaged
+              through adoption and expansion.
             </p>
           </div>
           <p className="turn-line">
-            I love that every day brings a new challenge to face. But there are some things I’d rather
-            avoid. Like this…
+            Curiosity works best with context. Which is why this is my least favorite kind of calendar
+            invite…
           </p>
           <a className="scroll-cue" href="#calendar-message">Keep scrolling <Arrow /></a>
         </div>
@@ -603,9 +601,9 @@ export default function Home() {
               from someone who does:
             </blockquote>
             <p className="reference-attribution">
-              <strong>Mario Platt ↗</strong><span>· VP CISO at LastPass at the time of posting</span>
+              <strong>Mario Platt</strong><span>· Chief Information Security Officer at LastPass</span>
             </p>
-            <span className="reference-arrow" aria-hidden="true" />
+            <span className="reference-arrow" aria-hidden="true">→</span>
           </div>
           <figure className="reference-proof">
             <img
