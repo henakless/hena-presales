@@ -131,6 +131,34 @@ test("redirects the root URL to the presales experience", async () => {
   assert.equal(response.headers.get("location"), "https://henakless.com/presales?from=root");
 });
 
+test("serves compiled assets from their Cloudflare path under the base path", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("asset-rewrite-test", `${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  const response = await worker.fetch(
+    new Request("https://henakless.com/presales/assets/app.css"),
+    {
+      ASSETS: {
+        fetch: async (assetRequest) =>
+          Response.json({ pathname: new URL(assetRequest.url).pathname }),
+      },
+    },
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { pathname: "/assets/app.css" });
+});
+
+test("binds the compiled Cloudflare asset directory to the Worker", async () => {
+  const workerConfig = JSON.parse(
+    await readFile(new URL("../dist/server/wrangler.json", import.meta.url), "utf8"),
+  );
+
+  assert.equal(workerConfig.assets?.binding, "ASSETS");
+  assert.equal(workerConfig.assets?.directory, "../client");
+});
+
 test("generates a structured briefing through the server endpoint", async () => {
   const originalFetch = globalThis.fetch;
   const originalApiKey = process.env.OPENAI_API_KEY;

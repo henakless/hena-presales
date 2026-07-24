@@ -35,6 +35,11 @@ const worker = {
       return Response.redirect(url.toString(), 308);
     }
 
+    if (url.pathname.startsWith(`${SITE_BASE_PATH}/assets/`)) {
+      url.pathname = url.pathname.slice(SITE_BASE_PATH.length);
+      return env.ASSETS.fetch(new Request(url.toString(), request));
+    }
+
     if (url.pathname === `${SITE_BASE_PATH}/_vinext/image`) {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
       return handleImageOptimization(request, {
