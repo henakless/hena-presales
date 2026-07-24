@@ -16,6 +16,19 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title,
     description,
+    icons: {
+      icon: [
+        { url: `${SITE_BASE_PATH}/favicon-hk.ico` },
+        { url: `${SITE_BASE_PATH}/favicon-hk.png`, type: "image/png", sizes: "512x512" },
+      ],
+      apple: [
+        {
+          url: `${SITE_BASE_PATH}/apple-touch-icon-hk.png`,
+          type: "image/png",
+          sizes: "180x180",
+        },
+      ],
+    },
     openGraph: {
       type: "website",
       url: pageUrl,
