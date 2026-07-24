@@ -35,6 +35,11 @@ const worker = {
       return Response.redirect(url.toString(), 308);
     }
 
+    if (url.pathname === `${SITE_BASE_PATH}/Hena_Kless_CV_2026.pdf`) {
+      url.pathname = `${SITE_BASE_PATH}/Hena_Kless_CV.pdf`;
+      return Response.redirect(url.toString(), 308);
+    }
+
     if (url.pathname.startsWith(`${SITE_BASE_PATH}/assets/`)) {
       url.pathname = url.pathname.slice(SITE_BASE_PATH.length);
       return env.ASSETS.fetch(new Request(url.toString(), request));

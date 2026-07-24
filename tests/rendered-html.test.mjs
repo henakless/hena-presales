@@ -80,6 +80,9 @@ test("server-renders the AI discovery experience", async () => {
   assert.match(html, /Hena Kless\./i);
   assert.match(html, /President’s Club/i);
   assert.match(html, /Download the full CV/i);
+  assert.match(html, /href="\/presales\/Hena_Kless_CV\.pdf"/i);
+  assert.match(html, /download="Hena_Kless_CV\.pdf"/i);
+  assert.doesNotMatch(html, /Hena_Kless_CV_2026\.pdf/i);
   assert.match(html, /best person for the job/i);
   assert.match(html, /Mario Platt/i);
   assert.match(html, /Chief Information Security Officer at LastPass/i);
@@ -129,6 +132,25 @@ test("redirects the root URL to the presales experience", async () => {
 
   assert.equal(response.status, 308);
   assert.equal(response.headers.get("location"), "https://henakless.com/presales?from=root");
+});
+
+test("redirects the legacy CV filename to the clean download URL", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("cv-redirect-test", `${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  const response = await worker.fetch(
+    new Request("https://henakless.com/presales/Hena_Kless_CV_2026.pdf"),
+    {
+      ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) },
+    },
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+
+  assert.equal(response.status, 308);
+  assert.equal(
+    response.headers.get("location"),
+    "https://henakless.com/presales/Hena_Kless_CV.pdf",
+  );
 });
 
 test("serves compiled assets from their Cloudflare path under the base path", async () => {
