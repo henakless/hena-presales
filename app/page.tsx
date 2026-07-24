@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import type { Briefing } from "../lib/briefing";
+import { SITE_BASE_PATH } from "../lib/site";
 
 type Contact = {
   id: string;
@@ -252,7 +253,7 @@ export default function Home() {
     setIsPreparing(true);
 
     try {
-      const response = await fetch("/api/briefing", {
+      const response = await fetch(`${SITE_BASE_PATH}/api/briefing`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
@@ -301,7 +302,7 @@ export default function Home() {
         </nav>
         <div className="header-actions">
           <a href="https://www.linkedin.com/in/henakless/" target="_blank" rel="noreferrer">LinkedIn ↗</a>
-          <a className="header-cta" href="/Hena_Kless_CV_2026.pdf" download>Download CV ↓</a>
+          <a className="header-cta" href={`${SITE_BASE_PATH}/Hena_Kless_CV_2026.pdf`} download>Download CV ↓</a>
         </div>
       </header>
 
@@ -314,7 +315,7 @@ export default function Home() {
 
         <div className="portrait-column" data-reveal>
           <div className="portrait-frame">
-            <img src="/hena-kless-portrait.png" alt="Hena Kless" width={800} height={800} />
+            <img src={`${SITE_BASE_PATH}/hena-kless-portrait.png`} alt="Hena Kless" width={800} height={800} />
             <span className="portrait-caption">SOLUTIONS<br />ENGINEER</span>
           </div>
           <div className="portrait-label">
@@ -681,7 +682,7 @@ export default function Home() {
       <section className="cv-section" id="cv">
         <header className="cv-heading" data-reveal>
           <div><p className="section-index">03 / THE SHORT VERSION</p><h2>A brief summary of <span>Hena Kless.</span></h2></div>
-          <a href="/Hena_Kless_CV_2026.pdf" download>Download the full CV ↓</a>
+          <a href={`${SITE_BASE_PATH}/Hena_Kless_CV_2026.pdf`} download>Download the full CV ↓</a>
         </header>
 
         <div className="cv-grid">
@@ -726,7 +727,7 @@ export default function Home() {
           </div>
           <figure className="reference-proof">
             <img
-              src="/mario-platt-linkedin-reference.jpg"
+              src={`${SITE_BASE_PATH}/mario-platt-linkedin-reference.jpg`}
               alt="LinkedIn screenshot of Mario Platt recommending Hena Kless"
             />
           </figure>
@@ -738,7 +739,7 @@ export default function Home() {
         <div className="footer-actions">
           <a href="https://www.linkedin.com/in/henakless/" target="_blank" rel="noreferrer">LinkedIn ↗</a>
           <a href="mailto:hena.kless@outlook.com">Email ↗</a>
-          <a href="/Hena_Kless_CV_2026.pdf" download>Download CV ↓</a>
+          <a href={`${SITE_BASE_PATH}/Hena_Kless_CV_2026.pdf`} download>Download CV ↓</a>
         </div>
       </footer>
     </main>

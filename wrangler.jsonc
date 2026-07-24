@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "hena-solutions-engineering",
+  "account_id": "55f54a0ac034d525ea3049d918fa93de",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-05-15",
+  "routes": [
+    {
+      "pattern": "henakless.com",
+      "custom_domain": true
+    }
+  ],
+  "vars": {
+    "OPENAI_MODEL": "gpt-5.6-terra"
+  },
+  "secrets": {
+    "required": ["OPENAI_API_KEY"]
+  },
+  "observability": {
+    "enabled": true
+  }
+}

@@ -8,7 +8,7 @@ async function render() {
   const { default: worker } = await import(workerUrl.href);
 
   return worker.fetch(
-    new Request("http://localhost/", {
+    new Request("http://localhost/presales", {
       headers: { accept: "text/html" },
     }),
     {
@@ -93,7 +93,7 @@ test("server-renders the AI discovery experience", async () => {
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 
   const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
-  assert.match(pageSource, /fetch\("\/api\/briefing"/i);
+  assert.match(pageSource, /fetch\(`\$\{SITE_BASE_PATH\}\/api\/briefing`/i);
   assert.match(pageSource, /Executive summary/i);
   assert.match(pageSource, /Person information/i);
   assert.match(pageSource, /Company information/i);
@@ -113,6 +113,22 @@ test("server-renders the AI discovery experience", async () => {
   const educationIndex = pageSource.indexOf("<h3>Education</h3>");
   assert.match(pageSource, /Cryptography · Encryption · Zero Trust · IdP · SSO · SCIM · REST APIs · JSON · NIS2 · GDPR · DORA/i);
   assert.ok(credentialsIndex < technicalIndex && technicalIndex < communityIndex && communityIndex < educationIndex);
+});
+
+test("redirects the root URL to the presales experience", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("redirect-test", `${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  const response = await worker.fetch(
+    new Request("https://henakless.com/?from=root"),
+    {
+      ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) },
+    },
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+
+  assert.equal(response.status, 308);
+  assert.equal(response.headers.get("location"), "https://henakless.com/presales?from=root");
 });
 
 test("generates a structured briefing through the server endpoint", async () => {
@@ -154,7 +170,7 @@ test("generates a structured briefing through the server endpoint", async () => 
     workerUrl.searchParams.set("api-test", `${process.pid}-${Date.now()}`);
     const { default: worker } = await import(workerUrl.href);
     const response = await worker.fetch(
-      new Request("http://localhost/api/briefing", {
+      new Request("http://localhost/presales/api/briefing", {
         method: "POST",
         headers: { "content-type": "application/json", "x-forwarded-for": "203.0.113.10" },
         body: JSON.stringify({
@@ -219,7 +235,7 @@ test("normalizes discovery questions that arrive serialized inside one item", as
     workerUrl.searchParams.set("normalization-test", `${process.pid}-${Date.now()}`);
     const { default: worker } = await import(workerUrl.href);
     const response = await worker.fetch(
-      new Request("http://localhost/api/briefing", {
+      new Request("http://localhost/presales/api/briefing", {
         method: "POST",
         headers: { "content-type": "application/json", "x-forwarded-for": "203.0.113.11" },
         body: JSON.stringify({
@@ -270,7 +286,7 @@ test("blocks an obvious prompt injection without calling OpenAI", async () => {
     workerUrl.searchParams.set("prompt-injection-test", `${process.pid}-${Date.now()}`);
     const { default: worker } = await import(workerUrl.href);
     const response = await worker.fetch(
-      new Request("http://localhost/api/briefing", {
+      new Request("http://localhost/presales/api/briefing", {
         method: "POST",
         headers: { "content-type": "application/json", "x-forwarded-for": "203.0.113.12" },
         body: JSON.stringify({
@@ -324,7 +340,7 @@ test("turns a model-classified prompt injection into the same safe result", asyn
     workerUrl.searchParams.set("semantic-prompt-injection-test", `${process.pid}-${Date.now()}`);
     const { default: worker } = await import(workerUrl.href);
     const response = await worker.fetch(
-      new Request("http://localhost/api/briefing", {
+      new Request("http://localhost/presales/api/briefing", {
         method: "POST",
         headers: { "content-type": "application/json", "x-forwarded-for": "203.0.113.13" },
         body: JSON.stringify({

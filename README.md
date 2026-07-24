@@ -1,8 +1,7 @@
-# vinext-starter
+# Hena Kless portfolio
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+A full-stack portfolio and interactive discovery briefing experience running on
+[vinext](https://github.com/cloudflare/vinext) and Cloudflare Workers.
 
 ## Prerequisites
 
@@ -89,10 +88,28 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 
 - `npm run dev`: start local development
 - `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
+- `npm test`: build and verify the rendered site and briefing endpoint
+- `npm run deploy:cloudflare`: build and deploy the Worker to `henakless.com/presales`
 - `npm run db:generate`: generate Drizzle migrations after schema changes
+
+## Cloudflare deployment
+
+The production Worker, custom domain, `/presales` base path, root redirect,
+runtime model, and required secret are declared in the project configuration.
+Authenticate once, add the encrypted secret when setting up the Worker, and
+deploy:
+
+```bash
+npx wrangler login
+npx wrangler secret put OPENAI_API_KEY
+npm run deploy:cloudflare
+```
+
+Wrangler prompts for the key and stores it as an encrypted Worker secret. Never
+commit `.env.local`.
 
 ## Learn More
 
 - [vinext Documentation](https://github.com/cloudflare/vinext)
+- [Cloudflare Workers documentation](https://developers.cloudflare.com/workers/)
 - [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
