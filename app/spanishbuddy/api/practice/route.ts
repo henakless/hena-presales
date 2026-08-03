@@ -15,7 +15,7 @@ import {
 
 export const runtime = "edge";
 
-const SPANISH_BUDDY_MODEL = "gpt-5.6-terra";
+const SPANISH_BUDDY_MODEL = "luna";
 const SESSION_SIZE = 8;
 
 const PRACTICE_SCHEMA = {

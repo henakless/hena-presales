@@ -21,7 +21,7 @@ const EVALUATION_SCHEMA = {
   required: ["verdict", "feedback"],
 } as const;
 
-const SPANISH_BUDDY_MODEL = "gpt-5.6-terra";
+const SPANISH_BUDDY_MODEL = "luna";
 
 type EvaluationRequest = {
   prompt?: unknown;

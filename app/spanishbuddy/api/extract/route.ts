@@ -14,7 +14,7 @@ const MAX_FILE_BYTES = 8 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 24 * 1024 * 1024;
 const MAX_NOTE_LENGTH = 12_000;
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-const SPANISH_BUDDY_MODEL = "gpt-5.6-terra";
+const SPANISH_BUDDY_MODEL = "luna";
 
 const EXTRACTION_SCHEMA = {
   type: "object",

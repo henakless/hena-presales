@@ -171,7 +171,7 @@ export default function SpanishBuddy() {
   useEffect(() => {
     const timer = window.setTimeout(async () => {
       try {
-        const response = await fetch(apiUrl("sync"), { cache: "no-store" });
+        const response = await fetch(`${apiUrl("sync")}?status=1`, { cache: "no-store" });
         const body = await response.json() as { synced?: boolean };
         if (response.ok) setSynced(body.synced === true);
       } catch {
