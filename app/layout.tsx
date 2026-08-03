@@ -28,14 +28,14 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     icons: {
       icon: [
-        { url: `${SITE_BASE_PATH}/favicon.svg?v=5`, type: "image/svg+xml" },
-        { url: `${SITE_BASE_PATH}/favicon.ico?v=5`, sizes: "any" },
-        { url: `${SITE_BASE_PATH}/favicon.png?v=5`, type: "image/png", sizes: "512x512" },
+        { url: `${SITE_BASE_PATH}/favicon.svg?v=6`, type: "image/svg+xml" },
+        { url: `${SITE_BASE_PATH}/favicon.ico?v=6`, sizes: "any" },
+        { url: `${SITE_BASE_PATH}/favicon.png?v=6`, type: "image/png", sizes: "512x512" },
       ],
-      shortcut: `${SITE_BASE_PATH}/favicon.svg?v=5`,
+      shortcut: `${SITE_BASE_PATH}/favicon.svg?v=6`,
       apple: [
         {
-          url: `${SITE_BASE_PATH}/apple-touch-icon.png?v=5`,
+          url: `${SITE_BASE_PATH}/apple-touch-icon.png?v=6`,
           type: "image/png",
           sizes: "180x180",
         },
