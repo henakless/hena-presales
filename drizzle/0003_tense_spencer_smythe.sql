@@ -1,0 +1,1 @@
+ALTER TABLE `spanish_buddy_items` ADD `learning_type` text DEFAULT 'word' NOT NULL;

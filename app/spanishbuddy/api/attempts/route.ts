@@ -56,7 +56,7 @@ export async function POST(request: Request) {
   }
 
   const itemId = typeof payload.itemId === "string" ? payload.itemId : "";
-  const action = payload.action === "override" ? "override" : "record";
+  const action = payload.action === "override" ? "override" : payload.action === "accept" ? "accept" : "record";
   const quality = payload.quality === "almost" ? "almost" : payload.correct === true || payload.quality === "correct" ? "correct" : "incorrect";
   const correct = quality === "correct";
   const exerciseType = typeof payload.exerciseType === "string" ? payload.exerciseType.slice(0, 40) : "practice";
@@ -71,6 +71,20 @@ export async function POST(request: Request) {
     ).bind(itemId, ownerId).first<ItemProgress>();
 
     if (!item) return jsonWithOwner({ error: "No se ha encontrado el contenido de aprendizaje." }, 404, setCookie);
+
+    if (action === "accept") {
+      const learnerAnswer = typeof payload.learnerAnswer === "string" ? payload.learnerAnswer.trim().slice(0, 300) : "";
+      if (!learnerAnswer) return jsonWithOwner({ error: "Falta la respuesta que quieres recordar." }, 400, setCookie);
+      let acceptedAnswers: string[] = [];
+      try {
+        const parsed = JSON.parse(item.accepted_answers);
+        acceptedAnswers = Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === "string") : [];
+      } catch { acceptedAnswers = []; }
+      if (!acceptedAnswers.some((value) => normalizeForCache(value) === normalizeForCache(learnerAnswer))) acceptedAnswers.push(learnerAnswer);
+      await db.prepare("UPDATE spanish_buddy_items SET accepted_answers = ? WHERE id = ? AND owner_id = ?")
+        .bind(JSON.stringify(acceptedAnswers.slice(-12)), itemId, ownerId).run();
+      return jsonWithOwner({ learnedAnswer: learnerAnswer }, 200, setCookie);
+    }
 
     if (action === "override") {
       const requestedAttemptId = typeof payload.attemptId === "string" ? payload.attemptId : "";
@@ -141,7 +155,7 @@ export async function POST(request: Request) {
           normalized[0],
           normalized[1],
           normalized[2],
-          "Von dir als richtige Formulierung bestätigt.",
+          "Marcada por ti como formulación correcta.",
         ),
       ]);
 

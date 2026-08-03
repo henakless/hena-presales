@@ -22,6 +22,7 @@ export async function ensureSpanishBuddySchema(db: D1Database) {
       owner_id TEXT NOT NULL,
       lesson_id TEXT NOT NULL,
       kind TEXT NOT NULL,
+      learning_type TEXT NOT NULL DEFAULT 'word',
       spanish TEXT NOT NULL,
       translation TEXT NOT NULL DEFAULT '',
       explanation TEXT NOT NULL DEFAULT '',
@@ -77,6 +78,11 @@ export async function ensureSpanishBuddySchema(db: D1Database) {
     db.prepare("CREATE INDEX IF NOT EXISTS sb_answer_cache_owner_idx ON spanish_buddy_answer_cache(owner_id, learner_normalized)"),
     db.prepare("CREATE INDEX IF NOT EXISTS sb_ai_usage_owner_idx ON spanish_buddy_ai_usage(owner_id, created_at)"),
   ]);
+
+  const columns = await db.prepare("PRAGMA table_info(spanish_buddy_items)").all<{ name: string }>();
+  if (!(columns.results ?? []).some((column) => column.name === "learning_type")) {
+    await db.prepare("ALTER TABLE spanish_buddy_items ADD COLUMN learning_type TEXT NOT NULL DEFAULT 'word'").run();
+  }
 }
 
 type OpenAIUsage = {

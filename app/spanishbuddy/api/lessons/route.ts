@@ -1,4 +1,4 @@
-import type { ExtractedItem, SavedItem, SavedLesson } from "../../../../lib/spanish-buddy";
+import { inferLearningType, type ExtractedItem, type LearningType, type SavedItem, type SavedLesson } from "../../../../lib/spanish-buddy";
 import {
   ensureSpanishBuddySchema,
   getOwner,
@@ -21,6 +21,7 @@ type ItemRow = {
   lesson_id: string;
   lesson_title: string;
   kind: "vocabulary" | "grammar";
+  learning_type: LearningType;
   spanish: string;
   translation: string;
   explanation: string;
@@ -41,11 +42,12 @@ function mapItem(row: ItemRow): SavedItem {
   } catch {
     acceptedAnswers = [];
   }
-  return {
+  const base = {
     id: row.id,
     lessonId: row.lesson_id,
     lessonTitle: row.lesson_title,
     kind: row.kind,
+    learningType: row.learning_type,
     spanish: row.spanish,
     translation: row.translation,
     explanation: row.explanation,
@@ -57,6 +59,11 @@ function mapItem(row: ItemRow): SavedItem {
     correctCount: row.correct_count,
     nextReviewAt: row.next_review_at,
   };
+  const inferred = inferLearningType(base);
+  const learningType = (row.kind === "grammar" && row.learning_type === "word") || (row.kind === "vocabulary" && row.learning_type === "word" && inferred !== "word")
+    ? inferred
+    : row.learning_type || inferred;
+  return { ...base, learningType };
 }
 
 export async function GET(request: Request) {
@@ -73,7 +80,7 @@ export async function GET(request: Request) {
          ORDER BY created_at DESC`,
       ).bind(ownerId).all<LessonRow>(),
       db.prepare(
-        `SELECT i.id, i.lesson_id, l.title AS lesson_title, i.kind, i.spanish,
+         `SELECT i.id, i.lesson_id, l.title AS lesson_title, i.kind, i.learning_type, i.spanish,
                 i.translation, i.explanation, i.example, i.accepted_answers, i.provenance,
                 i.mastery, i.attempts, i.correct_count, i.next_review_at
          FROM spanish_buddy_items i
@@ -138,13 +145,14 @@ export async function POST(request: Request) {
       ...selected.map((item) =>
         db.prepare(
           `INSERT INTO spanish_buddy_items
-           (id, owner_id, lesson_id, kind, spanish, translation, explanation, example, accepted_answers, provenance)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           (id, owner_id, lesson_id, kind, learning_type, spanish, translation, explanation, example, accepted_answers, provenance)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         ).bind(
           crypto.randomUUID(),
           ownerId,
           lessonId,
           item.kind,
+          item.learningType || inferLearningType(item),
           item.spanish.trim().slice(0, 180),
           String(item.translation ?? "").trim().slice(0, 300),
           String(item.explanation ?? "").trim().slice(0, 700),
@@ -164,5 +172,50 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Spanish Buddy lesson save failed", error);
     return jsonWithOwner({ error: "No se ha podido guardar la lección." }, 500, setCookie);
+  }
+}
+
+export async function PATCH(request: Request) {
+  const { ownerId, setCookie } = getOwner(request);
+  let payload: Partial<ExtractedItem> & { id?: unknown };
+  try {
+    payload = await request.json() as typeof payload;
+  } catch {
+    return jsonWithOwner({ error: "No se han podido leer los cambios." }, 400, setCookie);
+  }
+
+  const id = typeof payload.id === "string" ? payload.id.slice(0, 80) : "";
+  const kind = payload.kind === "grammar" ? "grammar" : "vocabulary";
+  const allowedTypes: LearningType[] = ["word", "collocation", "fixed_expression", "sentence_pattern", "grammar_rule", "conjugation"];
+  const learningType = allowedTypes.includes(payload.learningType as LearningType)
+    ? payload.learningType as LearningType
+    : inferLearningType({ kind, spanish: String(payload.spanish ?? ""), explanation: String(payload.explanation ?? "") });
+  const spanish = typeof payload.spanish === "string" ? payload.spanish.trim().slice(0, 180) : "";
+  if (!id || !spanish) return jsonWithOwner({ error: "El contenido necesita una forma en español." }, 400, setCookie);
+
+  try {
+    const db = await getSpanishBuddyDatabase();
+    await ensureSpanishBuddySchema(db);
+    const result = await db.prepare(
+      `UPDATE spanish_buddy_items
+       SET kind = ?, learning_type = ?, spanish = ?, translation = ?, explanation = ?, example = ?, accepted_answers = ?
+       WHERE id = ? AND owner_id = ?`,
+    ).bind(
+      kind,
+      learningType,
+      spanish,
+      String(payload.translation ?? "").trim().slice(0, 300),
+      String(payload.explanation ?? "").trim().slice(0, 700),
+      String(payload.example ?? "").trim().slice(0, 400),
+      JSON.stringify((Array.isArray(payload.acceptedAnswers) ? payload.acceptedAnswers : []).map(String).map((value) => value.trim()).filter(Boolean).slice(0, 12)),
+      id,
+      ownerId,
+    ).run();
+    if (!result.meta.changes) return jsonWithOwner({ error: "No se ha encontrado este contenido." }, 404, setCookie);
+    await db.prepare("DELETE FROM spanish_buddy_answer_cache WHERE owner_id = ? AND item_id = ?").bind(ownerId, id).run();
+    return jsonWithOwner({ item: { ...payload, id, kind, learningType, spanish } }, 200, setCookie);
+  } catch (error) {
+    console.error("Spanish Buddy item update failed", error);
+    return jsonWithOwner({ error: "No se han podido guardar los cambios." }, 500, setCookie);
   }
 }

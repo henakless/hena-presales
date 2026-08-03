@@ -1,9 +1,11 @@
 export type KnowledgeKind = "vocabulary" | "grammar";
+export type LearningType = "word" | "collocation" | "fixed_expression" | "sentence_pattern" | "grammar_rule" | "conjugation";
 export type Provenance = "course" | "suggested";
 
 export type ExtractedItem = {
   id: string;
   kind: KnowledgeKind;
+  learningType: LearningType;
   spanish: string;
   translation: string;
   explanation: string;
@@ -40,30 +42,41 @@ export type SavedLesson = {
 };
 
 export function masteryLabel(score: number) {
-  if (score >= 82) return "Seguro";
-  if (score >= 62) return "Familiar";
+  if (score >= 82) return "Ya lo dominas";
+  if (score >= 62) return "Lo sabes bien";
   if (score >= 35) return "Aprendiendo";
   if (score > 0) return "Repasar";
   return "Nuevo";
 }
 
+export function inferLearningType(item: Pick<ExtractedItem, "kind" | "spanish" | "explanation">): LearningType {
+  if (item.kind === "grammar") {
+    return /conjug|terminaci|ra[ií]z|forma|presente|pasado|futuro|condicional/i.test(item.explanation)
+      ? "conjugation"
+      : "grammar_rule";
+  }
+  const words = item.spanish.trim().split(/\s+/).length;
+  if (words <= 2) return words === 1 ? "word" : "collocation";
+  return /[.…?¿!¡]$/.test(item.spanish.trim()) ? "fixed_expression" : "sentence_pattern";
+}
+
 export const EXAMPLE_NOTES = [
   {
     id: "vocab",
-    title: "Neue Wörter · Alltag & Medien",
-    label: "Vokabeln aus dem Kurs",
+    title: "Vocabulario · Vida cotidiana y medios",
+    label: "Vocabulario del curso",
     text: `30.07.2026 — Vokabeln\n\nel anhelo — der Wunsch / die Sehnsucht\nlos guisantes — die Erbsen\nla amistad — die Freundschaft\nagitado/a — aufgeregt, unruhig\ncortés — höflich\nla esquina — die Ecke\nel aburrimiento — die Langeweile\nalojarse — übernachten\nlas noticias — die Nachrichten\nel/la carterista — der Taschendieb / die Taschendiebin\ncazar — jagen, fangen\nlas redes sociales — soziale Netzwerke\npillar — erwischen\nla enseñanza — die Bildung\npor lo menos — wenigstens, mindestens`,
   },
   {
     id: "grammar",
-    title: "Das Konditional",
-    label: "Grammatiklektion",
+    title: "El condicional",
+    label: "Lección de gramática",
     text: `Grammatik — Das Konditional\n\nDie Endungen werden an den Infinitiv angehängt:\ncomería, comerías, comería, comeríamos, comeríais, comerían\n\nUnregelmäßige Stämme:\ndecir → dir-\nhacer → har-\npoder → podr-\nponer → pondr-\ntener → tendr-\nsalir → saldr-\nhay → habría\n\nVerwendung: höfliche Bitten (¿Podrías ayudarme?), Wünsche (Me encantaría...), Vorschläge und Ratschläge (Yo, en tu lugar, llevaría unas flores).`,
   },
   {
     id: "invitations",
-    title: "Einladungen & höflich reagieren",
-    label: "Nützliche Wendungen",
+    title: "Invitaciones y respuestas corteses",
+    label: "Expresiones útiles",
     text: `Unidad 5 — Comunicación\n\nJemanden einladen:\n¿Te apetece venir a cenar?\nOs invito a mi fiesta.\n¿Vienes a tomar algo?\n\nEine Einladung annehmen:\n¡Claro que voy!\nGracias por la invitación.\nVoy con mucho gusto.\nPodéis contar conmigo.\n\nEine Einladung ablehnen:\nLo siento mucho, pero tengo un compromiso.\n¡Qué pena! Otra vez será.\nMe gustaría, pero no puedo.\n\nEtwas anbieten:\n¿Os apetece algo para picar?\n¿Quieres un poco más?\nNo, gracias, no hace falta.`,
   },
 ] as const;

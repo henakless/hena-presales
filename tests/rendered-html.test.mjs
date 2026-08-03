@@ -177,7 +177,11 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(pageSource, /acceptedAnswers/i);
   assert.match(pageSource, /sb-submitted-answer/i);
   assert.match(pageSource, /item\.kind === "grammar" && <textarea/i);
-  assert.match(pageSource, /answer: item\.example \|\| item\.spanish/i);
+  assert.match(pageSource, /learningType === "word"/i);
+  assert.match(pageSource, /grammarTarget/i);
+  assert.match(pageSource, /saveEditedItem/i);
+  assert.match(pageSource, /Respuesta de referencia/i);
+  assert.match(pageSource, /window\.addEventListener\("keydown"/i);
 
   const evaluatorSource = await readFile(new URL("../app/spanishbuddy/api/evaluate/route.ts", import.meta.url), "utf8");
   assert.match(evaluatorSource, /SPANISH_BUDDY_MODEL = "gpt-5\.6-terra"/i);
@@ -221,7 +225,8 @@ test("accepts a semantically equivalent Spanish Buddy translation", async () => 
     assert.equal(requestBody.text.format.schema.additionalProperties, false);
     assert.equal(requestBody.max_output_tokens, 120);
     assert.match(requestBody.instructions, /ellipsis.*open or unspecified complement/i);
-    assert.match(requestBody.instructions, /friendly sentence in German/i);
+    assert.match(requestBody.instructions, /friendly sentence in Spanish/i);
+    assert.match(requestBody.instructions, /learner_better/i);
 
     const submitted = JSON.parse(requestBody.input[0].content);
     assert.equal(submitted.prompt, "Os invito a…");
@@ -238,7 +243,7 @@ test("accepts a semantically equivalent Spanish Buddy translation", async () => 
               type: "output_text",
               text: JSON.stringify({
                 verdict: "equivalent",
-                feedback: "Das drückt dieselbe Einladung natürlich aus, ohne die Aktivität zu nennen.",
+                feedback: "Expresa la misma invitación de forma natural sin mencionar la actividad.",
               }),
             },
           ],
@@ -281,7 +286,7 @@ test("accepts a semantically equivalent Spanish Buddy translation", async () => 
       verdict: "equivalent",
       correct: true,
       equivalence: "equivalent",
-      feedback: "Das drückt dieselbe Einladung natürlich aus, ohne die Aktivität zu nennen.",
+      feedback: "Expresa la misma invitación de forma natural sin mencionar la actividad.",
     });
     assert.equal(response.headers.get("cache-control"), "no-store");
   } finally {
@@ -300,7 +305,7 @@ test("distinguishes an almost-correct translation from an incorrect one", async 
     assert.equal(String(input), "https://api.openai.com/v1/responses");
     const requestBody = JSON.parse(String(init?.body));
     assert.match(requestBody.instructions, /Gehst du was trinken.*almost/i);
-    assert.deepEqual(requestBody.text.format.schema.properties.verdict.enum, ["exact", "equivalent", "almost", "incorrect"]);
+    assert.deepEqual(requestBody.text.format.schema.properties.verdict.enum, ["exact", "equivalent", "learner_better", "almost", "incorrect"]);
     return Response.json({
       output: [{
         type: "message",
@@ -308,7 +313,7 @@ test("distinguishes an almost-correct translation from an incorrect one", async 
           type: "output_text",
           text: JSON.stringify({
             verdict: "almost",
-            feedback: "Die Absicht ist klar, aber „gehen“ verändert hier die Richtung von „venir“.",
+            feedback: "La intención está clara, pero «gehen» cambia la dirección expresada por «venir».",
           }),
         }],
       }],
@@ -343,7 +348,7 @@ test("distinguishes an almost-correct translation from an incorrect one", async 
       verdict: "almost",
       correct: false,
       equivalence: "almost",
-      feedback: "Die Absicht ist klar, aber „gehen“ verändert hier die Richtung von „venir“.",
+      feedback: "La intención está clara, pero «gehen» cambia la dirección expresada por «venir».",
     });
   } finally {
     globalThis.fetch = originalFetch;

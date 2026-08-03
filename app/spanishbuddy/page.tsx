@@ -4,6 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { acceptsAnswer, localAnswerVerdict, normalizeAnswer as normalize } from "../../lib/spanish-buddy-answer";
 import {
   EXAMPLE_NOTES,
+  inferLearningType,
   masteryLabel,
   type ExtractedItem,
   type ExtractionResult,
@@ -60,6 +61,7 @@ function distractorScore(target: SavedItem, candidate: SavedItem) {
   return (
     (target.lessonId === candidate.lessonId ? 20 : 0) +
     (target.kind === candidate.kind ? 8 : 0) +
+    (target.learningType === candidate.learningType ? 28 : 0) +
     (sameTopic ? 45 : 0) +
     sharedTopicWords * 14 -
     Math.min(lengthDifference, 30)
@@ -69,26 +71,53 @@ function distractorScore(target: SavedItem, candidate: SavedItem) {
 function bestDistractors(item: SavedItem, items: SavedItem[]) {
   const answer = item.translation || item.explanation;
   const unique = new Map<string, SavedItem>();
+  const targetTopic = topicTokens(item.explanation);
 
   for (const candidate of items) {
     const value = candidate.translation || candidate.explanation;
-    if (candidate.id !== item.id && value && normalize(value) !== normalize(answer)) {
+    const comparableLength = value.length >= answer.length * .5 && value.length <= answer.length * 2;
+    const candidateTopic = topicTokens(candidate.explanation);
+    const sharesTopic = normalize(item.explanation) && (
+      normalize(item.explanation) === normalize(candidate.explanation) || [...targetTopic].some((token) => candidateTopic.has(token))
+    );
+    if (candidate.id !== item.id && candidate.kind === item.kind && candidate.learningType === item.learningType && sharesTopic && comparableLength && value && normalize(value) !== normalize(answer)) {
       unique.set(normalize(value), candidate);
     }
   }
 
   return [...unique.values()]
+    .filter((candidate) => distractorScore(item, candidate) >= 18)
     .sort((a, b) => distractorScore(item, b) - distractorScore(item, a))
     .slice(0, 3)
     .map((candidate) => candidate.translation || candidate.explanation);
 }
 
 function buildExercises(items: SavedItem[]) {
-  const candidates = [...items]
-    .sort((a, b) => a.mastery - b.mastery || a.nextReviewAt.localeCompare(b.nextReviewAt))
-    .slice(0, 8);
+  const now = Date.now();
+  const ranked = [...items].sort((a, b) => {
+    const aDue = new Date(a.nextReviewAt).getTime() <= now ? 0 : 1;
+    const bDue = new Date(b.nextReviewAt).getTime() <= now ? 0 : 1;
+    return aDue - bDue || a.mastery - b.mastery || a.nextReviewAt.localeCompare(b.nextReviewAt);
+  });
+  const grammar = ranked.filter((item) => item.kind === "grammar");
+  const vocabulary = ranked.filter((item) => item.kind === "vocabulary");
+  const candidates: SavedItem[] = [];
+  const grammarTarget = Math.min(grammar.length, Math.max(2, Math.round(Math.min(8, ranked.length) * .35)));
+  const vocabularyTarget = Math.min(vocabulary.length, Math.min(8, ranked.length) - grammarTarget);
+  candidates.push(...grammar.slice(0, grammarTarget), ...vocabulary.slice(0, vocabularyTarget));
+  for (const item of ranked) if (candidates.length < 8 && !candidates.some((candidate) => candidate.id === item.id)) candidates.push(item);
+  candidates.sort((a, b) => a.mastery - b.mastery || a.nextReviewAt.localeCompare(b.nextReviewAt));
+
   return candidates.map<Exercise>((item, index) => {
-    const type = (["translation", "blank", "choice", "flashcard", "sentence"] as ExerciseType[])[index % 5];
+    const learningType = item.learningType || inferLearningType(item);
+    const eligibleTypes: ExerciseType[] = item.kind === "grammar"
+      ? ["flashcard"]
+      : learningType === "word"
+        ? ["translation", "blank", "choice", "sentence"]
+        : learningType === "collocation"
+          ? ["translation", "blank", "choice"]
+          : ["translation", "blank", "choice"];
+    const type = eligibleTypes[index % eligibleTypes.length];
     if (type === "blank" && item.kind === "vocabulary" && item.example) {
       const escaped = item.spanish.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const blanked = item.example.replace(new RegExp(escaped, "i"), "_____");
@@ -127,7 +156,7 @@ function buildExercises(items: SavedItem[]) {
       };
     }
 
-    if (item.kind === "grammar") {
+    if (item.kind === "grammar" && type !== "blank") {
       return {
         type: "flashcard",
         label: "Explica la regla",
@@ -150,13 +179,13 @@ function buildExercises(items: SavedItem[]) {
       };
     }
 
-    if (type === "sentence") {
+    if (type === "sentence" && learningType === "word") {
       return {
         type,
         label: "Construye una frase",
         item,
         prompt: `Escribe una frase en español con «${item.spanish}»`,
-        answer: item.example || item.spanish,
+        answer: item.example || `Quiero usar la palabra «${item.spanish}» correctamente.`,
         helper: "Una frase breve y natural es suficiente.",
       };
     }
@@ -199,6 +228,8 @@ export default function SpanishBuddy() {
   const [sessionCorrect, setSessionCorrect] = useState(0);
   const [sessionAlmost, setSessionAlmost] = useState(0);
   const [sessionDone, setSessionDone] = useState(false);
+  const [editingItem, setEditingItem] = useState<SavedItem | null>(null);
+  const [savingItem, setSavingItem] = useState(false);
 
   const currentExercise = exercises[exerciseIndex];
   const dueItems = useMemo(
@@ -224,15 +255,31 @@ export default function SpanishBuddy() {
   }
 
   useEffect(() => {
-    void loadLibrary();
+    const timer = window.setTimeout(() => void loadLibrary(), 0);
+    return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!currentExercise || sessionDone) return;
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Enter" || event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.tagName === "TEXTAREA" || target?.tagName === "BUTTON") return;
+      if (result && !overridingAnswer) {
+        event.preventDefault();
+        nextExercise();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
 
   function onFiles(event: ChangeEvent<HTMLInputElement>) {
     setFiles(Array.from(event.target.files ?? []).slice(0, 6));
     setError("");
   }
 
-  function useExample(example: (typeof EXAMPLE_NOTES)[number]) {
+  function chooseExample(example: (typeof EXAMPLE_NOTES)[number]) {
     setTitle(example.title);
     setNote(example.text);
     setFiles([]);
@@ -290,7 +337,7 @@ export default function SpanishBuddy() {
         body: JSON.stringify({
           title: extraction.title,
           summary: extraction.summary,
-          sourceType: files.length ? "Bilder" : "Textnotizen",
+          sourceType: files.length ? "imágenes" : "notas de texto",
           items: extraction.items,
         }),
       });
@@ -309,7 +356,7 @@ export default function SpanishBuddy() {
     }
   }
 
-  function startSession(sourceItems = dueItems.length ? dueItems : items) {
+  function startSession(sourceItems = items) {
     const nextExercises = buildExercises(sourceItems);
     if (nextExercises.length === 0) {
       setView("add");
@@ -378,7 +425,7 @@ export default function SpanishBuddy() {
       setResult(answerResult);
       setAnswerFeedback(answerResult === "correct"
         ? { title: localVerdict === "exact" ? "Exacto." : "También es correcto.", message: currentExercise.answer }
-        : { title: "Casi.", message: "Die Antwort ist verständlich; prüfe Akzent oder Schreibweise." });
+        : { title: "Casi.", message: "La respuesta se entiende; revisa el acento o la ortografía." });
       setRevealed(true);
       void recordAttempt(answerResult);
       return;
@@ -402,7 +449,7 @@ export default function SpanishBuddy() {
         }),
       });
       const body = (await response.json()) as {
-        verdict?: "exact" | "equivalent" | "almost" | "incorrect";
+        verdict?: "exact" | "equivalent" | "learner_better" | "almost" | "incorrect";
         feedback?: string;
         error?: string;
       };
@@ -410,7 +457,7 @@ export default function SpanishBuddy() {
         throw new Error(body.error || "No he podido comprobar esta formulación ahora mismo.");
       }
 
-      const answerResult: AnswerResult = body.verdict === "exact" || body.verdict === "equivalent"
+      const answerResult: AnswerResult = body.verdict === "exact" || body.verdict === "equivalent" || body.verdict === "learner_better"
         ? "correct"
         : body.verdict === "almost"
           ? "almost"
@@ -418,11 +465,12 @@ export default function SpanishBuddy() {
       setResult(answerResult);
       setAnswerJudgedByModel(true);
       setAnswerFeedback({
-        title: answerResult === "correct" ? (body.verdict === "exact" ? "Exacto." : "También es correcto.") : answerResult === "almost" ? "Casi." : "Todavía no.",
+        title: answerResult === "correct" ? (body.verdict === "exact" ? "Exacto." : body.verdict === "learner_better" ? "Tu respuesta es mejor." : "También es correcto.") : answerResult === "almost" ? "Casi." : "Todavía no.",
         message: body.feedback || (answerResult === "correct" ? "Esta formulación también funciona." : `Solución: ${currentExercise.answer}`),
       });
       setRevealed(true);
       void recordAttempt(answerResult);
+      if (body.verdict === "learner_better") void rememberAcceptedAnswer();
     } catch {
       setNeedsManualReview(true);
       setAnswerFeedback({
@@ -479,6 +527,49 @@ export default function SpanishBuddy() {
       });
     } finally {
       setOverridingAnswer(false);
+    }
+  }
+
+  async function rememberAcceptedAnswer() {
+    if (!currentExercise || !answer.trim()) return;
+    try {
+      const response = await fetch(apiUrl("attempts"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "accept", itemId: currentExercise.item.id, learnerAnswer: answer }),
+      });
+      if (!response.ok) return;
+      setItems((current) => current.map((item) => item.id === currentExercise.item.id
+        ? { ...item, acceptedAnswers: [...new Set([...(item.acceptedAnswers ?? []), answer])] }
+        : item));
+    } catch {
+      // The correct attempt is still recorded; this optimization can retry on a later answer.
+    }
+  }
+
+  async function saveEditedItem(event: FormEvent) {
+    event.preventDefault();
+    if (!editingItem || savingItem) return;
+    setSavingItem(true);
+    setError("");
+    try {
+      const response = await fetch(apiUrl("lessons"), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editingItem),
+      });
+      const body = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(body.error || "No se han podido guardar los cambios.");
+      setItems((current) => current.map((item) => item.id === editingItem.id ? editingItem : item));
+      setLessons((current) => current.map((lesson) => ({
+        ...lesson,
+        items: lesson.items.map((item) => item.id === editingItem.id ? editingItem : item),
+      })));
+      setEditingItem(null);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "No se han podido guardar los cambios.");
+    } finally {
+      setSavingItem(false);
     }
   }
 
@@ -544,7 +635,7 @@ export default function SpanishBuddy() {
     <main className="sb-app" lang="es">
       <header className="sb-header">
         <button className="sb-brand" onClick={() => { setView("today"); closeSession(); }} aria-label="Inicio de Spanish Buddy">
-          <span className="sb-brand-mark" aria-hidden="true">ñ</span>
+          <span className="sb-brand-mark" aria-hidden="true"><i /></span>
           <span>Spanish Buddy<small>Tu curso, contigo.</small></span>
         </button>
         <nav aria-label="Navegación principal">
@@ -565,7 +656,7 @@ export default function SpanishBuddy() {
               <h1>Recuerda lo que<br /><em>aprendes en clase.</em></h1>
               <p>Tus propios apuntes se convierten en la práctica que necesitas hoy.</p>
             </div>
-            <div className="sb-orbit" aria-hidden="true"><span>{averageMastery}%</span><small>dominio</small></div>
+            <div className="sb-orbit" aria-hidden="true"><span>{averageMastery}%</span><small>conocimiento</small></div>
           </section>
 
           <section className="sb-dashboard-grid">
@@ -585,7 +676,7 @@ export default function SpanishBuddy() {
               <p className="sb-eyebrow">Tu base de aprendizaje</p>
               <div className="sb-stat-row"><strong>{items.length}</strong><span>palabras y reglas</span></div>
               <div className="sb-stat-row"><strong>{lessons.length}</strong><span>lecciones del curso</span></div>
-              <div className="sb-stat-row"><strong>{items.filter((item) => item.mastery >= 62).length}</strong><span>familiares o seguros</span></div>
+              <div className="sb-stat-row"><strong>{items.filter((item) => item.mastery >= 62).length}</strong><span>ya dominas</span></div>
               <div className="sb-meter"><span style={{ width: `${averageMastery}%` }} /></div>
               <small>El dominio crece al recordar activamente, no solo al leer.</small>
             </aside>
@@ -608,7 +699,7 @@ export default function SpanishBuddy() {
             ) : (
               <div className="sb-empty sb-starter-empty">
                 <div><strong>Aún no hay nada guardado.</strong><span>Prueba un ejemplo o sube los apuntes de hoy.</span></div>
-                <button onClick={() => useExample(EXAMPLE_NOTES[0])}>Usar apuntes de ejemplo</button>
+                <button onClick={() => chooseExample(EXAMPLE_NOTES[0])}>Usar apuntes de ejemplo</button>
               </div>
             )}
           </section>
@@ -634,7 +725,7 @@ export default function SpanishBuddy() {
               </div>
               <div className="sb-example-strip">
                 <div><p className="sb-eyebrow">¿Quieres probarlo?</p><strong>Usa un ejemplo generado</strong></div>
-                {EXAMPLE_NOTES.map((example) => <button type="button" key={example.id} onClick={() => useExample(example)}><span>{example.label}</span>{example.title}</button>)}
+                {EXAMPLE_NOTES.map((example) => <button type="button" key={example.id} onClick={() => chooseExample(example)}><span>{example.label}</span>{example.title}</button>)}
               </div>
               <button className="sb-primary sb-analyze" disabled={busy}>{busy ? "Leyendo la lección…" : "Analizar la lección"}<span aria-hidden="true">→</span></button>
             </form>
@@ -650,7 +741,7 @@ export default function SpanishBuddy() {
                   <article className={`sb-review-item ${item.provenance === "suggested" ? "suggested" : ""}`} key={item.id}>
                     <label className="sb-check"><input type="checkbox" checked={item.selected} onChange={(event) => updateExtractedItem(item.id, { selected: event.target.checked })} /><span /></label>
                     <div className="sb-item-fields">
-                      <div className="sb-item-badges"><span>{item.kind === "grammar" ? "Gramática" : "Vocabulario"}</span><span>{item.provenance === "suggested" ? "Sugerencia relacionada" : "De tu lección"}</span>{item.confidence !== "high" && <span className="warning">Confianza {item.confidence === "low" ? "baja" : "media"}</span>}</div>
+                      <div className="sb-item-badges"><span>{item.kind === "grammar" ? "Gramática" : "Vocabulario"}</span><span>{item.provenance === "suggested" ? "Sugerencia relacionada" : "De tu lección"}</span>{item.confidence !== "high" && <span className="warning">Revisión {item.confidence === "low" ? "necesaria" : "recomendada"}</span>}</div>
                       <input aria-label="Español" value={item.spanish} onChange={(event) => updateExtractedItem(item.id, { spanish: event.target.value, acceptedAnswers: [] })} />
                       <input aria-label="Traducción" value={item.translation} onChange={(event) => updateExtractedItem(item.id, { translation: event.target.value, acceptedAnswers: [] })} placeholder="Traducción o etiqueta" />
                       {item.kind === "grammar" && <textarea aria-label="Explicación" value={item.explanation} onChange={(event) => updateExtractedItem(item.id, { explanation: event.target.value })} placeholder="Explicación breve" />}
@@ -673,11 +764,35 @@ export default function SpanishBuddy() {
               <div className="sb-library-lesson-head"><div><span>{new Date(lesson.createdAt).toLocaleDateString("de-DE")}</span><h2>{lesson.title}</h2><p>{lesson.summary}</p></div><button onClick={() => startSession(lesson.items)}>Practicar →</button></div>
               <div className="sb-library-items">
                 {lesson.items.map((item) => (
-                  <article key={item.id}><div><span>{item.kind === "grammar" ? "Regla" : "Palabra"}</span>{item.provenance === "suggested" && <small>Sugerencia</small>}</div><h3>{item.spanish}</h3><p lang="de">{item.translation || item.explanation}</p><div className="sb-item-mastery"><span><i style={{ width: `${item.mastery}%` }} /></span><small>{masteryLabel(item.mastery)} · {item.mastery}%</small></div></article>
+                  <article key={item.id}>
+                    <button className="sb-library-item-button" onClick={() => setEditingItem(item)} aria-label={`Abrir y editar ${item.spanish}`}>
+                      <div><span>{item.kind === "grammar" ? "Regla" : item.learningType === "fixed_expression" ? "Expresión" : "Palabra"}</span>{item.provenance === "suggested" && <small>Sugerencia</small>}</div>
+                      <h3>{item.spanish}</h3><p lang="de">{item.translation || item.explanation}</p>
+                      {item.kind === "grammar" && item.example && <p className="sb-card-example">Ejemplo: {item.example}</p>}
+                      <div className="sb-item-mastery"><span><i style={{ width: `${item.mastery}%` }} /></span><small>{masteryLabel(item.mastery)} · {item.mastery}%</small></div>
+                    </button>
+                  </article>
                 ))}
               </div>
             </section>
           )) : <div className="sb-empty sb-starter-empty"><div><strong>Tu biblioteca está lista para la primera lección.</strong><span>Sube tus apuntes o empieza con un ejemplo.</span></div><button onClick={() => setView("add")}>Añadir lección</button></div>}
+        </div>
+      )}
+
+      {editingItem && (
+        <div className="sb-editor-backdrop" role="dialog" aria-modal="true" aria-label={`Editar ${editingItem.spanish}`}>
+          <form className="sb-item-editor" onSubmit={saveEditedItem}>
+            <div className="sb-editor-head"><div><p className="sb-eyebrow">Contenido de tu biblioteca</p><h2>{editingItem.kind === "grammar" ? "Detalle de gramática" : "Editar vocabulario"}</h2></div><button type="button" onClick={() => setEditingItem(null)} aria-label="Cerrar">×</button></div>
+            <div className="sb-editor-grid">
+              <label><span>Tipo de contenido</span><select value={editingItem.learningType} onChange={(event) => setEditingItem({ ...editingItem, learningType: event.target.value as SavedItem["learningType"] })}><option value="word">Palabra</option><option value="collocation">Combinación de palabras</option><option value="fixed_expression">Expresión fija</option><option value="sentence_pattern">Estructura de frase</option><option value="grammar_rule">Regla gramatical</option><option value="conjugation">Conjugación</option></select></label>
+              <label><span>Español</span><input value={editingItem.spanish} onChange={(event) => setEditingItem({ ...editingItem, spanish: event.target.value })} required /></label>
+              <label><span>Traducción de tus apuntes</span><input lang="de" value={editingItem.translation} onChange={(event) => setEditingItem({ ...editingItem, translation: event.target.value, acceptedAnswers: [] })} /></label>
+              <label className="wide"><span>{editingItem.kind === "grammar" ? "Explicación de la regla" : "Nota de uso"}</span><textarea lang="de" value={editingItem.explanation} onChange={(event) => setEditingItem({ ...editingItem, explanation: event.target.value })} placeholder={editingItem.kind === "grammar" ? "Formación, uso y excepciones" : "Solo si hace falta aclarar el uso"} /></label>
+              <label className="wide"><span>Ejemplo en español</span><textarea value={editingItem.example} onChange={(event) => setEditingItem({ ...editingItem, example: event.target.value })} placeholder="Una frase clara que muestre el uso" /></label>
+              <label className="wide"><span>Respuestas alternativas aceptadas</span><textarea lang="de" value={editingItem.acceptedAnswers.join("\n")} onChange={(event) => setEditingItem({ ...editingItem, acceptedAnswers: event.target.value.split("\n").map((value) => value.trim()).filter(Boolean) })} placeholder="Una alternativa por línea" /></label>
+            </div>
+            <div className="sb-editor-actions"><button type="button" onClick={() => setEditingItem(null)}>Cancelar</button><button className="sb-primary" disabled={savingItem}>{savingItem ? "Guardando…" : "Guardar cambios"}<span>→</span></button></div>
+          </form>
         </div>
       )}
 
@@ -703,7 +818,7 @@ export default function SpanishBuddy() {
                 ) : (
                   <div className="sb-submitted-answer"><small>Tu respuesta</small><strong>{answer}</strong></div>
                 )}
-                {revealed && !currentExercise.selfRate && answerFeedback && <div className={`sb-feedback ${needsManualReview ? "review" : result}`}><span>{result === "correct" ? "✓" : result === "almost" ? "≈" : needsManualReview ? "?" : "→"}</span><div><strong>{answerFeedback.title}</strong><p>{answerFeedback.message}</p>{result && result !== "correct" && <p className="sb-reference">Solución: {currentExercise.answer}</p>}{result === "incorrect" && answerJudgedByModel && <div className="sb-review-choice"><button disabled={recordingAttempt || overridingAnswer} onClick={markJudgedAnswerCorrect}>{overridingAnswer ? "Guardando…" : recordingAttempt ? "Espera un momento…" : "Marcar mi respuesta como correcta"}</button></div>}{needsManualReview && <div className="sb-review-choice"><button onClick={() => resolveManualReview(true)}>Marcar como correcta</button><button onClick={() => resolveManualReview(false)}>Usar la solución</button></div>}</div></div>}
+                {revealed && !currentExercise.selfRate && answerFeedback && <div className={`sb-feedback ${needsManualReview ? "review" : result}`}><span>{result === "correct" ? "✓" : result === "almost" ? "≈" : needsManualReview ? "?" : "→"}</span><div><strong>{answerFeedback.title}</strong><p>{answerFeedback.message}</p>{result && <p className="sb-reference">Respuesta de referencia: {currentExercise.answer}</p>}{result === "incorrect" && answerJudgedByModel && <div className="sb-review-choice"><button disabled={recordingAttempt || overridingAnswer} onClick={markJudgedAnswerCorrect}>{overridingAnswer ? "Guardando…" : recordingAttempt ? "Espera un momento…" : "Marcar mi respuesta como correcta"}</button></div>}{needsManualReview && <div className="sb-review-choice"><button onClick={() => resolveManualReview(true)}>Marcar como correcta</button><button onClick={() => resolveManualReview(false)}>Usar la referencia</button></div>}</div></div>}
                 {result && <button className="sb-next" disabled={overridingAnswer} onClick={nextExercise}>{exerciseIndex + 1 === exercises.length ? "Ver resultado" : "Continuar"} →</button>}
               </div>
               <div className="sb-focus-note"><span>¿Por qué ahora?</span><p>{currentExercise.item.mastery < 35 ? "Este contenido es nuevo o todavía inseguro, por eso aparece antes." : "Toca repasar este contenido con repetición espaciada."}</p></div>
