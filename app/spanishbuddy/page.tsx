@@ -6,6 +6,7 @@ import {
   ACTIVE_EXERCISE_IDS,
   EXERCISE_CATEGORIES,
   EXERCISE_LIBRARY,
+  type ExerciseCategory,
 } from "../../lib/spanish-buddy-exercises";
 import {
   EXAMPLE_NOTES,
@@ -18,6 +19,7 @@ import {
 
 type View = "today" | "add" | "library" | "exercises";
 type LibraryFilter = "all" | "words" | "expressions" | "collocations" | "grammar";
+type ExerciseFilter = "all" | ExerciseCategory;
 
 type Exercise = {
   exerciseType: string;
@@ -125,6 +127,7 @@ export default function SpanishBuddy() {
   const [synced, setSynced] = useState(false);
   const [syncError, setSyncError] = useState("");
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("all");
+  const [exerciseFilter, setExerciseFilter] = useState<ExerciseFilter>("all");
 
   const currentExercise = exercises[exerciseIndex];
   const dueItems = useMemo(
@@ -169,6 +172,17 @@ export default function SpanishBuddy() {
       items: libraryFilter === "all" ? lesson.items : lesson.items.filter((item) => libraryCategory(item) === libraryFilter),
     }))
     .filter((lesson) => lesson.items.length > 0), [lessons, libraryFilter]);
+  const exerciseFilters: Array<{ id: ExerciseFilter; label: string; count: number }> = [
+    { id: "all", label: "Todo", count: EXERCISE_LIBRARY.length },
+    ...EXERCISE_CATEGORIES.map((category) => ({
+      id: category.id,
+      label: category.name,
+      count: EXERCISE_LIBRARY.filter((exercise) => exercise.category === category.id).length,
+    })),
+  ];
+  const visibleExerciseCategories = exerciseFilter === "all"
+    ? EXERCISE_CATEGORIES
+    : EXERCISE_CATEGORIES.filter((category) => category.id === exerciseFilter);
 
   function completeExercisePrompt(exercise: Exercise) {
     return [exercise.instruction, exercise.context, exercise.prompt].filter(Boolean).join("\n\n");
@@ -890,7 +904,21 @@ export default function SpanishBuddy() {
             </div>
           </section>
 
-          {EXERCISE_CATEGORIES.map((category) => {
+          <nav className="sb-library-filters sb-exercise-filters" aria-label="Categorías de ejercicios">
+            {exerciseFilters.map((filter) => (
+              <button
+                type="button"
+                className={exerciseFilter === filter.id ? "active" : ""}
+                aria-pressed={exerciseFilter === filter.id}
+                onClick={() => setExerciseFilter(filter.id)}
+                key={filter.id}
+              >
+                <span>{filter.label}</span><small>{filter.count}</small>
+              </button>
+            ))}
+          </nav>
+
+          {visibleExerciseCategories.map((category) => {
             const categoryExercises = EXERCISE_LIBRARY.filter((exercise) => exercise.category === category.id);
             const activeCategoryExercises = categoryExercises.filter((exercise) => exercise.status === "active");
             const selectedCategoryCount = activeCategoryExercises.filter((exercise) => selectedExerciseTypes.includes(exercise.id)).length;
