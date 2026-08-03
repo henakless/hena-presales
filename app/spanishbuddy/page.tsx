@@ -336,6 +336,17 @@ export default function SpanishBuddy() {
       : [...selectedExerciseTypes, id]);
   }
 
+  function toggleExerciseCategory(categoryId: string) {
+    const categoryExerciseIds = EXERCISE_LIBRARY
+      .filter((exercise) => exercise.category === categoryId && exercise.status === "active")
+      .map((exercise) => exercise.id);
+    const categoryIsSelected = categoryExerciseIds.every((id) => selectedExerciseTypes.includes(id));
+
+    updateExerciseSelection(categoryIsSelected
+      ? selectedExerciseTypes.filter((id) => !categoryExerciseIds.includes(id))
+      : [...new Set([...selectedExerciseTypes, ...categoryExerciseIds])]);
+  }
+
   async function startSession(sourceItems = items) {
     if (!sourceItems.length) {
       setView("add");
@@ -829,9 +840,26 @@ export default function SpanishBuddy() {
 
           {EXERCISE_CATEGORIES.map((category) => {
             const categoryExercises = EXERCISE_LIBRARY.filter((exercise) => exercise.category === category.id);
+            const activeCategoryExercises = categoryExercises.filter((exercise) => exercise.status === "active");
+            const selectedCategoryCount = activeCategoryExercises.filter((exercise) => selectedExerciseTypes.includes(exercise.id)).length;
+            const categoryIsSelected = activeCategoryExercises.length > 0 && selectedCategoryCount === activeCategoryExercises.length;
             return (
               <section className="sb-exercise-category" key={category.id}>
-                <div className="sb-exercise-category-head"><div><p className="sb-eyebrow">{category.name}</p><h2>{category.description}</h2></div><span>{categoryExercises.some((exercise) => exercise.status === "active") ? `${categoryExercises.filter((exercise) => exercise.status === "active" && selectedExerciseTypes.includes(exercise.id)).length}/${categoryExercises.filter((exercise) => exercise.status === "active").length}` : "Próximamente"}</span></div>
+                <div className="sb-exercise-category-head">
+                  <div><p className="sb-eyebrow">{category.name}</p><h2>{category.description}</h2></div>
+                  <div className="sb-exercise-category-actions">
+                    <span>{activeCategoryExercises.length ? `${selectedCategoryCount}/${activeCategoryExercises.length}` : "Próximamente"}</span>
+                    {activeCategoryExercises.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => toggleExerciseCategory(category.id)}
+                        aria-label={`${categoryIsSelected ? "Deseleccionar" : "Seleccionar"} todos los ejercicios de ${category.name}`}
+                      >
+                        {categoryIsSelected ? "Deseleccionar tema" : "Seleccionar tema"}
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <div className="sb-exercise-boxes">
                   {categoryExercises.map((exercise) => {
                     const comingSoon = exercise.status === "coming_soon";
