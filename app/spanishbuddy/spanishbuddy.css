@@ -371,6 +371,10 @@
 .sb-sync-connected > span { display: grid; width: 30px; height: 30px; flex: 0 0 30px; place-items: center; border-radius: 50%; background: var(--sb-green); color: white; }
 .sb-sync-connected strong { font-size: 13px; }
 .sb-sync-connected p { margin: 4px 0 0; color: var(--sb-muted); font-size: 10px; }
+.sb-sync-connected-view { display: flex; flex-direction: column; }
+.sb-disconnect-button { align-self: flex-start; margin-top: 24px; padding: 8px 0; border: 0; border-bottom: 1px solid var(--sb-red-dark); background: transparent; color: var(--sb-red-dark); font-size: 10px; font-weight: 850; cursor: pointer; }
+.sb-disconnect-button:disabled { opacity: .55; cursor: wait; }
+.sb-disconnect-note { max-width: 470px; margin-top: 9px; color: var(--sb-muted); font-size: 9px; line-height: 1.5; }
 
 @media (max-width: 860px) {
   .sb-header { grid-template-columns: minmax(0, 1fr) auto; background: var(--sb-bg); backdrop-filter: none; }

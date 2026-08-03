@@ -43,6 +43,15 @@ export async function GET(request: Request) {
   }
 }
 
+export async function DELETE(request: Request) {
+  const anonymousOwnerId = crypto.randomUUID();
+  return jsonWithOwner(
+    { synced: false },
+    200,
+    spanishBuddyOwnerCookie(request, anonymousOwnerId),
+  );
+}
+
 export async function POST(request: Request) {
   const { ownerId } = getOwner(request);
   let payload: { passphrase?: unknown };

@@ -295,6 +295,27 @@ export default function SpanishBuddy() {
     }
   }
 
+  async function disconnectLibrary() {
+    setSyncing(true);
+    setSyncError("");
+    try {
+      const response = await fetch(apiUrl("sync"), { method: "DELETE" });
+      const body = await response.json() as { synced?: boolean; error?: string };
+      if (!response.ok || body.synced !== false) throw new Error(body.error || "No se ha podido desconectar este dispositivo.");
+      setSynced(false);
+      setSyncOpen(false);
+      setLessons([]);
+      setItems([]);
+      setLoadingLibrary(true);
+      await loadLibrary();
+      setView("today");
+    } catch (disconnectFailure) {
+      setSyncError(disconnectFailure instanceof Error ? disconnectFailure.message : "No se ha podido desconectar este dispositivo.");
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   function chooseExample(example: (typeof EXAMPLE_NOTES)[number]) {
     setTitle(example.title);
     setNote(example.text);
@@ -1008,7 +1029,12 @@ export default function SpanishBuddy() {
               <button type="button" onClick={() => { setSyncOpen(false); setSyncPassphrase(""); setSyncError(""); }} aria-label="Cerrar">×</button>
             </div>
             {synced ? (
-              <div className="sb-sync-connected"><span aria-hidden="true">✓</span><div><strong>Esta biblioteca está sincronizada.</strong><p>Usa la misma frase en tu otro dispositivo para abrirla allí.</p></div></div>
+              <div className="sb-sync-connected-view">
+                <div className="sb-sync-connected"><span aria-hidden="true">✓</span><div><strong>Esta biblioteca está sincronizada.</strong><p>Usa la misma frase en tu otro dispositivo para abrirla allí.</p></div></div>
+                {syncError && <p className="sb-sync-error" role="alert">{syncError}</p>}
+                <button className="sb-disconnect-button" type="button" disabled={syncing} onClick={() => void disconnectLibrary()}>{syncing ? "Desconectando…" : "Desconectar este dispositivo"}</button>
+                <small className="sb-disconnect-note">La biblioteca sincronizada no se borrará. Podrás recuperarla introduciendo de nuevo la misma frase.</small>
+              </div>
             ) : (
               <>
                 <p className="sb-sync-copy">Elige una frase larga y memorable. Tus contenidos actuales se unirán a la biblioteca vinculada con esa frase.</p>
