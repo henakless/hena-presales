@@ -161,20 +161,47 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.equal(response.headers.get("permissions-policy"), "camera=(self), microphone=(), geolocation=()");
 
   const html = await response.text();
-  assert.match(html, /Spanish Buddy · Dein Kurs, im Kopf/i);
-  assert.match(html, /Behalte, was du/i);
-  assert.match(html, /Erste Lektion hinzufügen/i);
-  assert.match(html, /Dein Kurs, im Kopf/i);
+  assert.match(html, /Spanish Buddy · Tu curso, contigo/i);
+  assert.match(html, /Recuerda lo que/i);
+  assert.match(html, /Añadir la primera lección/i);
+  assert.match(html, /Tu curso, contigo/i);
   assert.doesNotMatch(html, /twitter:title[^>]*Meet Hena/i);
 
   const pageSource = await readFile(new URL("../app/spanishbuddy/page.tsx", import.meta.url), "utf8");
   assert.match(pageSource, /apiUrl\("evaluate"\)/i);
-  assert.match(pageSource, /Auch richtig\./i);
-  assert.match(pageSource, /Fast richtig\./i);
-  assert.match(pageSource, /Als richtig werten/i);
+  assert.match(pageSource, /También es correcto\./i);
+  assert.match(pageSource, /Casi\./i);
+  assert.match(pageSource, /Marcar mi respuesta como correcta/i);
+  assert.match(pageSource, /answerJudgedByModel/i);
+  assert.match(pageSource, /localAnswerVerdict/i);
+  assert.match(pageSource, /acceptedAnswers/i);
   assert.match(pageSource, /sb-submitted-answer/i);
   assert.match(pageSource, /item\.kind === "grammar" && <textarea/i);
   assert.match(pageSource, /answer: item\.example \|\| item\.spanish/i);
+
+  const evaluatorSource = await readFile(new URL("../app/spanishbuddy/api/evaluate/route.ts", import.meta.url), "utf8");
+  assert.match(evaluatorSource, /SPANISH_BUDDY_MODEL = "gpt-5\.6-terra"/i);
+  assert.match(evaluatorSource, /spanish_buddy_answer_cache/i);
+  assert.match(evaluatorSource, /spanish_buddy_ai_usage/i);
+
+  const extractionSource = await readFile(new URL("../app/spanishbuddy/api/extract/route.ts", import.meta.url), "utf8");
+  assert.match(extractionSource, /acceptedAnswers/i);
+  assert.match(extractionSource, /natural reference-language synonyms/i);
+
+  const attemptSource = await readFile(new URL("../app/spanishbuddy/api/attempts/route.ts", import.meta.url), "utf8");
+  assert.match(attemptSource, /action === "override"/i);
+  assert.match(attemptSource, /source = 'learner'/i);
+});
+
+test("checks safe Spanish Buddy answer variants locally", async () => {
+  const { acceptsAnswer, localAnswerVerdict } = await import("../lib/spanish-buddy-answer.ts");
+
+  assert.equal(localAnswerVerdict("Ich lade euch ein", "Ich lade euch zu ... ein."), "equivalent");
+  assert.equal(localAnswerVerdict("Voy al cine", "Voy a el cine"), "equivalent");
+  assert.equal(localAnswerVerdict("si claro que voy", "Sí, claro que voy"), "almost");
+  assert.equal(localAnswerVerdict("die Freundshaft", "die Freundschaft"), "almost");
+  assert.equal(localAnswerVerdict("Ich komme nicht", "Ich komme"), null);
+  assert.equal(acceptsAnswer("Ich bin dabei", "Ich komme mit", ["Ich bin dabei"]), true);
 });
 
 test("accepts a semantically equivalent Spanish Buddy translation", async () => {

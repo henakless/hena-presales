@@ -25,6 +25,7 @@ type ItemRow = {
   translation: string;
   explanation: string;
   example: string;
+  accepted_answers: string;
   provenance: "course" | "suggested";
   mastery: number;
   attempts: number;
@@ -33,6 +34,13 @@ type ItemRow = {
 };
 
 function mapItem(row: ItemRow): SavedItem {
+  let acceptedAnswers: string[] = [];
+  try {
+    const parsed = JSON.parse(row.accepted_answers);
+    acceptedAnswers = Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === "string") : [];
+  } catch {
+    acceptedAnswers = [];
+  }
   return {
     id: row.id,
     lessonId: row.lesson_id,
@@ -42,6 +50,7 @@ function mapItem(row: ItemRow): SavedItem {
     translation: row.translation,
     explanation: row.explanation,
     example: row.example,
+    acceptedAnswers,
     provenance: row.provenance,
     mastery: row.mastery,
     attempts: row.attempts,
@@ -65,7 +74,7 @@ export async function GET(request: Request) {
       ).bind(ownerId).all<LessonRow>(),
       db.prepare(
         `SELECT i.id, i.lesson_id, l.title AS lesson_title, i.kind, i.spanish,
-                i.translation, i.explanation, i.example, i.provenance,
+                i.translation, i.explanation, i.example, i.accepted_answers, i.provenance,
                 i.mastery, i.attempts, i.correct_count, i.next_review_at
          FROM spanish_buddy_items i
          JOIN spanish_buddy_lessons l ON l.id = i.lesson_id
@@ -87,7 +96,7 @@ export async function GET(request: Request) {
     return jsonWithOwner({ lessons, items }, 200, setCookie);
   } catch (error) {
     console.error("Spanish Buddy lessons read failed", error);
-    return jsonWithOwner({ error: "Deine Lernbibliothek konnte nicht geladen werden." }, 500, setCookie);
+    return jsonWithOwner({ error: "No se ha podido cargar tu biblioteca." }, 500, setCookie);
   }
 }
 
@@ -98,7 +107,7 @@ export async function POST(request: Request) {
   try {
     payload = (await request.json()) as typeof payload;
   } catch {
-    return jsonWithOwner({ error: "Die Lektion konnte nicht gelesen werden." }, 400, setCookie);
+    return jsonWithOwner({ error: "No se ha podido leer la lección." }, 400, setCookie);
   }
 
   const title = typeof payload.title === "string" ? payload.title.trim().slice(0, 100) : "";
@@ -114,7 +123,7 @@ export async function POST(request: Request) {
   ).slice(0, 60);
 
   if (!title || selected.length === 0) {
-    return jsonWithOwner({ error: "Gib der Lektion einen Titel und bestätige mindestens einen Eintrag." }, 400, setCookie);
+    return jsonWithOwner({ error: "Pon un título y confirma al menos un contenido." }, 400, setCookie);
   }
 
   try {
@@ -129,8 +138,8 @@ export async function POST(request: Request) {
       ...selected.map((item) =>
         db.prepare(
           `INSERT INTO spanish_buddy_items
-           (id, owner_id, lesson_id, kind, spanish, translation, explanation, example, provenance)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           (id, owner_id, lesson_id, kind, spanish, translation, explanation, example, accepted_answers, provenance)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         ).bind(
           crypto.randomUUID(),
           ownerId,
@@ -140,6 +149,11 @@ export async function POST(request: Request) {
           String(item.translation ?? "").trim().slice(0, 300),
           String(item.explanation ?? "").trim().slice(0, 700),
           String(item.example ?? "").trim().slice(0, 400),
+          JSON.stringify(
+            [...new Set((Array.isArray(item.acceptedAnswers) ? item.acceptedAnswers : [])
+              .map((value) => String(value).trim().slice(0, 300))
+              .filter(Boolean))].slice(0, 5),
+          ),
           item.provenance === "suggested" ? "suggested" : "course",
         ),
       ),
@@ -149,6 +163,6 @@ export async function POST(request: Request) {
     return jsonWithOwner({ lessonId, savedItems: selected.length }, 201, setCookie);
   } catch (error) {
     console.error("Spanish Buddy lesson save failed", error);
-    return jsonWithOwner({ error: "Die Lektion konnte nicht gespeichert werden." }, 500, setCookie);
+    return jsonWithOwner({ error: "No se ha podido guardar la lección." }, 500, setCookie);
   }
 }

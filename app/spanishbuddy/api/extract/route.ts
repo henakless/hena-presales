@@ -1,4 +1,11 @@
 import type { ExtractedItem, ExtractionResult } from "../../../../lib/spanish-buddy";
+import {
+  ensureSpanishBuddySchema,
+  getOwner,
+  getSpanishBuddyDatabase,
+  jsonWithOwner,
+  recordSpanishBuddyAiUsage,
+} from "../../../../lib/spanish-buddy-server";
 
 export const runtime = "edge";
 
@@ -7,6 +14,7 @@ const MAX_FILE_BYTES = 8 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 24 * 1024 * 1024;
 const MAX_NOTE_LENGTH = 12_000;
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const SPANISH_BUDDY_MODEL = "gpt-5.6-terra";
 
 const EXTRACTION_SCHEMA = {
   type: "object",
@@ -28,9 +36,14 @@ const EXTRACTION_SCHEMA = {
           translation: { type: "string" },
           explanation: { type: "string" },
           example: { type: "string" },
+          acceptedAnswers: {
+            type: "array",
+            maxItems: 5,
+            items: { type: "string" },
+          },
           confidence: { type: "string", enum: ["high", "medium", "low"] },
         },
-        required: ["kind", "spanish", "translation", "explanation", "example", "confidence"],
+        required: ["kind", "spanish", "translation", "explanation", "example", "acceptedAnswers", "confidence"],
       },
     },
     suggestedItems: {
@@ -45,9 +58,14 @@ const EXTRACTION_SCHEMA = {
           translation: { type: "string" },
           explanation: { type: "string" },
           example: { type: "string" },
+          acceptedAnswers: {
+            type: "array",
+            maxItems: 5,
+            items: { type: "string" },
+          },
           confidence: { type: "string", enum: ["high", "medium", "low"] },
         },
-        required: ["kind", "spanish", "translation", "explanation", "example", "confidence"],
+        required: ["kind", "spanish", "translation", "explanation", "example", "acceptedAnswers", "confidence"],
       },
     },
   },
@@ -70,6 +88,13 @@ type OpenAIResponse = {
     content?: Array<{ type?: string; text?: string; refusal?: string }>;
   }>;
   error?: { message?: string };
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    total_tokens?: number;
+    input_tokens_details?: { cached_tokens?: number };
+    output_tokens_details?: { reasoning_tokens?: number };
+  };
 };
 
 function outputText(response: OpenAIResponse) {
@@ -104,6 +129,9 @@ function normalizeItem(item: ModelItem, provenance: "course" | "suggested"): Ext
     translation: clean(item.translation, 300),
     explanation: clean(item.explanation, 700),
     example: clean(item.example, 400),
+    acceptedAnswers: Array.isArray(item.acceptedAnswers)
+      ? [...new Set(item.acceptedAnswers.map((value) => clean(value, 300)).filter(Boolean))].slice(0, 5)
+      : [],
     confidence: ["high", "medium", "low"].includes(item.confidence) ? item.confidence : "medium",
     provenance,
     selected: provenance === "course",
@@ -111,11 +139,12 @@ function normalizeItem(item: ModelItem, provenance: "course" | "suggested"): Ext
 }
 
 export async function POST(request: Request) {
+  const { ownerId, setCookie } = getOwner(request);
   let formData: FormData;
   try {
     formData = await request.formData();
   } catch {
-    return Response.json({ error: "Der Upload konnte nicht gelesen werden." }, { status: 400 });
+    return jsonWithOwner({ error: "No se ha podido leer la carga." }, 400, setCookie);
   }
 
   const note = clean(formData.get("note"), MAX_NOTE_LENGTH);
@@ -123,22 +152,22 @@ export async function POST(request: Request) {
   const files = formData.getAll("images").filter((value): value is File => value instanceof File && value.size > 0);
 
   if (!note && files.length === 0) {
-    return Response.json({ error: "Füge zuerst ein Foto oder Kursnotizen ein." }, { status: 400 });
+    return jsonWithOwner({ error: "Añade primero una foto o tus apuntes del curso." }, 400, setCookie);
   }
   if (files.length > MAX_FILES) {
-    return Response.json({ error: `Lade höchstens ${MAX_FILES} Bilder gleichzeitig hoch.` }, { status: 413 });
+    return jsonWithOwner({ error: `Sube como máximo ${MAX_FILES} imágenes a la vez.` }, 413, setCookie);
   }
   if (files.some((file) => !IMAGE_TYPES.has(file.type) || file.size > MAX_FILE_BYTES)) {
-    return Response.json({ error: "Verwende JPG-, PNG-, WEBP- oder GIF-Bilder mit jeweils weniger als 8 MB." }, { status: 415 });
+    return jsonWithOwner({ error: "Usa imágenes JPG, PNG, WEBP o GIF de menos de 8 MB cada una." }, 415, setCookie);
   }
   if (files.reduce((total, file) => total + file.size, 0) > MAX_TOTAL_BYTES) {
-    return Response.json({ error: "Alle Bilder zusammen dürfen höchstens 24 MB groß sein." }, { status: 413 });
+    return jsonWithOwner({ error: "Las imágenes pueden ocupar como máximo 24 MB en total." }, 413, setCookie);
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
-  const model = process.env.OPENAI_MODEL?.trim() || "gpt-5.6-terra";
+  const model = SPANISH_BUDDY_MODEL;
   if (!apiKey) {
-    return Response.json({ error: "Die Lektionsanalyse ist noch nicht eingerichtet." }, { status: 503 });
+    return jsonWithOwner({ error: "El análisis de la lección todavía no está configurado." }, 503, setCookie);
   }
 
   const content: Array<Record<string, unknown>> = [
@@ -178,6 +207,7 @@ export async function POST(request: Request) {
           "Extract only language-learning content that is actually visible or supplied: Spanish vocabulary, useful phrases, grammar rules, conjugation patterns, and examples.",
           "Preserve the source's reference language. These notes often use German translations; do not translate German into English.",
           "For vocabulary and communicative phrases, put the canonical Spanish expression in spanish and an exact, natural reference-language translation in translation. Never use a category label such as 'Eine Einladung annehmen' as the translation of a phrase.",
+          "For each vocabulary item or communicative phrase, generate up to five concise acceptedAnswers: natural reference-language synonyms, contractions, or equivalent translations that should count as fully correct in later practice. Do not include meaning-changing variants, and do not repeat translation verbatim. For grammar items return an empty array unless there are genuinely equivalent labels.",
           "For vocabulary, leave explanation empty unless a short usage distinction is genuinely necessary. Put communicative function or context in explanation, not in translation.",
           "For grammar, use a short concept name in spanish, a reference-language label in translation, and a concise explanation in the detected reference language.",
           "Correct obvious OCR errors but use low confidence when handwriting or meaning is uncertain. Do not silently invent missing translations.",
@@ -203,12 +233,20 @@ export async function POST(request: Request) {
     const body = (await openaiResponse.json()) as OpenAIResponse;
     if (!openaiResponse.ok) {
       console.error("Spanish Buddy extraction failed", openaiResponse.status, body.error?.message);
-      return Response.json({ error: "Die Lektion konnte nicht analysiert werden. Versuche es erneut." }, { status: 502 });
+      return jsonWithOwner({ error: "No se ha podido analizar la lección. Inténtalo de nuevo." }, 502, setCookie);
+    }
+
+    try {
+      const db = await getSpanishBuddyDatabase();
+      await ensureSpanishBuddySchema(db);
+      await recordSpanishBuddyAiUsage(db, ownerId, "extract", model, body.usage);
+    } catch (usageError) {
+      console.error("Spanish Buddy extraction usage logging failed", usageError);
     }
 
     const text = outputText(body);
     if (!text) {
-      return Response.json({ error: "Die Analyse der Lektion war unvollständig." }, { status: 502 });
+      return jsonWithOwner({ error: "El análisis de la lección estaba incompleto." }, 502, setCookie);
     }
 
     const parsed = JSON.parse(text) as ModelExtraction;
@@ -218,7 +256,7 @@ export async function POST(request: Request) {
     ].filter((item) => item.spanish.length > 0);
 
     if (items.length === 0) {
-      return Response.json({ error: "Es wurden keine eindeutigen spanischen Lerninhalte gefunden." }, { status: 422 });
+      return jsonWithOwner({ error: "No se han encontrado contenidos claros de español." }, 422, setCookie);
     }
 
     const result: ExtractionResult = {
@@ -228,16 +266,13 @@ export async function POST(request: Request) {
       items,
     };
 
-    return Response.json(
-      { extraction: result, sourceDeleted: true },
-      { headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonWithOwner({ extraction: result, sourceDeleted: true }, 200, setCookie);
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      return Response.json({ error: "Die Analyse hat zu lange gedauert. Versuche es mit weniger oder kleineren Bildern." }, { status: 504 });
+      return jsonWithOwner({ error: "El análisis ha tardado demasiado. Prueba con menos imágenes o archivos más pequeños." }, 504, setCookie);
     }
     console.error("Spanish Buddy extraction error", error);
-    return Response.json({ error: "Die Lektion konnte nicht analysiert werden. Versuche es erneut." }, { status: 500 });
+    return jsonWithOwner({ error: "No se ha podido analizar la lección. Inténtalo de nuevo." }, 500, setCookie);
   } finally {
     clearTimeout(timeout);
   }

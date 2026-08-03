@@ -19,6 +19,7 @@ export const spanishBuddyItems = sqliteTable("spanish_buddy_items", {
   translation: text("translation").notNull().default(""),
   explanation: text("explanation").notNull().default(""),
   example: text("example").notNull().default(""),
+  acceptedAnswers: text("accepted_answers").notNull().default("[]"),
   provenance: text("provenance", { enum: ["course", "suggested"] }).notNull().default("course"),
   mastery: integer("mastery").notNull().default(0),
   attempts: integer("attempts").notNull().default(0),
@@ -33,5 +34,36 @@ export const spanishBuddyAttempts = sqliteTable("spanish_buddy_attempts", {
   itemId: text("item_id").notNull(),
   exerciseType: text("exercise_type").notNull(),
   correct: integer("correct", { mode: "boolean" }).notNull(),
+  quality: text("quality", { enum: ["correct", "almost", "incorrect"] }).notNull().default("incorrect"),
+  masteryBefore: integer("mastery_before").notNull().default(0),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const spanishBuddyAnswerCache = sqliteTable("spanish_buddy_answer_cache", {
+  id: text("id").primaryKey(),
+  ownerId: text("owner_id").notNull(),
+  itemId: text("item_id").notNull().default(""),
+  exerciseType: text("exercise_type").notNull(),
+  promptNormalized: text("prompt_normalized").notNull(),
+  expectedNormalized: text("expected_normalized").notNull(),
+  learnerNormalized: text("learner_normalized").notNull(),
+  verdict: text("verdict", { enum: ["exact", "equivalent", "almost", "incorrect"] }).notNull(),
+  feedback: text("feedback").notNull().default(""),
+  source: text("source", { enum: ["model", "learner"] }).notNull().default("model"),
+  hitCount: integer("hit_count").notNull().default(0),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const spanishBuddyAiUsage = sqliteTable("spanish_buddy_ai_usage", {
+  id: text("id").primaryKey(),
+  ownerId: text("owner_id").notNull(),
+  operation: text("operation").notNull(),
+  model: text("model").notNull(),
+  inputTokens: integer("input_tokens").notNull().default(0),
+  outputTokens: integer("output_tokens").notNull().default(0),
+  cachedInputTokens: integer("cached_input_tokens").notNull().default(0),
+  reasoningTokens: integer("reasoning_tokens").notNull().default(0),
+  totalTokens: integer("total_tokens").notNull().default(0),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });

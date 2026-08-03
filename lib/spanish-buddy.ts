@@ -8,6 +8,7 @@ export type ExtractedItem = {
   translation: string;
   explanation: string;
   example: string;
+  acceptedAnswers: string[];
   confidence: "high" | "medium" | "low";
   provenance: Provenance;
   selected: boolean;
@@ -39,11 +40,11 @@ export type SavedLesson = {
 };
 
 export function masteryLabel(score: number) {
-  if (score >= 82) return "Sicher";
-  if (score >= 62) return "Vertraut";
-  if (score >= 35) return "Im Aufbau";
-  if (score > 0) return "Weiter üben";
-  return "Neu";
+  if (score >= 82) return "Seguro";
+  if (score >= 62) return "Familiar";
+  if (score >= 35) return "Aprendiendo";
+  if (score > 0) return "Repasar";
+  return "Nuevo";
 }
 
 export const EXAMPLE_NOTES = [

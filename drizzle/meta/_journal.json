@@ -8,6 +8,20 @@
       "when": 1785780186512,
       "tag": "0000_loving_dragon_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1785788430803,
+      "tag": "0001_tidy_fenris",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1785788575659,
+      "tag": "0002_fearless_wallflower",
+      "breakpoints": true
     }
   ]
 }
