@@ -23,6 +23,22 @@ async function render() {
   );
 }
 
+async function renderSpanishBuddy() {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("spanishbuddy-test", `${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+
+  return worker.fetch(
+    new Request("https://henakless.com/spanishbuddy", {
+      headers: { accept: "text/html" },
+    }),
+    {
+      ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) },
+    },
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+}
+
 const MOCK_BRIEFING = {
   executiveSummary: "A focused discovery summary.",
   person: {
@@ -63,7 +79,7 @@ test("server-renders the AI discovery experience", async () => {
   assert.equal(response.headers.get("cross-origin-opener-policy"), "same-origin");
   assert.equal(
     response.headers.get("permissions-policy"),
-    "camera=(), microphone=(), geolocation=()",
+    "camera=(self), microphone=(), geolocation=()",
   );
   assert.equal(response.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
   assert.equal(
@@ -137,6 +153,19 @@ test("server-renders the AI discovery experience", async () => {
   const educationIndex = pageSource.indexOf("<h3>Education</h3>");
   assert.match(pageSource, /Cryptography · Encryption · Zero Trust · IdP · SSO · SCIM · REST APIs · JSON · NIS2 · GDPR · DORA/i);
   assert.ok(credentialsIndex < technicalIndex && technicalIndex < communityIndex && communityIndex < educationIndex);
+});
+
+test("serves Spanish Buddy at its public path", async () => {
+  const response = await renderSpanishBuddy();
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("permissions-policy"), "camera=(self), microphone=(), geolocation=()");
+
+  const html = await response.text();
+  assert.match(html, /Spanish Buddy · Your course, remembered/i);
+  assert.match(html, /Keep what you/i);
+  assert.match(html, /Add your first lesson/i);
+  assert.match(html, /Your course, remembered/i);
+  assert.doesNotMatch(html, /twitter:title[^>]*Meet Hena/i);
 });
 
 test("redirects the root URL to the presales experience", async () => {

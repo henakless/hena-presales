@@ -45,7 +45,7 @@ function secureResponse(response: Response): Response {
   headers.set("X-Robots-Tag", SEARCH_EXCLUSION_DIRECTIVES);
   headers.set("Content-Security-Policy", CONTENT_SECURITY_POLICY);
   headers.set("Cross-Origin-Opener-Policy", "same-origin");
-  headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  headers.set("Permissions-Policy", "camera=(self), microphone=(), geolocation=()");
   headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   headers.set("X-Content-Type-Options", "nosniff");
@@ -89,6 +89,34 @@ async function enforceBriefingRateLimit(request: Request, env: Env) {
   }
 }
 
+async function enforceSpanishBuddyRateLimit(request: Request, env: Env) {
+  if (!env.BRIEFING_RATE_LIMITER) return null;
+
+  const client = request.headers.get("cf-connecting-ip") ?? "unknown";
+
+  try {
+    const { success } = await env.BRIEFING_RATE_LIMITER.limit({
+      key: `spanishbuddy:${client}`,
+    });
+    if (success) return null;
+
+    return secureResponse(
+      Response.json(
+        { error: "You’ve analyzed several lessons already. Please try again shortly." },
+        { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "60" } },
+      ),
+    );
+  } catch (error) {
+    console.error("Spanish Buddy rate limiter failed", error);
+    return secureResponse(
+      Response.json(
+        { error: "Lesson analysis is temporarily unavailable. Please try again." },
+        { status: 503, headers: { "Cache-Control": "no-store" } },
+      ),
+    );
+  }
+}
+
 // Image security config. SVG sources with .svg extension auto-skip the
 // optimization endpoint on the client side (served directly, no proxy).
 // To route SVGs through the optimizer (with security headers), set
@@ -104,6 +132,15 @@ const worker = {
       if (rateLimitResponse) return rateLimitResponse;
     }
 
+    if (
+      request.method === "POST" &&
+      (url.pathname === "/spanishbuddy/api/extract" ||
+        url.pathname === `${SITE_BASE_PATH}/spanishbuddy/api/extract`)
+    ) {
+      const rateLimitResponse = await enforceSpanishBuddyRateLimit(request, env);
+      if (rateLimitResponse) return rateLimitResponse;
+    }
+
     if (url.pathname === "/robots.txt") {
       return secureResponse(
         new Response("User-agent: *\nAllow: /\n", {
@@ -115,6 +152,11 @@ const worker = {
     if (url.pathname === "/") {
       url.pathname = SITE_BASE_PATH;
       return secureResponse(Response.redirect(url.toString(), 308));
+    }
+
+    if (url.pathname === "/spanishbuddy" || url.pathname.startsWith("/spanishbuddy/")) {
+      url.pathname = `${SITE_BASE_PATH}${url.pathname}`;
+      request = new Request(url.toString(), request);
     }
 
     if (url.pathname === `${SITE_BASE_PATH}/Hena_Kless_CV_2026.pdf`) {
