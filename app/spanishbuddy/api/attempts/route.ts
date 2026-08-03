@@ -47,6 +47,7 @@ export async function POST(request: Request) {
     prompt?: unknown;
     expectedAnswer?: unknown;
     learnerAnswer?: unknown;
+    assisted?: unknown;
   };
 
   try {
@@ -60,6 +61,7 @@ export async function POST(request: Request) {
   const quality = payload.quality === "almost" ? "almost" : payload.correct === true || payload.quality === "correct" ? "correct" : "incorrect";
   const correct = quality === "correct";
   const exerciseType = typeof payload.exerciseType === "string" ? payload.exerciseType.slice(0, 40) : "practice";
+  const assisted = payload.assisted === true;
   if (!itemId) return jsonWithOwner({ error: "Falta el contenido de aprendizaje." }, 400, setCookie);
 
   try {
@@ -122,10 +124,12 @@ export async function POST(request: Request) {
       }
       acceptedAnswers = acceptedAnswers.slice(-12);
 
-      const gain = Math.max(7, 18 - Math.floor(Math.max(0, item.attempts - 1) / 2));
+      const fullGain = Math.max(7, 18 - Math.floor(Math.max(0, item.attempts - 1) / 2));
+      const gain = assisted ? Math.max(3, Math.round(fullGain * .4)) : fullGain;
       const mastery = Math.max(0, Math.min(100, previousAttempt.mastery_before + gain));
       const correctCount = item.correct_count + 1;
-      const reviewDays = mastery >= 90 ? 16 : mastery >= 75 ? 8 : mastery >= 55 ? 4 : mastery >= 30 ? 2 : 1;
+      const fullReviewDays = mastery >= 90 ? 16 : mastery >= 75 ? 8 : mastery >= 55 ? 4 : mastery >= 30 ? 2 : 1;
+      const reviewDays = assisted ? Math.min(fullReviewDays, 2) : fullReviewDays;
       const nextReview = new Date(Date.now() + reviewDays * 86_400_000).toISOString();
       const normalized = [prompt, expectedAnswer, learnerAnswer, exerciseType].map(normalizeForCache);
       const cacheId = await answerCacheId(ownerId, normalized);
@@ -140,7 +144,7 @@ export async function POST(request: Request) {
           `UPDATE spanish_buddy_attempts
            SET correct = 1, quality = 'correct', exercise_type = ?
            WHERE id = ? AND owner_id = ?`,
-        ).bind(`${exerciseType}:overridden`, previousAttempt.id, ownerId),
+        ).bind(`${exerciseType}${assisted ? ":assisted" : ""}:overridden`, previousAttempt.id, ownerId),
         db.prepare(
           `INSERT INTO spanish_buddy_answer_cache
            (id, owner_id, item_id, exercise_type, prompt_normalized, expected_normalized, learner_normalized, verdict, feedback, source)
@@ -167,11 +171,13 @@ export async function POST(request: Request) {
 
     const attempts = item.attempts + 1;
     const correctCount = item.correct_count + (correct ? 1 : 0);
-    const gain = Math.max(7, 18 - Math.floor(item.attempts / 2));
+    const fullGain = Math.max(7, 18 - Math.floor(item.attempts / 2));
+    const gain = assisted ? Math.max(3, Math.round(fullGain * .4)) : fullGain;
     const mastery = Math.max(0, Math.min(100, item.mastery + (correct ? gain : quality === "almost" ? -4 : -20)));
-    const reviewDays = correct
+    const fullReviewDays = correct
       ? mastery >= 90 ? 16 : mastery >= 75 ? 8 : mastery >= 55 ? 4 : mastery >= 30 ? 2 : 1
       : quality === "almost" ? 1 : 0;
+    const reviewDays = correct && assisted ? Math.min(fullReviewDays, 2) : fullReviewDays;
     const nextReview = new Date(Date.now() + reviewDays * 86_400_000).toISOString();
 
     const attemptId = crypto.randomUUID();
@@ -185,7 +191,7 @@ export async function POST(request: Request) {
         `INSERT INTO spanish_buddy_attempts
          (id, owner_id, item_id, exercise_type, correct, quality, mastery_before)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      ).bind(attemptId, ownerId, itemId, `${exerciseType}:${quality}`, correct ? 1 : 0, quality, item.mastery),
+      ).bind(attemptId, ownerId, itemId, `${exerciseType}${assisted ? ":assisted" : ""}:${quality}`, correct ? 1 : 0, quality, item.mastery),
     ]);
 
     return jsonWithOwner(

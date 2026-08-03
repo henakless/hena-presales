@@ -28,6 +28,9 @@ type Exercise = {
   options?: string[];
   acceptedAnswers?: string[];
   gradingFocus?: string;
+  germanSupport: string;
+  grammarReminder: string;
+  strongerHint: string;
 };
 
 type AnswerFeedback = {
@@ -73,6 +76,8 @@ export default function SpanishBuddy() {
   const [savingItem, setSavingItem] = useState(false);
   const [selectedExerciseTypes, setSelectedExerciseTypes] = useState<string[]>([...ACTIVE_EXERCISE_IDS]);
   const [preparingSession, setPreparingSession] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [strongHintRevealed, setStrongHintRevealed] = useState(false);
 
   const currentExercise = exercises[exerciseIndex];
   const dueItems = useMemo(
@@ -263,6 +268,8 @@ export default function SpanishBuddy() {
       setSessionCorrect(0);
       setSessionAlmost(0);
       setSessionDone(false);
+      setHelpOpen(false);
+      setStrongHintRevealed(false);
     } catch (sessionError) {
       setError(sessionError instanceof Error ? sessionError.message : "No se ha podido preparar la práctica.");
     } finally {
@@ -278,7 +285,7 @@ export default function SpanishBuddy() {
     setItems((current) =>
       current.map((item) =>
         item.id === currentExercise.item.id
-          ? { ...item, mastery: Math.max(0, Math.min(100, item.mastery + (correct ? 12 : quality === "almost" ? -4 : -20))) }
+          ? { ...item, mastery: Math.max(0, Math.min(100, item.mastery + (correct ? strongHintRevealed ? 5 : 12 : quality === "almost" ? -4 : -20))) }
           : item,
       ),
     );
@@ -287,7 +294,7 @@ export default function SpanishBuddy() {
       const response = await fetch(apiUrl("attempts"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemId: currentExercise.item.id, correct, quality, exerciseType: currentExercise.exerciseType }),
+        body: JSON.stringify({ itemId: currentExercise.item.id, correct, quality, exerciseType: currentExercise.exerciseType, assisted: strongHintRevealed }),
       });
       const body = (await response.json()) as {
         attemptId?: string;
@@ -391,6 +398,7 @@ export default function SpanishBuddy() {
           prompt: currentExercise.prompt,
           expectedAnswer: currentExercise.answer,
           learnerAnswer: answer,
+          assisted: strongHintRevealed,
         }),
       });
       const body = (await response.json()) as {
@@ -505,6 +513,8 @@ export default function SpanishBuddy() {
     setNeedsManualReview(false);
     setCurrentAttemptId(null);
     setAnswerJudgedByModel(false);
+    setHelpOpen(false);
+    setStrongHintRevealed(false);
   }
 
   function closeSession() {
@@ -516,6 +526,8 @@ export default function SpanishBuddy() {
     setNeedsManualReview(false);
     setCurrentAttemptId(null);
     setAnswerJudgedByModel(false);
+    setHelpOpen(false);
+    setStrongHintRevealed(false);
   }
 
   return (
@@ -541,7 +553,7 @@ export default function SpanishBuddy() {
           <section className="sb-welcome">
             <div>
               <p className="sb-eyebrow">Hoy · tu plan adaptativo</p>
-              <h1>Recuerda lo que<br /><em>aprendes en clase.</em></h1>
+              <h1>Tu curso,<br /><em>recordado.</em></h1>
               <p>Tus propios apuntes se convierten en la práctica que necesitas hoy.</p>
             </div>
             <div className="sb-orbit" aria-hidden="true"><span>{averageMastery}%</span><small>conocimiento</small></div>
@@ -747,7 +759,21 @@ export default function SpanishBuddy() {
               <div className="sb-exercise-meta"><span>{currentExercise.label}</span><span>{currentExercise.item.lessonTitle}</span></div>
               <div className="sb-exercise-card">
                 <p>{currentExercise.helper}</p>
-                <h2>{currentExercise.prompt}</h2>
+                <div className="sb-prompt-row">
+                  <h2>{currentExercise.prompt}</h2>
+                  <button className="sb-info-button" type="button" aria-label="Información y ayuda en alemán" aria-expanded={helpOpen} onClick={() => setHelpOpen((value) => !value)}>i</button>
+                </div>
+                {helpOpen && (
+                  <aside className="sb-language-help" aria-label="Ayuda en alemán">
+                    <div><small>En alemán</small><p lang="de">{currentExercise.germanSupport}</p></div>
+                    {currentExercise.grammarReminder && <div><small>Recordatorio gramatical</small><p lang="de">{currentExercise.grammarReminder}</p></div>}
+                    {!strongHintRevealed ? (
+                      <button type="button" onClick={() => setStrongHintRevealed(true)}>Mostrar más ayuda</button>
+                    ) : (
+                      <div className="sb-strong-hint"><small>Ayuda adicional</small><p lang="de">{currentExercise.strongerHint}</p><span>Esta respuesta contará como práctica con ayuda.</span></div>
+                    )}
+                  </aside>
+                )}
                 {currentExercise.options?.length ? (
                   <div className="sb-options">{currentExercise.options.map((option) => <button className={revealed ? acceptsAnswer(option, currentExercise.answer, currentExercise.item.acceptedAnswers ?? []) ? "correct" : option === answer ? "incorrect" : "" : ""} key={option} onClick={() => chooseAnswer(option)}>{option}</button>)}</div>
                 ) : !revealed ? (
@@ -756,6 +782,7 @@ export default function SpanishBuddy() {
                   <div className="sb-submitted-answer"><small>Tu respuesta</small><strong>{answer}</strong></div>
                 )}
                 {revealed && answerFeedback && <div className={`sb-feedback ${needsManualReview ? "review" : result}`}><span>{result === "correct" ? "✓" : result === "almost" ? "≈" : needsManualReview ? "?" : "→"}</span><div><strong>{answerFeedback.title}</strong><p>{answerFeedback.message}</p>{result && <p className="sb-reference">Respuesta de referencia: {currentExercise.answer}</p>}{result === "incorrect" && answerJudgedByModel && <div className="sb-review-choice"><button disabled={recordingAttempt || overridingAnswer} onClick={markJudgedAnswerCorrect}>{overridingAnswer ? "Guardando…" : recordingAttempt ? "Espera un momento…" : "Marcar mi respuesta como correcta"}</button></div>}{needsManualReview && <div className="sb-review-choice"><button onClick={() => resolveManualReview(true)}>Marcar como correcta</button><button onClick={() => resolveManualReview(false)}>Usar la referencia</button></div>}</div></div>}
+                {result && strongHintRevealed && <p className="sb-assisted-note">Con ayuda · esta respuesta aporta menos evidencia de dominio.</p>}
                 {result && <button className="sb-next" disabled={overridingAnswer} onClick={nextExercise}>{exerciseIndex + 1 === exercises.length ? "Ver resultado" : "Continuar"} →</button>}
               </div>
               <div className="sb-focus-note"><span>¿Por qué ahora?</span><p>{currentExercise.item.mastery < 35 ? "Este contenido es nuevo o todavía inseguro, por eso aparece antes." : "Toca repasar este contenido con repetición espaciada."}</p></div>

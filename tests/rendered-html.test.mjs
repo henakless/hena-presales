@@ -162,7 +162,8 @@ test("serves Spanish Buddy at its public path", async () => {
 
   const html = await response.text();
   assert.match(html, /Spanish Buddy · Tu curso, contigo/i);
-  assert.match(html, /Recuerda lo que/i);
+  assert.match(html, /Tu curso,/i);
+  assert.match(html, /recordado\./i);
   assert.match(html, /Añadir la primera lección/i);
   assert.match(html, /Tu curso, contigo/i);
   assert.doesNotMatch(html, /twitter:title[^>]*Meet Hena/i);
@@ -181,6 +182,9 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(pageSource, /Deseleccionar todos/i);
   assert.match(pageSource, /selectedExerciseTypes/i);
   assert.match(pageSource, /apiUrl\("practice"\)/i);
+  assert.match(pageSource, /Información y ayuda en alemán/i);
+  assert.match(pageSource, /Mostrar más ayuda/i);
+  assert.match(pageSource, /strongHintRevealed/i);
   assert.doesNotMatch(pageSource, /Descubrir la respuesta|Piensa la respuesta antes/i);
   assert.match(pageSource, /saveEditedItem/i);
   assert.match(pageSource, /Respuesta de referencia/i);
@@ -206,10 +210,14 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(practiceSource, /SPANISH_BUDDY_MODEL = "gpt-5\.6-terra"/i);
   assert.match(practiceSource, /Every non-multiple-choice exercise requires the learner to type/i);
   assert.match(practiceSource, /spanish_buddy_exercise_variants/i);
+  assert.match(practiceSource, /germanSupport/i);
+  assert.match(practiceSource, /grammarReminder/i);
+  assert.match(practiceSource, /strongerHint/i);
 
   const attemptSource = await readFile(new URL("../app/spanishbuddy/api/attempts/route.ts", import.meta.url), "utf8");
   assert.match(attemptSource, /action === "override"/i);
   assert.match(attemptSource, /source = 'learner'/i);
+  assert.match(attemptSource, /assisted \? Math\.max\(3/i);
 });
 
 test("checks safe Spanish Buddy answer variants locally", async () => {

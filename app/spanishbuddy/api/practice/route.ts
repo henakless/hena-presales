@@ -39,8 +39,11 @@ const PRACTICE_SCHEMA = {
           options: { type: "array", maxItems: 4, items: { type: "string" } },
           acceptedAnswers: { type: "array", maxItems: 6, items: { type: "string" } },
           gradingFocus: { type: "string" },
+          germanSupport: { type: "string" },
+          grammarReminder: { type: "string" },
+          strongerHint: { type: "string" },
         },
-        required: ["itemId", "exerciseType", "label", "helper", "prompt", "answer", "options", "acceptedAnswers", "gradingFocus"],
+        required: ["itemId", "exerciseType", "label", "helper", "prompt", "answer", "options", "acceptedAnswers", "gradingFocus", "germanSupport", "grammarReminder", "strongerHint"],
       },
     },
   },
@@ -75,6 +78,9 @@ type PracticeExercise = {
   options: string[];
   acceptedAnswers: string[];
   gradingFocus: string;
+  germanSupport: string;
+  grammarReminder: string;
+  strongerHint: string;
 };
 
 type CachedRow = { id: string; payload: string };
@@ -168,7 +174,9 @@ function normalizeExercise(value: PracticeExercise, planned: { item: SavedItem; 
   if (value.itemId !== planned.item.id || value.exerciseType !== planned.exerciseType) return null;
   const prompt = clean(value.prompt, 900);
   const answer = clean(value.answer, 600);
-  if (!prompt || !answer) return null;
+  const germanSupport = clean(value.germanSupport, 700);
+  const strongerHint = clean(value.strongerHint, 700);
+  if (!prompt || !answer || !germanSupport || !strongerHint) return null;
   const options = Array.isArray(value.options)
     ? [...new Set(value.options.map((entry) => clean(entry, 240)).filter(Boolean))].slice(0, 4)
     : [];
@@ -188,6 +196,9 @@ function normalizeExercise(value: PracticeExercise, planned: { item: SavedItem; 
       ? [...new Set(value.acceptedAnswers.map((entry) => clean(entry, 300)).filter(Boolean))].slice(0, 6)
       : [],
     gradingFocus: clean(value.gradingFocus, 220),
+    germanSupport,
+    grammarReminder: clean(value.grammarReminder, 400),
+    strongerHint,
   } satisfies PracticeExercise;
 }
 
@@ -254,6 +265,7 @@ export async function POST(request: Request) {
     ).bind(ownerId, plan.item.id, plan.exerciseType).first<CachedRow>()));
     const exercises: Array<{ exercise: PracticeExercise; item: SavedItem; cacheId: string | null }> = [];
     const missingPlans: typeof plans = [];
+    const invalidCacheIds: string[] = [];
     plans.forEach((plan, index) => {
       const row = cached[index];
       if (!row) {
@@ -263,11 +275,20 @@ export async function POST(request: Request) {
       try {
         const parsed = normalizeExercise(JSON.parse(row.payload) as PracticeExercise, plan);
         if (parsed) exercises.push({ exercise: parsed, item: plan.item, cacheId: row.id });
-        else missingPlans.push(plan);
+        else {
+          invalidCacheIds.push(row.id);
+          missingPlans.push(plan);
+        }
       } catch {
+        invalidCacheIds.push(row.id);
         missingPlans.push(plan);
       }
     });
+    if (invalidCacheIds.length) {
+      await db.batch(invalidCacheIds.map((id) => db.prepare(
+        "DELETE FROM spanish_buddy_exercise_variants WHERE id = ? AND owner_id = ?",
+      ).bind(id, ownerId)));
+    }
 
     if (missingPlans.length) {
       const apiKey = process.env.OPENAI_API_KEY;
@@ -324,6 +345,9 @@ export async function POST(request: Request) {
               "For reading, write an original compact passage of 45-90 Spanish words using lesson concepts, then include the question in the prompt. Never reproduce a textbook passage.",
               "Keep one clear learning objective per exercise. Make context sufficient, accept natural alternatives, and avoid trivia or guessable distractors.",
               "gradingFocus must state briefly what should be graded strictly and what natural variation is acceptable.",
+              "germanSupport must always contain concise German support for the prompt. Translate or gloss the surrounding Spanish, but replace the exact tested word, form, or decisive answer with a blank so this first level never spoils the exercise.",
+              "grammarReminder must be one short German sentence explaining what a named tense or grammar concept means and when it is used, without giving the requested ending, conjugated form, or correct option. Return an empty string only when no grammar concept is involved.",
+              "strongerHint must always contain a more explicit German translation or answer-level hint. It may reveal enough to make the task easier because the product records its use as assisted practice.",
             ].join("\n\n"),
             input: [{ role: "user", content: JSON.stringify({ requested, lessonContexts }) }],
             text: {
