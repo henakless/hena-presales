@@ -43,22 +43,21 @@ export async function GET(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
-  const anonymousOwnerId = crypto.randomUUID();
-  return jsonWithOwner(
-    { synced: false },
-    200,
-    spanishBuddyOwnerCookie(request, anonymousOwnerId),
-  );
-}
-
 export async function POST(request: Request) {
   const { ownerId } = getOwner(request);
-  let payload: { passphrase?: unknown };
+  let payload: { action?: unknown; passphrase?: unknown };
   try {
     payload = await request.json() as typeof payload;
   } catch {
     return jsonWithOwner({ error: "No se ha podido leer la frase de sincronización." }, 400, null);
+  }
+
+  if (payload.action === "disconnect") {
+    return jsonWithOwner(
+      { synced: false },
+      200,
+      spanishBuddyOwnerCookie(request, crypto.randomUUID()),
+    );
   }
 
   const passphrase = typeof payload.passphrase === "string" ? payload.passphrase.trim() : "";

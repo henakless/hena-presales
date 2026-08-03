@@ -134,9 +134,11 @@ export default function SpanishBuddy() {
     () => items.filter((item) => new Date(item.nextReviewAt).getTime() <= Date.now() || item.mastery < 35),
     [items],
   );
-  const averageMastery = items.length
-    ? Math.round(items.reduce((sum, item) => sum + item.mastery, 0) / items.length)
-    : 0;
+  const averageMastery = loadingLibrary
+    ? null
+    : items.length
+      ? Math.round(items.reduce((sum, item) => sum + item.mastery, 0) / items.length)
+      : 0;
   const libraryFilters: Array<{ id: LibraryFilter; label: string }> = [
     { id: "all", label: "Todo" },
     { id: "words", label: "Palabras" },
@@ -299,7 +301,11 @@ export default function SpanishBuddy() {
     setSyncing(true);
     setSyncError("");
     try {
-      const response = await fetch(apiUrl("sync"), { method: "DELETE" });
+      const response = await fetch(apiUrl("sync"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "disconnect" }),
+      });
       const body = await response.json() as { synced?: boolean; error?: string };
       if (!response.ok || body.synced !== false) throw new Error(body.error || "No se ha podido desconectar este dispositivo.");
       setSynced(false);
@@ -760,9 +766,13 @@ export default function SpanishBuddy() {
               <p>Tus propios apuntes se convierten en la práctica que necesitas hoy.</p>
             </div>
             <div className="sb-orbit">
-              <Sunflower mastery={averageMastery} label={`Dominio general: ${averageMastery}%`} />
-              <span>{averageMastery}%</span>
-              <small>conocimiento</small>
+              {averageMastery !== null && (
+                <>
+                  <Sunflower mastery={averageMastery} label={`Dominio general: ${averageMastery}%`} />
+                  <span>{averageMastery}%</span>
+                  <small>conocimiento</small>
+                </>
+              )}
             </div>
           </section>
 
@@ -785,8 +795,12 @@ export default function SpanishBuddy() {
               <div className="sb-stat-row"><strong>{lessons.length}</strong><span>lecciones del curso</span></div>
               <div className="sb-stat-row"><strong>{items.filter((item) => item.mastery >= 62).length}</strong><span>ya dominas</span></div>
               <div className="sb-growth-meter">
-                <Sunflower mastery={averageMastery} label={`Progreso de tu base: ${averageMastery}%`} />
-                <div className="sb-meter"><span style={{ width: `${averageMastery}%` }} /></div>
+                {averageMastery !== null && (
+                  <>
+                    <Sunflower mastery={averageMastery} label={`Progreso de tu base: ${averageMastery}%`} />
+                    <div className="sb-meter"><span style={{ width: `${averageMastery}%` }} /></div>
+                  </>
+                )}
               </div>
               <small>El dominio crece al recordar activamente, no solo al leer.</small>
             </aside>

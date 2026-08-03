@@ -200,7 +200,7 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(syncSource, /spanish-buddy-sync-v2/i);
   assert.match(syncSource, /crypto\.subtle\.digest/i);
   assert.match(syncSource, /spanish_buddy_sync_profiles/i);
-  assert.match(syncSource, /export async function DELETE/i);
+  assert.match(syncSource, /action === "disconnect"/i);
   assert.doesNotMatch(syncSource, /INSERT[^\n]+passphrase/i);
   assert.match(pageSource, /Desconectar este dispositivo/i);
 
