@@ -177,8 +177,11 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(pageSource, /acceptedAnswers/i);
   assert.match(pageSource, /sb-submitted-answer/i);
   assert.match(pageSource, /item\.kind === "grammar" && <textarea/i);
-  assert.match(pageSource, /learningType === "word"/i);
-  assert.match(pageSource, /grammarTarget/i);
+  assert.match(pageSource, /EXERCISE_LIBRARY/i);
+  assert.match(pageSource, /Deseleccionar todos/i);
+  assert.match(pageSource, /selectedExerciseTypes/i);
+  assert.match(pageSource, /apiUrl\("practice"\)/i);
+  assert.doesNotMatch(pageSource, /Descubrir la respuesta|Piensa la respuesta antes/i);
   assert.match(pageSource, /saveEditedItem/i);
   assert.match(pageSource, /Respuesta de referencia/i);
   assert.match(pageSource, /window\.addEventListener\("keydown"/i);
@@ -191,6 +194,18 @@ test("serves Spanish Buddy at its public path", async () => {
   const extractionSource = await readFile(new URL("../app/spanishbuddy/api/extract/route.ts", import.meta.url), "utf8");
   assert.match(extractionSource, /acceptedAnswers/i);
   assert.match(extractionSource, /natural reference-language synonyms/i);
+  assert.match(extractionSource, /hablar con, ir a, alojarse en/i);
+
+  const exerciseLibrarySource = await readFile(new URL("../lib/spanish-buddy-exercises.ts", import.meta.url), "utf8");
+  assert.match(exerciseLibrarySource, /Recuerdo escrito/i);
+  assert.match(exerciseLibrarySource, /Dado de conjugación/i);
+  assert.match(exerciseLibrarySource, /status: "coming_soon"/i);
+  assert.match(exerciseLibrarySource, /hablar con · yo · presente/i);
+
+  const practiceSource = await readFile(new URL("../app/spanishbuddy/api/practice/route.ts", import.meta.url), "utf8");
+  assert.match(practiceSource, /SPANISH_BUDDY_MODEL = "gpt-5\.6-terra"/i);
+  assert.match(practiceSource, /Every non-multiple-choice exercise requires the learner to type/i);
+  assert.match(practiceSource, /spanish_buddy_exercise_variants/i);
 
   const attemptSource = await readFile(new URL("../app/spanishbuddy/api/attempts/route.ts", import.meta.url), "utf8");
   assert.match(attemptSource, /action === "override"/i);

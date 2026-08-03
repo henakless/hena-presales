@@ -72,11 +72,24 @@ export async function ensureSpanishBuddySchema(db: D1Database) {
       total_tokens INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS spanish_buddy_exercise_variants (
+      id TEXT PRIMARY KEY,
+      owner_id TEXT NOT NULL,
+      item_id TEXT NOT NULL,
+      lesson_id TEXT NOT NULL,
+      exercise_type TEXT NOT NULL,
+      payload TEXT NOT NULL,
+      use_count INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`),
     db.prepare("CREATE INDEX IF NOT EXISTS sb_lessons_owner_idx ON spanish_buddy_lessons(owner_id, created_at)"),
     db.prepare("CREATE INDEX IF NOT EXISTS sb_items_owner_idx ON spanish_buddy_items(owner_id, next_review_at)"),
     db.prepare("CREATE INDEX IF NOT EXISTS sb_items_lesson_idx ON spanish_buddy_items(lesson_id)"),
     db.prepare("CREATE INDEX IF NOT EXISTS sb_answer_cache_owner_idx ON spanish_buddy_answer_cache(owner_id, learner_normalized)"),
     db.prepare("CREATE INDEX IF NOT EXISTS sb_ai_usage_owner_idx ON spanish_buddy_ai_usage(owner_id, created_at)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS sb_exercise_variants_owner_idx ON spanish_buddy_exercise_variants(owner_id, exercise_type, use_count)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS sb_exercise_variants_lesson_idx ON spanish_buddy_exercise_variants(lesson_id)"),
   ]);
 
   const columns = await db.prepare("PRAGMA table_info(spanish_buddy_items)").all<{ name: string }>();
@@ -96,7 +109,7 @@ type OpenAIUsage = {
 export async function recordSpanishBuddyAiUsage(
   db: D1Database,
   ownerId: string,
-  operation: "extract" | "evaluate",
+  operation: "extract" | "evaluate" | "practice",
   model: string,
   usage?: OpenAIUsage,
 ) {

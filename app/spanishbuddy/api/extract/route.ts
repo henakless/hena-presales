@@ -213,6 +213,7 @@ export async function POST(request: Request) {
           "Classify every item by learningType: word for a single lexical item, collocation for a short word combination, fixed_expression for a complete memorized phrase, sentence_pattern for a reusable sentence frame, grammar_rule for a concept, and conjugation for forms or paradigms.",
           "Preserve the source's reference language. These notes often use German translations; do not translate German into English.",
           "For vocabulary and communicative phrases, put the canonical Spanish expression in spanish and an exact, natural reference-language translation in translation. Never use a category label such as 'Eine Einladung annehmen' as the translation of a phrase.",
+          "For verbs, preserve the complete lexical unit learners need in order to use it: include its governed preposition or complement, for example hablar con, ir a, alojarse en, depender de and acordarse de. Use a bare infinitive only when no fixed complement is required.",
           "For each vocabulary item or communicative phrase, generate up to five concise acceptedAnswers: natural reference-language synonyms, contractions, or equivalent translations that should count as fully correct in later practice. Do not include meaning-changing variants, and do not repeat translation verbatim. For grammar items return an empty array unless there are genuinely equivalent labels.",
           "For vocabulary, leave explanation empty unless a short usage distinction is genuinely necessary. Put communicative function or context in explanation, not in translation.",
           "For grammar, use a short concept name in spanish, a reference-language label in translation, and a concise explanation in the detected reference language.",
@@ -266,7 +267,7 @@ export async function POST(request: Request) {
     }
 
     const result: ExtractionResult = {
-      title: requestedTitle || clean(parsed.title, 100) || "Neue Spanischlektion",
+      title: requestedTitle || clean(parsed.title, 100) || "Nueva lección de español",
       summary: clean(parsed.summary, 300),
       referenceLanguage: clean(parsed.referenceLanguage, 40) || "Deutsch",
       items,

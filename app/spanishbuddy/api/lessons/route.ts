@@ -213,6 +213,10 @@ export async function PATCH(request: Request) {
     ).run();
     if (!result.meta.changes) return jsonWithOwner({ error: "No se ha encontrado este contenido." }, 404, setCookie);
     await db.prepare("DELETE FROM spanish_buddy_answer_cache WHERE owner_id = ? AND item_id = ?").bind(ownerId, id).run();
+    await db.prepare(
+      `DELETE FROM spanish_buddy_exercise_variants
+       WHERE owner_id = ? AND lesson_id = (SELECT lesson_id FROM spanish_buddy_items WHERE id = ? AND owner_id = ?)`,
+    ).bind(ownerId, id, ownerId).run();
     return jsonWithOwner({ item: { ...payload, id, kind, learningType, spanish } }, 200, setCookie);
   } catch (error) {
     console.error("Spanish Buddy item update failed", error);

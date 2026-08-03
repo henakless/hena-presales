@@ -65,7 +65,7 @@ export const EXAMPLE_NOTES = [
     id: "vocab",
     title: "Vocabulario · Vida cotidiana y medios",
     label: "Vocabulario del curso",
-    text: `30.07.2026 — Vokabeln\n\nel anhelo — der Wunsch / die Sehnsucht\nlos guisantes — die Erbsen\nla amistad — die Freundschaft\nagitado/a — aufgeregt, unruhig\ncortés — höflich\nla esquina — die Ecke\nel aburrimiento — die Langeweile\nalojarse — übernachten\nlas noticias — die Nachrichten\nel/la carterista — der Taschendieb / die Taschendiebin\ncazar — jagen, fangen\nlas redes sociales — soziale Netzwerke\npillar — erwischen\nla enseñanza — die Bildung\npor lo menos — wenigstens, mindestens`,
+    text: `30.07.2026 — Vokabeln\n\nel anhelo — der Wunsch / die Sehnsucht\nlos guisantes — die Erbsen\nla amistad — die Freundschaft\nagitado/a — aufgeregt, unruhig\ncortés — höflich\nla esquina — die Ecke\nel aburrimiento — die Langeweile\nalojarse en — übernachten in\nhablar con — sprechen mit\nir a — gehen/fahren nach\nlas noticias — die Nachrichten\nel/la carterista — der Taschendieb / die Taschendiebin\ncazar — jagen, fangen\nlas redes sociales — soziale Netzwerke\npillar — erwischen\nla enseñanza — die Bildung\npor lo menos — wenigstens, mindestens`,
   },
   {
     id: "grammar",

@@ -68,3 +68,15 @@ export const spanishBuddyAiUsage = sqliteTable("spanish_buddy_ai_usage", {
   totalTokens: integer("total_tokens").notNull().default(0),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const spanishBuddyExerciseVariants = sqliteTable("spanish_buddy_exercise_variants", {
+  id: text("id").primaryKey(),
+  ownerId: text("owner_id").notNull(),
+  itemId: text("item_id").notNull(),
+  lessonId: text("lesson_id").notNull(),
+  exerciseType: text("exercise_type").notNull(),
+  payload: text("payload").notNull(),
+  useCount: integer("use_count").notNull().default(0),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});

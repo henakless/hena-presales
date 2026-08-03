@@ -1,10 +1,14 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
-import { acceptsAnswer, localAnswerVerdict, normalizeAnswer as normalize } from "../../lib/spanish-buddy-answer";
+import { acceptsAnswer, localAnswerVerdict } from "../../lib/spanish-buddy-answer";
+import {
+  ACTIVE_EXERCISE_IDS,
+  EXERCISE_CATEGORIES,
+  EXERCISE_LIBRARY,
+} from "../../lib/spanish-buddy-exercises";
 import {
   EXAMPLE_NOTES,
-  inferLearningType,
   masteryLabel,
   type ExtractedItem,
   type ExtractionResult,
@@ -12,18 +16,18 @@ import {
   type SavedLesson,
 } from "../../lib/spanish-buddy";
 
-type View = "today" | "add" | "library";
-type ExerciseType = "translation" | "blank" | "choice" | "flashcard" | "sentence";
+type View = "today" | "add" | "library" | "exercises";
 
 type Exercise = {
-  type: ExerciseType;
+  exerciseType: string;
   label: string;
   item: SavedItem;
   prompt: string;
   answer: string;
   helper: string;
   options?: string[];
-  selfRate?: boolean;
+  acceptedAnswers?: string[];
+  gradingFocus?: string;
 };
 
 type AnswerFeedback = {
@@ -36,169 +40,6 @@ type AnswerResult = "correct" | "almost" | "incorrect";
 function apiUrl(path: string) {
   const basePath = window.location.pathname.replace(/\/$/, "");
   return `${basePath}/api/${path}`;
-}
-
-function shuffled<T>(values: T[]) {
-  return [...values].sort(() => Math.random() - 0.5);
-}
-
-function topicTokens(value: string) {
-  const stopwords = new Set(["aber", "auch", "das", "der", "die", "eine", "einen", "einer", "für", "ist", "mit", "oder", "und", "von", "zu"]);
-  return new Set(
-    normalize(value)
-      .split(" ")
-      .filter((token) => token.length > 2 && !stopwords.has(token)),
-  );
-}
-
-function distractorScore(target: SavedItem, candidate: SavedItem) {
-  const targetTopic = topicTokens(target.explanation);
-  const candidateTopic = topicTokens(candidate.explanation);
-  const sharedTopicWords = [...targetTopic].filter((token) => candidateTopic.has(token)).length;
-  const sameTopic = normalize(target.explanation) && normalize(target.explanation) === normalize(candidate.explanation);
-  const lengthDifference = Math.abs((target.translation || target.explanation).length - (candidate.translation || candidate.explanation).length);
-
-  return (
-    (target.lessonId === candidate.lessonId ? 20 : 0) +
-    (target.kind === candidate.kind ? 8 : 0) +
-    (target.learningType === candidate.learningType ? 28 : 0) +
-    (sameTopic ? 45 : 0) +
-    sharedTopicWords * 14 -
-    Math.min(lengthDifference, 30)
-  );
-}
-
-function bestDistractors(item: SavedItem, items: SavedItem[]) {
-  const answer = item.translation || item.explanation;
-  const unique = new Map<string, SavedItem>();
-  const targetTopic = topicTokens(item.explanation);
-
-  for (const candidate of items) {
-    const value = candidate.translation || candidate.explanation;
-    const comparableLength = value.length >= answer.length * .5 && value.length <= answer.length * 2;
-    const candidateTopic = topicTokens(candidate.explanation);
-    const sharesTopic = normalize(item.explanation) && (
-      normalize(item.explanation) === normalize(candidate.explanation) || [...targetTopic].some((token) => candidateTopic.has(token))
-    );
-    if (candidate.id !== item.id && candidate.kind === item.kind && candidate.learningType === item.learningType && sharesTopic && comparableLength && value && normalize(value) !== normalize(answer)) {
-      unique.set(normalize(value), candidate);
-    }
-  }
-
-  return [...unique.values()]
-    .filter((candidate) => distractorScore(item, candidate) >= 18)
-    .sort((a, b) => distractorScore(item, b) - distractorScore(item, a))
-    .slice(0, 3)
-    .map((candidate) => candidate.translation || candidate.explanation);
-}
-
-function buildExercises(items: SavedItem[]) {
-  const now = Date.now();
-  const ranked = [...items].sort((a, b) => {
-    const aDue = new Date(a.nextReviewAt).getTime() <= now ? 0 : 1;
-    const bDue = new Date(b.nextReviewAt).getTime() <= now ? 0 : 1;
-    return aDue - bDue || a.mastery - b.mastery || a.nextReviewAt.localeCompare(b.nextReviewAt);
-  });
-  const grammar = ranked.filter((item) => item.kind === "grammar");
-  const vocabulary = ranked.filter((item) => item.kind === "vocabulary");
-  const candidates: SavedItem[] = [];
-  const grammarTarget = Math.min(grammar.length, Math.max(2, Math.round(Math.min(8, ranked.length) * .35)));
-  const vocabularyTarget = Math.min(vocabulary.length, Math.min(8, ranked.length) - grammarTarget);
-  candidates.push(...grammar.slice(0, grammarTarget), ...vocabulary.slice(0, vocabularyTarget));
-  for (const item of ranked) if (candidates.length < 8 && !candidates.some((candidate) => candidate.id === item.id)) candidates.push(item);
-  candidates.sort((a, b) => a.mastery - b.mastery || a.nextReviewAt.localeCompare(b.nextReviewAt));
-
-  return candidates.map<Exercise>((item, index) => {
-    const learningType = item.learningType || inferLearningType(item);
-    const eligibleTypes: ExerciseType[] = item.kind === "grammar"
-      ? ["flashcard"]
-      : learningType === "word"
-        ? ["translation", "blank", "choice", "sentence"]
-        : learningType === "collocation"
-          ? ["translation", "blank", "choice"]
-          : ["translation", "blank", "choice"];
-    const type = eligibleTypes[index % eligibleTypes.length];
-    if (type === "blank" && item.kind === "vocabulary" && item.example) {
-      const escaped = item.spanish.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const blanked = item.example.replace(new RegExp(escaped, "i"), "_____");
-      if (blanked !== item.example) {
-        return {
-          type,
-          label: "Completa el hueco",
-          item,
-          prompt: blanked,
-          answer: item.spanish,
-          helper: item.translation,
-        };
-      }
-    }
-
-    if (type === "choice") {
-      const distractors = bestDistractors(item, items);
-      if (distractors.length < 3) {
-        return {
-          type: "translation",
-          label: "Escribe la traducción",
-          item,
-          prompt: item.spanish,
-          answer: item.translation || item.explanation,
-          helper: "Traduce al idioma de tus apuntes.",
-        };
-      }
-      return {
-        type,
-        label: "Elige el significado",
-        item,
-        prompt: item.spanish,
-        answer: item.translation || item.explanation,
-        helper: "Elige la opción que mejor corresponde.",
-        options: shuffled([item.translation || item.explanation, ...distractors]).filter(Boolean),
-      };
-    }
-
-    if (item.kind === "grammar" && type !== "blank") {
-      return {
-        type: "flashcard",
-        label: "Explica la regla",
-        item,
-        prompt: item.spanish,
-        answer: item.explanation || item.translation,
-        helper: "Piensa la respuesta antes de descubrirla.",
-        selfRate: true,
-      };
-    }
-
-    if (type === "flashcard") {
-      return {
-        type: "translation",
-        label: "Escribe de memoria",
-        item,
-        prompt: item.spanish,
-        answer: item.translation || item.explanation,
-        helper: "Escribe la traducción exacta.",
-      };
-    }
-
-    if (type === "sentence" && learningType === "word") {
-      return {
-        type,
-        label: "Construye una frase",
-        item,
-        prompt: `Escribe una frase en español con «${item.spanish}»`,
-        answer: item.example || `Quiero usar la palabra «${item.spanish}» correctamente.`,
-        helper: "Una frase breve y natural es suficiente.",
-      };
-    }
-
-    return {
-      type: "translation",
-      label: "Escribe la traducción",
-      item,
-      prompt: item.spanish,
-      answer: item.translation || item.explanation,
-      helper: "Traduce al idioma de tus apuntes.",
-    };
-  });
 }
 
 export default function SpanishBuddy() {
@@ -230,6 +71,8 @@ export default function SpanishBuddy() {
   const [sessionDone, setSessionDone] = useState(false);
   const [editingItem, setEditingItem] = useState<SavedItem | null>(null);
   const [savingItem, setSavingItem] = useState(false);
+  const [selectedExerciseTypes, setSelectedExerciseTypes] = useState<string[]>([...ACTIVE_EXERCISE_IDS]);
+  const [preparingSession, setPreparingSession] = useState(false);
 
   const currentExercise = exercises[exerciseIndex];
   const dueItems = useMemo(
@@ -257,6 +100,19 @@ export default function SpanishBuddy() {
   useEffect(() => {
     const timer = window.setTimeout(() => void loadLibrary(), 0);
     return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("spanish-buddy-exercises");
+      if (!saved) return;
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        setSelectedExerciseTypes(parsed.filter((value): value is string => typeof value === "string" && ACTIVE_EXERCISE_IDS.includes(value)));
+      }
+    } catch {
+      // The complete default selection remains available if a local preference is unreadable.
+    }
   }, []);
 
   useEffect(() => {
@@ -356,25 +212,62 @@ export default function SpanishBuddy() {
     }
   }
 
-  function startSession(sourceItems = items) {
-    const nextExercises = buildExercises(sourceItems);
-    if (nextExercises.length === 0) {
+  function updateExerciseSelection(next: string[]) {
+    setSelectedExerciseTypes(next);
+    try {
+      window.localStorage.setItem("spanish-buddy-exercises", JSON.stringify(next));
+    } catch {
+      // Selection still works for the current visit when local preferences are unavailable.
+    }
+  }
+
+  function toggleExerciseType(id: string) {
+    updateExerciseSelection(selectedExerciseTypes.includes(id)
+      ? selectedExerciseTypes.filter((value) => value !== id)
+      : [...selectedExerciseTypes, id]);
+  }
+
+  async function startSession(sourceItems = items) {
+    if (!sourceItems.length) {
       setView("add");
       return;
     }
-    setExercises(nextExercises);
-    setExerciseIndex(0);
-    setAnswer("");
-    setRevealed(false);
-    setResult(null);
-    setAnswerFeedback(null);
-    setCheckingAnswer(false);
-    setNeedsManualReview(false);
-    setCurrentAttemptId(null);
-    setAnswerJudgedByModel(false);
-    setSessionCorrect(0);
-    setSessionAlmost(0);
-    setSessionDone(false);
+    if (!selectedExerciseTypes.length) {
+      setError("Selecciona al menos un tipo de ejercicio.");
+      setView("exercises");
+      return;
+    }
+    setPreparingSession(true);
+    setError("");
+    try {
+      const response = await fetch(apiUrl("practice"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          itemIds: sourceItems.map((item) => item.id),
+          selectedTypes: selectedExerciseTypes,
+        }),
+      });
+      const body = await response.json() as { exercises?: Exercise[]; error?: string };
+      if (!response.ok || !body.exercises?.length) throw new Error(body.error || "No se ha podido preparar la práctica.");
+      setExercises(body.exercises);
+      setExerciseIndex(0);
+      setAnswer("");
+      setRevealed(false);
+      setResult(null);
+      setAnswerFeedback(null);
+      setCheckingAnswer(false);
+      setNeedsManualReview(false);
+      setCurrentAttemptId(null);
+      setAnswerJudgedByModel(false);
+      setSessionCorrect(0);
+      setSessionAlmost(0);
+      setSessionDone(false);
+    } catch (sessionError) {
+      setError(sessionError instanceof Error ? sessionError.message : "No se ha podido preparar la práctica.");
+    } finally {
+      setPreparingSession(false);
+    }
   }
 
   async function recordAttempt(quality: AnswerResult) {
@@ -394,7 +287,7 @@ export default function SpanishBuddy() {
       const response = await fetch(apiUrl("attempts"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemId: currentExercise.item.id, correct, quality, exerciseType: currentExercise.type }),
+        body: JSON.stringify({ itemId: currentExercise.item.id, correct, quality, exerciseType: currentExercise.exerciseType }),
       });
       const body = (await response.json()) as {
         attemptId?: string;
@@ -441,9 +334,9 @@ export default function SpanishBuddy() {
           prompt: currentExercise.prompt,
           expectedAnswer: currentExercise.answer,
           learnerAnswer: answer,
-          exerciseType: currentExercise.type,
+          exerciseType: currentExercise.exerciseType,
           itemId: currentExercise.item.id,
-          context: [currentExercise.item.spanish, currentExercise.item.translation, currentExercise.item.explanation]
+          context: [currentExercise.item.spanish, currentExercise.item.translation, currentExercise.item.explanation, currentExercise.gradingFocus]
             .filter(Boolean)
             .join(" · "),
         }),
@@ -494,7 +387,7 @@ export default function SpanishBuddy() {
           action: "override",
           attemptId: currentAttemptId,
           itemId: currentExercise.item.id,
-          exerciseType: currentExercise.type,
+          exerciseType: currentExercise.exerciseType,
           prompt: currentExercise.prompt,
           expectedAnswer: currentExercise.answer,
           learnerAnswer: answer,
@@ -598,12 +491,6 @@ export default function SpanishBuddy() {
     void recordAttempt(correct ? "correct" : "incorrect");
   }
 
-  function selfRate(correct: boolean) {
-    if (result) return;
-    setResult(correct ? "correct" : "incorrect");
-    void recordAttempt(correct ? "correct" : "incorrect");
-  }
-
   function nextExercise() {
     if (exerciseIndex + 1 >= exercises.length) {
       setSessionDone(true);
@@ -642,6 +529,7 @@ export default function SpanishBuddy() {
           <button className={view === "today" ? "active" : ""} onClick={() => setView("today")}>Hoy</button>
           <button className={view === "add" ? "active" : ""} onClick={() => setView("add")}>Nueva lección</button>
           <button className={view === "library" ? "active" : ""} onClick={() => setView("library")}>Biblioteca</button>
+          <button className={view === "exercises" ? "active" : ""} onClick={() => setView("exercises")}>Ejercicios</button>
         </nav>
         <div className="sb-level"><span>B1</span><small>Español de España</small></div>
       </header>
@@ -667,8 +555,8 @@ export default function SpanishBuddy() {
                 <h2>{items.length ? "Un poco de práctica hoy lo hace más fácil mañana." : "Tu primera lección empieza aquí."}</h2>
                 <span>{items.length ? "Unos 8 minutos · ejercicios variados" : "Sube tus apuntes o empieza con un ejemplo"}</span>
               </div>
-              <button className="sb-primary" onClick={() => items.length ? startSession() : setView("add")}>
-                {items.length ? "Empezar la práctica" : "Añadir la primera lección"}<span aria-hidden="true">→</span>
+              <button className="sb-primary" disabled={preparingSession} onClick={() => items.length ? void startSession() : setView("add")}>
+                {preparingSession ? "Preparando…" : items.length ? "Empezar la práctica" : "Añadir la primera lección"}<span aria-hidden="true">→</span>
               </button>
             </article>
 
@@ -689,10 +577,10 @@ export default function SpanishBuddy() {
                 {lessons.slice(0, 3).map((lesson, index) => (
                   <article className="sb-lesson-card" key={lesson.id}>
                     <span className="sb-lesson-number">0{index + 1}</span>
-                    <p>{new Date(lesson.createdAt).toLocaleDateString("de-DE", { day: "2-digit", month: "short" })}</p>
+                    <p>{new Date(lesson.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}</p>
                     <h3>{lesson.title}</h3>
                     <div><span>{lesson.items.length} contenidos</span><span>{Math.round(lesson.items.reduce((sum, item) => sum + item.mastery, 0) / Math.max(lesson.items.length, 1))}%</span></div>
-                    <button onClick={() => startSession(lesson.items)}>Practicar</button>
+                    <button disabled={preparingSession} onClick={() => void startSession(lesson.items)}>Practicar</button>
                   </article>
                 ))}
               </div>
@@ -761,7 +649,7 @@ export default function SpanishBuddy() {
           <div className="sb-library-heading"><div><p className="sb-eyebrow">Tu base de aprendizaje</p><h1>Todo lo que <em>has aprendido.</em></h1></div><button className="sb-primary" onClick={() => setView("add")}>Añadir lección <span>+</span></button></div>
           {lessons.length ? lessons.map((lesson) => (
             <section className="sb-library-lesson" key={lesson.id}>
-              <div className="sb-library-lesson-head"><div><span>{new Date(lesson.createdAt).toLocaleDateString("de-DE")}</span><h2>{lesson.title}</h2><p>{lesson.summary}</p></div><button onClick={() => startSession(lesson.items)}>Practicar →</button></div>
+              <div className="sb-library-lesson-head"><div><span>{new Date(lesson.createdAt).toLocaleDateString("es-ES")}</span><h2>{lesson.title}</h2><p>{lesson.summary}</p></div><button disabled={preparingSession} onClick={() => void startSession(lesson.items)}>{preparingSession ? "Preparando…" : "Practicar →"}</button></div>
               <div className="sb-library-items">
                 {lesson.items.map((item) => (
                   <article key={item.id}>
@@ -779,13 +667,66 @@ export default function SpanishBuddy() {
         </div>
       )}
 
+      {view === "exercises" && (
+        <div className="sb-shell sb-exercise-library">
+          <section className="sb-exercise-library-intro">
+            <div>
+              <p className="sb-eyebrow">Tu forma de practicar</p>
+              <h1>Elige cómo quieres <em>aprender.</em></h1>
+              <p>Todos los ejercicios escritos están activos por defecto. Desactiva los que no quieras o vacía la selección para crear una práctica dedicada.</p>
+            </div>
+            <div className="sb-selection-panel">
+              <strong>{selectedExerciseTypes.length}</strong>
+              <span>tipos seleccionados</span>
+              <div>
+                <button onClick={() => updateExerciseSelection([...ACTIVE_EXERCISE_IDS])}>Seleccionar todos</button>
+                <button onClick={() => updateExerciseSelection([])}>Deseleccionar todos</button>
+              </div>
+              <button className="sb-primary" disabled={!items.length || !selectedExerciseTypes.length || preparingSession} onClick={() => void startSession()}>
+                {preparingSession ? "Preparando…" : "Empezar entrenamiento"}<span>→</span>
+              </button>
+            </div>
+          </section>
+
+          {EXERCISE_CATEGORIES.map((category) => {
+            const categoryExercises = EXERCISE_LIBRARY.filter((exercise) => exercise.category === category.id);
+            return (
+              <section className="sb-exercise-category" key={category.id}>
+                <div className="sb-exercise-category-head"><div><p className="sb-eyebrow">{category.name}</p><h2>{category.description}</h2></div><span>{categoryExercises.some((exercise) => exercise.status === "active") ? `${categoryExercises.filter((exercise) => exercise.status === "active" && selectedExerciseTypes.includes(exercise.id)).length}/${categoryExercises.filter((exercise) => exercise.status === "active").length}` : "Próximamente"}</span></div>
+                <div className="sb-exercise-boxes">
+                  {categoryExercises.map((exercise) => {
+                    const comingSoon = exercise.status === "coming_soon";
+                    const selected = !comingSoon && selectedExerciseTypes.includes(exercise.id);
+                    return (
+                      <button
+                        type="button"
+                        className={`sb-exercise-box ${selected ? "selected" : ""} ${comingSoon ? "coming-soon" : ""}`}
+                        key={exercise.id}
+                        disabled={comingSoon}
+                        aria-pressed={comingSoon ? undefined : selected}
+                        onClick={() => toggleExerciseType(exercise.id)}
+                      >
+                        <div className="sb-exercise-box-top"><span>{comingSoon ? "Próximamente" : selected ? "Activo" : "Inactivo"}</span><i aria-hidden="true">{comingSoon ? "·" : selected ? "✓" : "+"}</i></div>
+                        <h3>{exercise.name}</h3>
+                        <p>{exercise.description}</p>
+                        <div className="sb-exercise-example"><small>Ejemplo</small><strong>{exercise.examplePrompt}</strong><span>{exercise.exampleAnswer}</span></div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      )}
+
       {editingItem && (
         <div className="sb-editor-backdrop" role="dialog" aria-modal="true" aria-label={`Editar ${editingItem.spanish}`}>
           <form className="sb-item-editor" onSubmit={saveEditedItem}>
             <div className="sb-editor-head"><div><p className="sb-eyebrow">Contenido de tu biblioteca</p><h2>{editingItem.kind === "grammar" ? "Detalle de gramática" : "Editar vocabulario"}</h2></div><button type="button" onClick={() => setEditingItem(null)} aria-label="Cerrar">×</button></div>
             <div className="sb-editor-grid">
               <label><span>Tipo de contenido</span><select value={editingItem.learningType} onChange={(event) => setEditingItem({ ...editingItem, learningType: event.target.value as SavedItem["learningType"] })}><option value="word">Palabra</option><option value="collocation">Combinación de palabras</option><option value="fixed_expression">Expresión fija</option><option value="sentence_pattern">Estructura de frase</option><option value="grammar_rule">Regla gramatical</option><option value="conjugation">Conjugación</option></select></label>
-              <label><span>Español</span><input value={editingItem.spanish} onChange={(event) => setEditingItem({ ...editingItem, spanish: event.target.value })} required /></label>
+              <label><span>Español</span><input value={editingItem.spanish} onChange={(event) => setEditingItem({ ...editingItem, spanish: event.target.value })} required /><small>En los verbos, incluye la preposición: hablar con, ir a, depender de…</small></label>
               <label><span>Traducción de tus apuntes</span><input lang="de" value={editingItem.translation} onChange={(event) => setEditingItem({ ...editingItem, translation: event.target.value, acceptedAnswers: [] })} /></label>
               <label className="wide"><span>{editingItem.kind === "grammar" ? "Explicación de la regla" : "Nota de uso"}</span><textarea lang="de" value={editingItem.explanation} onChange={(event) => setEditingItem({ ...editingItem, explanation: event.target.value })} placeholder={editingItem.kind === "grammar" ? "Formación, uso y excepciones" : "Solo si hace falta aclarar el uso"} /></label>
               <label className="wide"><span>Ejemplo en español</span><textarea value={editingItem.example} onChange={(event) => setEditingItem({ ...editingItem, example: event.target.value })} placeholder="Una frase clara que muestre el uso" /></label>
@@ -807,18 +748,14 @@ export default function SpanishBuddy() {
               <div className="sb-exercise-card">
                 <p>{currentExercise.helper}</p>
                 <h2>{currentExercise.prompt}</h2>
-                {currentExercise.options ? (
+                {currentExercise.options?.length ? (
                   <div className="sb-options">{currentExercise.options.map((option) => <button className={revealed ? acceptsAnswer(option, currentExercise.answer, currentExercise.item.acceptedAnswers ?? []) ? "correct" : option === answer ? "incorrect" : "" : ""} key={option} onClick={() => chooseAnswer(option)}>{option}</button>)}</div>
-                ) : currentExercise.selfRate ? (
-                  <div className="sb-self-rate">
-                    {!revealed ? <button className="sb-reveal" onClick={() => setRevealed(true)}>Descubrir la respuesta</button> : <><div className="sb-answer"><small>Respuesta de ejemplo</small><strong>{currentExercise.answer}</strong></div>{!result && <div><button onClick={() => selfRate(false)}>Seguir practicando</button><button onClick={() => selfRate(true)}>Lo sabía</button></div>}</>}
-                  </div>
                 ) : !revealed ? (
-                  <form className="sb-answer-form" onSubmit={submitAnswer}><input autoFocus value={answer} disabled={checkingAnswer} onChange={(event) => setAnswer(event.target.value)} placeholder={currentExercise.type === "sentence" ? "Escribe una frase en español…" : "Escribe tu respuesta…"} /><button disabled={checkingAnswer || !answer.trim()}>{checkingAnswer ? "Comprobando…" : "Comprobar"}</button></form>
+                  <form className="sb-answer-form" onSubmit={submitAnswer}><input autoFocus value={answer} disabled={checkingAnswer} onChange={(event) => setAnswer(event.target.value)} placeholder="Escribe tu respuesta…" /><button disabled={checkingAnswer || !answer.trim()}>{checkingAnswer ? "Comprobando…" : "Comprobar"}</button></form>
                 ) : (
                   <div className="sb-submitted-answer"><small>Tu respuesta</small><strong>{answer}</strong></div>
                 )}
-                {revealed && !currentExercise.selfRate && answerFeedback && <div className={`sb-feedback ${needsManualReview ? "review" : result}`}><span>{result === "correct" ? "✓" : result === "almost" ? "≈" : needsManualReview ? "?" : "→"}</span><div><strong>{answerFeedback.title}</strong><p>{answerFeedback.message}</p>{result && <p className="sb-reference">Respuesta de referencia: {currentExercise.answer}</p>}{result === "incorrect" && answerJudgedByModel && <div className="sb-review-choice"><button disabled={recordingAttempt || overridingAnswer} onClick={markJudgedAnswerCorrect}>{overridingAnswer ? "Guardando…" : recordingAttempt ? "Espera un momento…" : "Marcar mi respuesta como correcta"}</button></div>}{needsManualReview && <div className="sb-review-choice"><button onClick={() => resolveManualReview(true)}>Marcar como correcta</button><button onClick={() => resolveManualReview(false)}>Usar la referencia</button></div>}</div></div>}
+                {revealed && answerFeedback && <div className={`sb-feedback ${needsManualReview ? "review" : result}`}><span>{result === "correct" ? "✓" : result === "almost" ? "≈" : needsManualReview ? "?" : "→"}</span><div><strong>{answerFeedback.title}</strong><p>{answerFeedback.message}</p>{result && <p className="sb-reference">Respuesta de referencia: {currentExercise.answer}</p>}{result === "incorrect" && answerJudgedByModel && <div className="sb-review-choice"><button disabled={recordingAttempt || overridingAnswer} onClick={markJudgedAnswerCorrect}>{overridingAnswer ? "Guardando…" : recordingAttempt ? "Espera un momento…" : "Marcar mi respuesta como correcta"}</button></div>}{needsManualReview && <div className="sb-review-choice"><button onClick={() => resolveManualReview(true)}>Marcar como correcta</button><button onClick={() => resolveManualReview(false)}>Usar la referencia</button></div>}</div></div>}
                 {result && <button className="sb-next" disabled={overridingAnswer} onClick={nextExercise}>{exerciseIndex + 1 === exercises.length ? "Ver resultado" : "Continuar"} →</button>}
               </div>
               <div className="sb-focus-note"><span>¿Por qué ahora?</span><p>{currentExercise.item.mastery < 35 ? "Este contenido es nuevo o todavía inseguro, por eso aparece antes." : "Toca repasar este contenido con repetición espaciada."}</p></div>
