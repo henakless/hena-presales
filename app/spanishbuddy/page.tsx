@@ -17,6 +17,7 @@ import {
 } from "../../lib/spanish-buddy";
 
 type View = "today" | "add" | "library" | "exercises";
+type LibraryFilter = "all" | "words" | "expressions" | "collocations" | "grammar";
 
 type Exercise = {
   exerciseType: string;
@@ -123,6 +124,7 @@ export default function SpanishBuddy() {
   const [syncing, setSyncing] = useState(false);
   const [synced, setSynced] = useState(false);
   const [syncError, setSyncError] = useState("");
+  const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("all");
 
   const currentExercise = exercises[exerciseIndex];
   const dueItems = useMemo(
@@ -132,6 +134,41 @@ export default function SpanishBuddy() {
   const averageMastery = items.length
     ? Math.round(items.reduce((sum, item) => sum + item.mastery, 0) / items.length)
     : 0;
+  const libraryFilters: Array<{ id: LibraryFilter; label: string }> = [
+    { id: "all", label: "Todo" },
+    { id: "words", label: "Palabras" },
+    { id: "expressions", label: "Expresiones" },
+    { id: "collocations", label: "Combinaciones" },
+    { id: "grammar", label: "Gramática" },
+  ];
+
+  function libraryCategory(item: SavedItem): Exclude<LibraryFilter, "all"> {
+    if (item.kind === "grammar" || item.learningType === "grammar_rule" || item.learningType === "conjugation") return "grammar";
+    if (item.learningType === "fixed_expression" || item.learningType === "sentence_pattern") return "expressions";
+    if (item.learningType === "collocation") return "collocations";
+    return "words";
+  }
+
+  function libraryCategoryLabel(item: SavedItem) {
+    const category = libraryCategory(item);
+    if (category === "grammar") return "Regla";
+    if (category === "expressions") return "Expresión";
+    if (category === "collocations") return "Combinación";
+    return "Palabra";
+  }
+
+  const libraryCounts = useMemo(() => {
+    const counts: Record<LibraryFilter, number> = { all: items.length, words: 0, expressions: 0, collocations: 0, grammar: 0 };
+    items.forEach((item) => { counts[libraryCategory(item)] += 1; });
+    return counts;
+  }, [items]);
+
+  const filteredLessons = useMemo(() => lessons
+    .map((lesson) => ({
+      ...lesson,
+      items: libraryFilter === "all" ? lesson.items : lesson.items.filter((item) => libraryCategory(item) === libraryFilter),
+    }))
+    .filter((lesson) => lesson.items.length > 0), [lessons, libraryFilter]);
 
   function completeExercisePrompt(exercise: Exercise) {
     return [exercise.instruction, exercise.context, exercise.prompt].filter(Boolean).join("\n\n");
@@ -797,14 +834,27 @@ export default function SpanishBuddy() {
       {view === "library" && (
         <div className="sb-shell sb-library">
           <div className="sb-library-heading"><div><p className="sb-eyebrow">Tu base de aprendizaje</p><h1>Todo lo que <em>has aprendido.</em></h1></div><button className="sb-primary" onClick={() => setView("add")}>Añadir lección <span>+</span></button></div>
-          {lessons.length ? lessons.map((lesson) => (
+          <nav className="sb-library-filters" aria-label="Secciones de la biblioteca">
+            {libraryFilters.map((filter) => (
+              <button
+                type="button"
+                className={libraryFilter === filter.id ? "active" : ""}
+                aria-pressed={libraryFilter === filter.id}
+                onClick={() => setLibraryFilter(filter.id)}
+                key={filter.id}
+              >
+                <span>{filter.label}</span><small>{libraryCounts[filter.id]}</small>
+              </button>
+            ))}
+          </nav>
+          {filteredLessons.length ? filteredLessons.map((lesson) => (
             <section className="sb-library-lesson" key={lesson.id}>
               <div className="sb-library-lesson-head"><div><span>{new Date(lesson.createdAt).toLocaleDateString("es-ES")}</span><h2>{lesson.title}</h2><p>{lesson.summary}</p></div><button disabled={preparingSession} onClick={() => void startSession(lesson.items)}>{preparingSession ? "Preparando…" : "Practicar →"}</button></div>
               <div className="sb-library-items">
                 {lesson.items.map((item) => (
                   <article key={item.id}>
                     <button className="sb-library-item-button" onClick={() => openLibraryItem(item)} aria-label={`Abrir ${item.spanish}`}>
-                      <div><span>{item.kind === "grammar" ? "Regla" : item.learningType === "fixed_expression" ? "Expresión" : "Palabra"}</span>{item.provenance === "suggested" && <small>Sugerencia</small>}</div>
+                      <div><span>{libraryCategoryLabel(item)}</span>{item.provenance === "suggested" && <small>Sugerencia</small>}</div>
                       <h3>{item.spanish}</h3><p lang="de">{item.translation || item.explanation}</p>
                       {item.kind === "grammar" && item.example && <p className="sb-card-example">Ejemplo: {item.example}</p>}
                       <div className="sb-item-mastery"><Sunflower mastery={item.mastery} label={`${item.spanish}: ${item.mastery}% de dominio`} /><span><i style={{ width: `${item.mastery}%` }} /></span><small>{masteryLabel(item.mastery)} · {item.mastery}%</small></div>
@@ -813,7 +863,9 @@ export default function SpanishBuddy() {
                 ))}
               </div>
             </section>
-          )) : <div className="sb-empty sb-starter-empty"><div><strong>Tu biblioteca está lista para la primera lección.</strong><span>Sube tus apuntes o empieza con un ejemplo.</span></div><button onClick={() => setView("add")}>Añadir lección</button></div>}
+          )) : lessons.length ? (
+            <div className="sb-empty sb-starter-empty"><div><strong>Aún no hay contenido en esta sección.</strong><span>Elige otra sección o añade una nueva lección.</span></div><button onClick={() => setLibraryFilter("all")}>Ver todo</button></div>
+          ) : <div className="sb-empty sb-starter-empty"><div><strong>Tu biblioteca está lista para la primera lección.</strong><span>Sube tus apuntes o empieza con un ejemplo.</span></div><button onClick={() => setView("add")}>Añadir lección</button></div>}
         </div>
       )}
 
