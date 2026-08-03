@@ -166,6 +166,96 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(html, /Add your first lesson/i);
   assert.match(html, /Your course, remembered/i);
   assert.doesNotMatch(html, /twitter:title[^>]*Meet Hena/i);
+
+  const pageSource = await readFile(new URL("../app/spanishbuddy/page.tsx", import.meta.url), "utf8");
+  assert.match(pageSource, /apiUrl\("evaluate"\)/i);
+  assert.match(pageSource, /Also correct\./i);
+  assert.match(pageSource, /Count as correct/i);
+});
+
+test("accepts a semantically equivalent Spanish Buddy translation", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalApiKey = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = "test-key";
+
+  globalThis.fetch = async (input, init) => {
+    assert.equal(String(input), "https://api.openai.com/v1/responses");
+    assert.equal(init?.method, "POST");
+    const requestBody = JSON.parse(String(init?.body));
+    assert.equal(requestBody.model, "gpt-5.6-terra");
+    assert.equal(requestBody.store, false);
+    assert.equal(requestBody.reasoning.effort, "low");
+    assert.equal(requestBody.text.format.type, "json_schema");
+    assert.equal(requestBody.text.format.strict, true);
+    assert.equal(requestBody.text.format.schema.additionalProperties, false);
+    assert.match(requestBody.instructions, /ellipsis.*open or unspecified complement/i);
+
+    const submitted = JSON.parse(requestBody.input[0].content);
+    assert.equal(submitted.prompt, "Os invito a…");
+    assert.equal(submitted.expectedAnswer, "Ich lade euch zu ... ein.");
+    assert.equal(submitted.learnerAnswer, "ich lade euch ein");
+
+    return Response.json({
+      model: "gpt-5.6-terra",
+      output: [
+        {
+          type: "message",
+          content: [
+            {
+              type: "output_text",
+              text: JSON.stringify({
+                correct: true,
+                equivalence: "equivalent",
+                feedback: "This naturally conveys the same invitation without specifying the activity.",
+              }),
+            },
+          ],
+        },
+      ],
+    });
+  };
+
+  try {
+    const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+    workerUrl.searchParams.set("answer-evaluation-test", `${process.pid}-${Date.now()}`);
+    const { default: worker } = await import(workerUrl.href);
+    const response = await worker.fetch(
+      new Request("https://henakless.com/spanishbuddy/api/evaluate", {
+        method: "POST",
+        headers: { "content-type": "application/json", "cf-connecting-ip": "203.0.113.20" },
+        body: JSON.stringify({
+          prompt: "Os invito a…",
+          expectedAnswer: "Ich lade euch zu ... ein.",
+          learnerAnswer: "ich lade euch ein",
+          exerciseType: "translation",
+          context: "Os invito a… · Ich lade euch zu ... ein.",
+        }),
+      }),
+      {
+        OPENAI_API_KEY: "test-key",
+        ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) },
+        EVALUATION_RATE_LIMITER: {
+          limit: async ({ key }) => {
+            assert.equal(key, "spanishbuddy-evaluate:203.0.113.20");
+            return { success: true };
+          },
+        },
+      },
+      { waitUntil() {}, passThroughOnException() {} },
+    );
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+      correct: true,
+      equivalence: "equivalent",
+      feedback: "This naturally conveys the same invitation without specifying the activity.",
+    });
+    assert.equal(response.headers.get("cache-control"), "no-store");
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalApiKey === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = originalApiKey;
+  }
 });
 
 test("redirects the root URL to the presales experience", async () => {

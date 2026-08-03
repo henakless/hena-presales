@@ -205,10 +205,15 @@
 .sb-feedback { display: flex; gap: 14px; align-items: center; margin-top: 18px; padding: 16px; }
 .sb-feedback.correct { background: #dfe9d8; }
 .sb-feedback.incorrect { background: #ffe0d8; }
+.sb-feedback.review { background: #f3ecd0; }
 .sb-feedback > span { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50%; background: var(--sb-green); color: white; }
 .sb-feedback.incorrect > span { background: var(--sb-red); }
+.sb-feedback.review > span { background: #8a6f16; }
 .sb-feedback strong { font-family: Georgia, serif; font-size: 18px; font-weight: 400; }
 .sb-feedback p { margin: 2px 0 0; color: var(--sb-muted); font-size: 10px; }
+.sb-review-choice { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.sb-review-choice button { min-height: 34px; padding: 0 12px; border: 1px solid var(--sb-ink); background: white; font-size: 9px; font-weight: 800; cursor: pointer; }
+.sb-review-choice button:first-child { background: var(--sb-lime); }
 .sb-next { float: right; margin-top: 25px; padding: 9px 0; border: 0; border-bottom: 1px solid; background: transparent; font-size: 10px; font-weight: 900; cursor: pointer; }
 .sb-focus-note { display: flex; gap: 15px; margin-top: 30px; color: #c8d3c8; font-size: 9px; }
 .sb-focus-note span { color: var(--sb-lime); font-weight: 900; text-transform: uppercase; }

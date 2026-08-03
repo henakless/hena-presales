@@ -9,6 +9,9 @@ interface Env {
   BRIEFING_RATE_LIMITER?: {
     limit(options: { key: string }): Promise<{ success: boolean }>;
   };
+  EVALUATION_RATE_LIMITER?: {
+    limit(options: { key: string }): Promise<{ success: boolean }>;
+  };
   IMAGES: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -117,6 +120,30 @@ async function enforceSpanishBuddyRateLimit(request: Request, env: Env) {
   }
 }
 
+async function enforceEvaluationRateLimit(request: Request, env: Env) {
+  if (!env.EVALUATION_RATE_LIMITER) return null;
+
+  const client = request.headers.get("cf-connecting-ip") ?? "unknown";
+  try {
+    const { success } = await env.EVALUATION_RATE_LIMITER.limit({ key: `spanishbuddy-evaluate:${client}` });
+    if (success) return null;
+    return secureResponse(
+      Response.json(
+        { error: "You’ve checked several alternative phrasings already. Please try again shortly." },
+        { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "60" } },
+      ),
+    );
+  } catch (error) {
+    console.error("Spanish Buddy evaluation rate limiter failed", error);
+    return secureResponse(
+      Response.json(
+        { error: "Answer checking is temporarily unavailable." },
+        { status: 503, headers: { "Cache-Control": "no-store" } },
+      ),
+    );
+  }
+}
+
 // Image security config. SVG sources with .svg extension auto-skip the
 // optimization endpoint on the client side (served directly, no proxy).
 // To route SVGs through the optimizer (with security headers), set
@@ -138,6 +165,15 @@ const worker = {
         url.pathname === `${SITE_BASE_PATH}/spanishbuddy/api/extract`)
     ) {
       const rateLimitResponse = await enforceSpanishBuddyRateLimit(request, env);
+      if (rateLimitResponse) return rateLimitResponse;
+    }
+
+    if (
+      request.method === "POST" &&
+      (url.pathname === "/spanishbuddy/api/evaluate" ||
+        url.pathname === `${SITE_BASE_PATH}/spanishbuddy/api/evaluate`)
+    ) {
+      const rateLimitResponse = await enforceEvaluationRateLimit(request, env);
       if (rateLimitResponse) return rateLimitResponse;
     }
 

@@ -24,6 +24,11 @@ type Exercise = {
   selfRate?: boolean;
 };
 
+type AnswerFeedback = {
+  title: string;
+  message: string;
+};
+
 function normalize(value: string) {
   return value
     .toLocaleLowerCase("es")
@@ -138,6 +143,9 @@ export default function SpanishBuddy() {
   const [answer, setAnswer] = useState("");
   const [revealed, setRevealed] = useState(false);
   const [result, setResult] = useState<"correct" | "incorrect" | null>(null);
+  const [answerFeedback, setAnswerFeedback] = useState<AnswerFeedback | null>(null);
+  const [checkingAnswer, setCheckingAnswer] = useState(false);
+  const [needsManualReview, setNeedsManualReview] = useState(false);
   const [sessionCorrect, setSessionCorrect] = useState(0);
   const [sessionDone, setSessionDone] = useState(false);
 
@@ -261,6 +269,9 @@ export default function SpanishBuddy() {
     setAnswer("");
     setRevealed(false);
     setResult(null);
+    setAnswerFeedback(null);
+    setCheckingAnswer(false);
+    setNeedsManualReview(false);
     setSessionCorrect(0);
     setSessionDone(false);
   }
@@ -294,12 +305,71 @@ export default function SpanishBuddy() {
     }
   }
 
-  function submitAnswer(event?: FormEvent) {
+  async function submitAnswer(event?: FormEvent) {
     event?.preventDefault();
-    if (!currentExercise || !answer.trim()) return;
-    const correct = acceptsAnswer(answer, currentExercise.answer);
+    if (!currentExercise || !answer.trim() || checkingAnswer || revealed) return;
+
+    if (acceptsAnswer(answer, currentExercise.answer)) {
+      setResult("correct");
+      setAnswerFeedback({ title: "Exactly.", message: currentExercise.answer });
+      setRevealed(true);
+      void recordAttempt(true);
+      return;
+    }
+
+    setCheckingAnswer(true);
+    setAnswerFeedback(null);
+    try {
+      const response = await fetch(apiUrl("evaluate"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: currentExercise.prompt,
+          expectedAnswer: currentExercise.answer,
+          learnerAnswer: answer,
+          exerciseType: currentExercise.type,
+          context: [currentExercise.item.spanish, currentExercise.item.translation, currentExercise.item.explanation]
+            .filter(Boolean)
+            .join(" · "),
+        }),
+      });
+      const body = (await response.json()) as {
+        correct?: boolean;
+        equivalence?: "exact" | "equivalent" | "not_equivalent";
+        feedback?: string;
+        error?: string;
+      };
+      if (!response.ok || typeof body.correct !== "boolean") {
+        throw new Error(body.error || "This phrasing could not be checked right now.");
+      }
+
+      setResult(body.correct ? "correct" : "incorrect");
+      setAnswerFeedback({
+        title: body.correct ? (body.equivalence === "exact" ? "Exactly." : "Also correct.") : "Keep this one close.",
+        message: body.feedback || (body.correct ? "That phrasing works too." : `Reference: ${currentExercise.answer}`),
+      });
+      setRevealed(true);
+      void recordAttempt(body.correct);
+    } catch {
+      setNeedsManualReview(true);
+      setAnswerFeedback({
+        title: "Your call.",
+        message: "I couldn’t compare the meaning right now. Choose whether your phrasing should count.",
+      });
+      setRevealed(true);
+    } finally {
+      setCheckingAnswer(false);
+    }
+  }
+
+  function resolveManualReview(correct: boolean) {
+    if (!needsManualReview || result) return;
+    setNeedsManualReview(false);
     setResult(correct ? "correct" : "incorrect");
-    setRevealed(true);
+    setAnswerFeedback({
+      title: correct ? "Counted as correct." : "Reference answer saved.",
+      message: correct ? "Your phrasing will count for this review." : currentExercise.answer,
+    });
     void recordAttempt(correct);
   }
 
@@ -308,6 +378,10 @@ export default function SpanishBuddy() {
     setAnswer(option);
     const correct = acceptsAnswer(option, currentExercise.answer);
     setResult(correct ? "correct" : "incorrect");
+    setAnswerFeedback({
+      title: correct ? "Exactly." : "Keep this one close.",
+      message: correct ? currentExercise.answer : `Answer: ${currentExercise.answer}`,
+    });
     setRevealed(true);
     void recordAttempt(correct);
   }
@@ -328,12 +402,17 @@ export default function SpanishBuddy() {
     setAnswer("");
     setRevealed(false);
     setResult(null);
+    setAnswerFeedback(null);
+    setNeedsManualReview(false);
   }
 
   function closeSession() {
     setExercises([]);
     setSessionDone(false);
     setExerciseIndex(0);
+    setCheckingAnswer(false);
+    setAnswerFeedback(null);
+    setNeedsManualReview(false);
   }
 
   return (
@@ -495,9 +574,9 @@ export default function SpanishBuddy() {
                     {!revealed ? <button className="sb-reveal" onClick={() => setRevealed(true)}>Reveal answer</button> : <><div className="sb-answer"><small>Suggested answer</small><strong>{currentExercise.answer}</strong></div>{!result && <div><button onClick={() => selfRate(false)}>Needs work</button><button onClick={() => selfRate(true)}>I got it</button></div>}</>}
                   </div>
                 ) : (
-                  <form className="sb-answer-form" onSubmit={submitAnswer}><input autoFocus value={answer} disabled={revealed} onChange={(event) => setAnswer(event.target.value)} placeholder="Type your answer…" /><button disabled={revealed || !answer.trim()}>Check</button></form>
+                  <form className="sb-answer-form" onSubmit={submitAnswer}><input autoFocus value={answer} disabled={revealed || checkingAnswer} onChange={(event) => setAnswer(event.target.value)} placeholder="Type your answer…" /><button disabled={revealed || checkingAnswer || !answer.trim()}>{checkingAnswer ? "Checking meaning…" : "Check"}</button></form>
                 )}
-                {revealed && !currentExercise.selfRate && <div className={`sb-feedback ${result}`}><span>{result === "correct" ? "✓" : "→"}</span><div><strong>{result === "correct" ? "Exactly." : "Keep this one close."}</strong><p>{result === "incorrect" && <>Answer: </>}{currentExercise.answer}</p></div></div>}
+                {revealed && !currentExercise.selfRate && answerFeedback && <div className={`sb-feedback ${needsManualReview ? "review" : result}`}><span>{result === "correct" ? "✓" : needsManualReview ? "?" : "→"}</span><div><strong>{answerFeedback.title}</strong><p>{answerFeedback.message}</p>{needsManualReview && <div className="sb-review-choice"><button onClick={() => resolveManualReview(true)}>Count as correct</button><button onClick={() => resolveManualReview(false)}>Use reference answer</button></div>}</div></div>}
                 {result && <button className="sb-next" onClick={nextExercise}>{exerciseIndex + 1 === exercises.length ? "See results" : "Continue"} →</button>}
               </div>
               <div className="sb-focus-note"><span>Why this?</span><p>{currentExercise.item.mastery < 35 ? "This is new or needs attention, so it appears earlier." : "This item is due for a spaced review."}</p></div>

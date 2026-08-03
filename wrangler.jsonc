@@ -29,6 +29,14 @@
         "limit": 5,
         "period": 60
       }
+    },
+    {
+      "name": "EVALUATION_RATE_LIMITER",
+      "namespace_id": "714216309",
+      "simple": {
+        "limit": 20,
+        "period": 60
+      }
     }
   ],
   "assets": {
