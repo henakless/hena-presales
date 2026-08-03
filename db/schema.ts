@@ -1,6 +1,11 @@
 import { sql } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
+export const spanishBuddySyncProfiles = sqliteTable("spanish_buddy_sync_profiles", {
+  ownerId: text("owner_id").primaryKey(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const spanishBuddyLessons = sqliteTable("spanish_buddy_lessons", {
   id: text("id").primaryKey(),
   ownerId: text("owner_id").notNull(),

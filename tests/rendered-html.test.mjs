@@ -193,6 +193,14 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(pageSource, /saveEditedItem/i);
   assert.match(pageSource, /Respuesta de referencia/i);
   assert.match(pageSource, /window\.addEventListener\("keydown"/i);
+  assert.match(pageSource, /Sincronizar biblioteca/i);
+  assert.match(pageSource, /apiUrl\("sync"\)/i);
+
+  const syncSource = await readFile(new URL("../app/spanishbuddy/api/sync/route.ts", import.meta.url), "utf8");
+  assert.match(syncSource, /PBKDF2/i);
+  assert.match(syncSource, /crypto\.subtle\.deriveBits/i);
+  assert.match(syncSource, /spanish_buddy_sync_profiles/i);
+  assert.doesNotMatch(syncSource, /INSERT[^\n]+passphrase/i);
 
   const evaluatorSource = await readFile(new URL("../app/spanishbuddy/api/evaluate/route.ts", import.meta.url), "utf8");
   assert.match(evaluatorSource, /SPANISH_BUDDY_MODEL = "gpt-5\.6-terra"/i);

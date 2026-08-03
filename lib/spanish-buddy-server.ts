@@ -9,6 +9,10 @@ export async function getSpanishBuddyDatabase() {
 
 export async function ensureSpanishBuddySchema(db: D1Database) {
   await db.batch([
+    db.prepare(`CREATE TABLE IF NOT EXISTS spanish_buddy_sync_profiles (
+      owner_id TEXT PRIMARY KEY,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`),
     db.prepare(`CREATE TABLE IF NOT EXISTS spanish_buddy_lessons (
       id TEXT PRIMARY KEY,
       owner_id TEXT NOT NULL,
@@ -147,11 +151,15 @@ export function getOwner(request: Request) {
   }
 
   const ownerId = crypto.randomUUID();
-  const secure = new URL(request.url).protocol === "https:" ? "; Secure" : "";
   return {
     ownerId,
-    setCookie: `${OWNER_COOKIE}=${ownerId}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax${secure}`,
+    setCookie: spanishBuddyOwnerCookie(request, ownerId),
   };
+}
+
+export function spanishBuddyOwnerCookie(request: Request, ownerId: string) {
+  const secure = new URL(request.url).protocol === "https:" ? "; Secure" : "";
+  return `${OWNER_COOKIE}=${ownerId}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax${secure}`;
 }
 
 export function jsonWithOwner(

@@ -144,6 +144,30 @@ async function enforceEvaluationRateLimit(request: Request, env: Env) {
   }
 }
 
+async function enforceSyncRateLimit(request: Request, env: Env) {
+  if (!env.EVALUATION_RATE_LIMITER) return null;
+
+  const client = request.headers.get("cf-connecting-ip") ?? "unknown";
+  try {
+    const { success } = await env.EVALUATION_RATE_LIMITER.limit({ key: `spanishbuddy-sync:${client}` });
+    if (success) return null;
+    return secureResponse(
+      Response.json(
+        { error: "Demasiados intentos de sincronización. Inténtalo de nuevo en un minuto." },
+        { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "60" } },
+      ),
+    );
+  } catch (error) {
+    console.error("Spanish Buddy sync rate limiter failed", error);
+    return secureResponse(
+      Response.json(
+        { error: "La sincronización no está disponible temporalmente." },
+        { status: 503, headers: { "Cache-Control": "no-store" } },
+      ),
+    );
+  }
+}
+
 // Image security config. SVG sources with .svg extension auto-skip the
 // optimization endpoint on the client side (served directly, no proxy).
 // To route SVGs through the optimizer (with security headers), set
@@ -174,6 +198,15 @@ const worker = {
         url.pathname === `${SITE_BASE_PATH}/spanishbuddy/api/evaluate`)
     ) {
       const rateLimitResponse = await enforceEvaluationRateLimit(request, env);
+      if (rateLimitResponse) return rateLimitResponse;
+    }
+
+    if (
+      request.method === "POST" &&
+      (url.pathname === "/spanishbuddy/api/sync" ||
+        url.pathname === `${SITE_BASE_PATH}/spanishbuddy/api/sync`)
+    ) {
+      const rateLimitResponse = await enforceSyncRateLimit(request, env);
       if (rateLimitResponse) return rateLimitResponse;
     }
 
