@@ -170,7 +170,11 @@ test("serves Spanish Buddy at its public path", async () => {
   const pageSource = await readFile(new URL("../app/spanishbuddy/page.tsx", import.meta.url), "utf8");
   assert.match(pageSource, /apiUrl\("evaluate"\)/i);
   assert.match(pageSource, /Auch richtig\./i);
+  assert.match(pageSource, /Fast richtig\./i);
   assert.match(pageSource, /Als richtig werten/i);
+  assert.match(pageSource, /sb-submitted-answer/i);
+  assert.match(pageSource, /item\.kind === "grammar" && <textarea/i);
+  assert.match(pageSource, /answer: item\.example \|\| item\.spanish/i);
 });
 
 test("accepts a semantically equivalent Spanish Buddy translation", async () => {
@@ -206,8 +210,7 @@ test("accepts a semantically equivalent Spanish Buddy translation", async () => 
             {
               type: "output_text",
               text: JSON.stringify({
-                correct: true,
-                equivalence: "equivalent",
+                verdict: "equivalent",
                 feedback: "Das drückt dieselbe Einladung natürlich aus, ohne die Aktivität zu nennen.",
               }),
             },
@@ -248,11 +251,73 @@ test("accepts a semantically equivalent Spanish Buddy translation", async () => 
 
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), {
+      verdict: "equivalent",
       correct: true,
       equivalence: "equivalent",
       feedback: "Das drückt dieselbe Einladung natürlich aus, ohne die Aktivität zu nennen.",
     });
     assert.equal(response.headers.get("cache-control"), "no-store");
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalApiKey === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = originalApiKey;
+  }
+});
+
+test("distinguishes an almost-correct translation from an incorrect one", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalApiKey = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = "test-key";
+
+  globalThis.fetch = async (input, init) => {
+    assert.equal(String(input), "https://api.openai.com/v1/responses");
+    const requestBody = JSON.parse(String(init?.body));
+    assert.match(requestBody.instructions, /Gehst du was trinken.*almost/i);
+    assert.deepEqual(requestBody.text.format.schema.properties.verdict.enum, ["exact", "equivalent", "almost", "incorrect"]);
+    return Response.json({
+      output: [{
+        type: "message",
+        content: [{
+          type: "output_text",
+          text: JSON.stringify({
+            verdict: "almost",
+            feedback: "Die Absicht ist klar, aber „gehen“ verändert hier die Richtung von „venir“.",
+          }),
+        }],
+      }],
+    });
+  };
+
+  try {
+    const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+    workerUrl.searchParams.set("almost-answer-test", `${process.pid}-${Date.now()}`);
+    const { default: worker } = await import(workerUrl.href);
+    const response = await worker.fetch(
+      new Request("https://henakless.com/spanishbuddy/api/evaluate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          prompt: "¿Vienes a tomar...?",
+          expectedAnswer: "Kommst du etwas ... trinken?",
+          learnerAnswer: "Gehst du was trinken?",
+          exerciseType: "translation",
+          context: "Einladung",
+        }),
+      }),
+      {
+        OPENAI_API_KEY: "test-key",
+        ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) },
+      },
+      { waitUntil() {}, passThroughOnException() {} },
+    );
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+      verdict: "almost",
+      correct: false,
+      equivalence: "almost",
+      feedback: "Die Absicht ist klar, aber „gehen“ verändert hier die Richtung von „venir“.",
+    });
   } finally {
     globalThis.fetch = originalFetch;
     if (originalApiKey === undefined) delete process.env.OPENAI_API_KEY;

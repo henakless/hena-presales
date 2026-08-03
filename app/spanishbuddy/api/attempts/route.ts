@@ -15,7 +15,7 @@ type ItemProgress = {
 
 export async function POST(request: Request) {
   const { ownerId, setCookie } = getOwner(request);
-  let payload: { itemId?: unknown; correct?: unknown; exerciseType?: unknown };
+  let payload: { itemId?: unknown; correct?: unknown; quality?: unknown; exerciseType?: unknown };
 
   try {
     payload = (await request.json()) as typeof payload;
@@ -24,7 +24,8 @@ export async function POST(request: Request) {
   }
 
   const itemId = typeof payload.itemId === "string" ? payload.itemId : "";
-  const correct = payload.correct === true;
+  const quality = payload.quality === "almost" ? "almost" : payload.correct === true || payload.quality === "correct" ? "correct" : "incorrect";
+  const correct = quality === "correct";
   const exerciseType = typeof payload.exerciseType === "string" ? payload.exerciseType.slice(0, 40) : "practice";
   if (!itemId) return jsonWithOwner({ error: "Der Lerneintrag fehlt." }, 400, setCookie);
 
@@ -41,10 +42,10 @@ export async function POST(request: Request) {
     const attempts = item.attempts + 1;
     const correctCount = item.correct_count + (correct ? 1 : 0);
     const gain = Math.max(7, 18 - Math.floor(item.attempts / 2));
-    const mastery = Math.max(0, Math.min(100, item.mastery + (correct ? gain : -20)));
+    const mastery = Math.max(0, Math.min(100, item.mastery + (correct ? gain : quality === "almost" ? -4 : -20)));
     const reviewDays = correct
       ? mastery >= 90 ? 16 : mastery >= 75 ? 8 : mastery >= 55 ? 4 : mastery >= 30 ? 2 : 1
-      : 0;
+      : quality === "almost" ? 1 : 0;
     const nextReview = new Date(Date.now() + reviewDays * 86_400_000).toISOString();
 
     await db.batch([
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
       db.prepare(
         `INSERT INTO spanish_buddy_attempts (id, owner_id, item_id, exercise_type, correct)
          VALUES (?, ?, ?, ?, ?)`,
-      ).bind(crypto.randomUUID(), ownerId, itemId, exerciseType, correct ? 1 : 0),
+      ).bind(crypto.randomUUID(), ownerId, itemId, `${exerciseType}:${quality}`, correct ? 1 : 0),
     ]);
 
     return jsonWithOwner(
