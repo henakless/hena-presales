@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { acceptsAnswer, localAnswerVerdict } from "../../lib/spanish-buddy-answer";
 import {
   ACTIVE_EXERCISE_IDS,
@@ -22,9 +22,11 @@ type Exercise = {
   exerciseType: string;
   label: string;
   item: SavedItem;
+  instruction: string;
+  context: string;
   prompt: string;
   answer: string;
-  helper: string;
+  answerTranslation: string;
   options?: string[];
   acceptedAnswers?: string[];
   gradingFocus?: string;
@@ -39,6 +41,42 @@ type AnswerFeedback = {
 };
 
 type AnswerResult = "correct" | "almost" | "incorrect";
+
+type SunflowerProps = {
+  mastery?: number;
+  className?: string;
+  celebration?: boolean;
+  label?: string;
+};
+
+function Sunflower({ mastery = 100, className = "", celebration = false, label }: SunflowerProps) {
+  const normalizedMastery = Math.max(0, Math.min(100, mastery));
+  const petalCount = normalizedMastery === 100 ? 12 : Math.floor((normalizedMastery / 100) * 12);
+  const accessibleLabel = label ?? `${normalizedMastery}% de dominio, ${petalCount} de 12 pétalos`;
+
+  return (
+    <svg
+      className={`sb-sunflower ${celebration ? "sb-sunflower--celebration" : ""} ${className}`.trim()}
+      viewBox="0 0 64 64"
+      role="img"
+      aria-label={accessibleLabel}
+    >
+      {Array.from({ length: petalCount }, (_, index) => (
+        <g key={index} transform={`rotate(${index * 30} 32 32)`}>
+          <ellipse
+            className="sb-sunflower-petal"
+            cx="32"
+            cy="10.5"
+            rx="5.2"
+            ry="10"
+            style={{ "--sb-petal-index": index } as CSSProperties}
+          />
+        </g>
+      ))}
+      <circle className="sb-sunflower-center" cx="32" cy="32" r="13" />
+    </svg>
+  );
+}
 
 function apiUrl(path: string) {
   const basePath = window.location.pathname.replace(/\/$/, "");
@@ -78,6 +116,8 @@ export default function SpanishBuddy() {
   const [preparingSession, setPreparingSession] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [strongHintRevealed, setStrongHintRevealed] = useState(false);
+  const [answerTranslationOpen, setAnswerTranslationOpen] = useState(false);
+  const [editorMode, setEditorMode] = useState<"detail" | "edit">("detail");
 
   const currentExercise = exercises[exerciseIndex];
   const dueItems = useMemo(
@@ -87,6 +127,22 @@ export default function SpanishBuddy() {
   const averageMastery = items.length
     ? Math.round(items.reduce((sum, item) => sum + item.mastery, 0) / items.length)
     : 0;
+
+  function completeExercisePrompt(exercise: Exercise) {
+    return [exercise.instruction, exercise.context, exercise.prompt].filter(Boolean).join("\n\n");
+  }
+
+  function openLibraryItem(item: SavedItem) {
+    setEditingItem({ ...item, acceptedAnswers: [...item.acceptedAnswers] });
+    setEditorMode("detail");
+  }
+
+  function cancelItemEditing() {
+    if (!editingItem) return;
+    const original = items.find((item) => item.id === editingItem.id);
+    setEditingItem(original ? { ...original, acceptedAnswers: [...original.acceptedAnswers] } : null);
+    setEditorMode("detail");
+  }
 
   async function loadLibrary() {
     try {
@@ -270,6 +326,7 @@ export default function SpanishBuddy() {
       setSessionDone(false);
       setHelpOpen(false);
       setStrongHintRevealed(false);
+      setAnswerTranslationOpen(false);
     } catch (sessionError) {
       setError(sessionError instanceof Error ? sessionError.message : "No se ha podido preparar la práctica.");
     } finally {
@@ -338,7 +395,7 @@ export default function SpanishBuddy() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: currentExercise.prompt,
+          prompt: completeExercisePrompt(currentExercise),
           expectedAnswer: currentExercise.answer,
           learnerAnswer: answer,
           exerciseType: currentExercise.exerciseType,
@@ -395,7 +452,7 @@ export default function SpanishBuddy() {
           attemptId: currentAttemptId,
           itemId: currentExercise.item.id,
           exerciseType: currentExercise.exerciseType,
-          prompt: currentExercise.prompt,
+          prompt: completeExercisePrompt(currentExercise),
           expectedAnswer: currentExercise.answer,
           learnerAnswer: answer,
           assisted: strongHintRevealed,
@@ -466,7 +523,7 @@ export default function SpanishBuddy() {
         ...lesson,
         items: lesson.items.map((item) => item.id === editingItem.id ? editingItem : item),
       })));
-      setEditingItem(null);
+      setEditorMode("detail");
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "No se han podido guardar los cambios.");
     } finally {
@@ -515,6 +572,7 @@ export default function SpanishBuddy() {
     setAnswerJudgedByModel(false);
     setHelpOpen(false);
     setStrongHintRevealed(false);
+    setAnswerTranslationOpen(false);
   }
 
   function closeSession() {
@@ -528,13 +586,14 @@ export default function SpanishBuddy() {
     setAnswerJudgedByModel(false);
     setHelpOpen(false);
     setStrongHintRevealed(false);
+    setAnswerTranslationOpen(false);
   }
 
   return (
     <main className="sb-app" lang="es">
       <header className="sb-header">
         <button className="sb-brand" onClick={() => { setView("today"); closeSession(); }} aria-label="Inicio de Spanish Buddy">
-          <span className="sb-brand-mark" aria-hidden="true"><i /></span>
+          <Sunflower className="sb-brand-mark" label="Spanish Buddy" />
           <span>Spanish Buddy<small>Tu curso, contigo.</small></span>
         </button>
         <nav aria-label="Navegación principal">
@@ -552,11 +611,17 @@ export default function SpanishBuddy() {
         <div className="sb-shell">
           <section className="sb-welcome">
             <div>
-              <p className="sb-eyebrow">Hoy · tu plan adaptativo</p>
-              <h1>Tu curso,<br /><em>recordado.</em></h1>
+              <div className="sb-welcome-title">
+                <h1>Tu curso,<br /><em>recordado.</em></h1>
+                <Sunflower className="sb-title-flower" label="Girasol de Spanish Buddy" />
+              </div>
               <p>Tus propios apuntes se convierten en la práctica que necesitas hoy.</p>
             </div>
-            <div className="sb-orbit" aria-hidden="true"><span>{averageMastery}%</span><small>conocimiento</small></div>
+            <div className="sb-orbit">
+              <Sunflower mastery={averageMastery} label={`Dominio general: ${averageMastery}%`} />
+              <span>{averageMastery}%</span>
+              <small>conocimiento</small>
+            </div>
           </section>
 
           <section className="sb-dashboard-grid">
@@ -577,7 +642,10 @@ export default function SpanishBuddy() {
               <div className="sb-stat-row"><strong>{items.length}</strong><span>palabras y reglas</span></div>
               <div className="sb-stat-row"><strong>{lessons.length}</strong><span>lecciones del curso</span></div>
               <div className="sb-stat-row"><strong>{items.filter((item) => item.mastery >= 62).length}</strong><span>ya dominas</span></div>
-              <div className="sb-meter"><span style={{ width: `${averageMastery}%` }} /></div>
+              <div className="sb-growth-meter">
+                <Sunflower mastery={averageMastery} label={`Progreso de tu base: ${averageMastery}%`} />
+                <div className="sb-meter"><span style={{ width: `${averageMastery}%` }} /></div>
+              </div>
               <small>El dominio crece al recordar activamente, no solo al leer.</small>
             </aside>
           </section>
@@ -644,8 +712,8 @@ export default function SpanishBuddy() {
                       <div className="sb-item-badges"><span>{item.kind === "grammar" ? "Gramática" : "Vocabulario"}</span><span>{item.provenance === "suggested" ? "Sugerencia relacionada" : "De tu lección"}</span>{item.confidence !== "high" && <span className="warning">Revisión {item.confidence === "low" ? "necesaria" : "recomendada"}</span>}</div>
                       <input aria-label="Español" value={item.spanish} onChange={(event) => updateExtractedItem(item.id, { spanish: event.target.value, acceptedAnswers: [] })} />
                       <input aria-label="Traducción" value={item.translation} onChange={(event) => updateExtractedItem(item.id, { translation: event.target.value, acceptedAnswers: [] })} placeholder="Traducción o etiqueta" />
-                      {item.kind === "grammar" && <textarea aria-label="Explicación" value={item.explanation} onChange={(event) => updateExtractedItem(item.id, { explanation: event.target.value })} placeholder="Explicación breve" />}
-                      <input className={item.kind === "vocabulary" ? "sb-field-wide" : ""} aria-label="Ejemplo" value={item.example} onChange={(event) => updateExtractedItem(item.id, { example: event.target.value })} placeholder="Frase de ejemplo" />
+                      <textarea className="sb-field-wide" aria-label={item.kind === "grammar" ? "Explicación" : "Nota de uso"} value={item.explanation} onChange={(event) => updateExtractedItem(item.id, { explanation: event.target.value })} placeholder={item.kind === "grammar" ? "Explicación breve de la regla" : "Nota de uso, si es útil"} />
+                      <input className="sb-field-wide" aria-label="Ejemplo" value={item.example} onChange={(event) => updateExtractedItem(item.id, { example: event.target.value })} placeholder="Frase de ejemplo" />
                     </div>
                   </article>
                 ))}
@@ -665,11 +733,11 @@ export default function SpanishBuddy() {
               <div className="sb-library-items">
                 {lesson.items.map((item) => (
                   <article key={item.id}>
-                    <button className="sb-library-item-button" onClick={() => setEditingItem(item)} aria-label={`Abrir y editar ${item.spanish}`}>
+                    <button className="sb-library-item-button" onClick={() => openLibraryItem(item)} aria-label={`Abrir ${item.spanish}`}>
                       <div><span>{item.kind === "grammar" ? "Regla" : item.learningType === "fixed_expression" ? "Expresión" : "Palabra"}</span>{item.provenance === "suggested" && <small>Sugerencia</small>}</div>
                       <h3>{item.spanish}</h3><p lang="de">{item.translation || item.explanation}</p>
                       {item.kind === "grammar" && item.example && <p className="sb-card-example">Ejemplo: {item.example}</p>}
-                      <div className="sb-item-mastery"><span><i style={{ width: `${item.mastery}%` }} /></span><small>{masteryLabel(item.mastery)} · {item.mastery}%</small></div>
+                      <div className="sb-item-mastery"><Sunflower mastery={item.mastery} label={`${item.spanish}: ${item.mastery}% de dominio`} /><span><i style={{ width: `${item.mastery}%` }} /></span><small>{masteryLabel(item.mastery)} · {item.mastery}%</small></div>
                     </button>
                   </article>
                 ))}
@@ -733,34 +801,49 @@ export default function SpanishBuddy() {
       )}
 
       {editingItem && (
-        <div className="sb-editor-backdrop" role="dialog" aria-modal="true" aria-label={`Editar ${editingItem.spanish}`}>
-          <form className="sb-item-editor" onSubmit={saveEditedItem}>
-            <div className="sb-editor-head"><div><p className="sb-eyebrow">Contenido de tu biblioteca</p><h2>{editingItem.kind === "grammar" ? "Detalle de gramática" : "Editar vocabulario"}</h2></div><button type="button" onClick={() => setEditingItem(null)} aria-label="Cerrar">×</button></div>
-            <div className="sb-editor-grid">
-              <label><span>Tipo de contenido</span><select value={editingItem.learningType} onChange={(event) => setEditingItem({ ...editingItem, learningType: event.target.value as SavedItem["learningType"] })}><option value="word">Palabra</option><option value="collocation">Combinación de palabras</option><option value="fixed_expression">Expresión fija</option><option value="sentence_pattern">Estructura de frase</option><option value="grammar_rule">Regla gramatical</option><option value="conjugation">Conjugación</option></select></label>
-              <label><span>Español</span><input value={editingItem.spanish} onChange={(event) => setEditingItem({ ...editingItem, spanish: event.target.value })} required /><small>En los verbos, incluye la preposición: hablar con, ir a, depender de…</small></label>
-              <label><span>Traducción de tus apuntes</span><input lang="de" value={editingItem.translation} onChange={(event) => setEditingItem({ ...editingItem, translation: event.target.value, acceptedAnswers: [] })} /></label>
-              <label className="wide"><span>{editingItem.kind === "grammar" ? "Explicación de la regla" : "Nota de uso"}</span><textarea lang="de" value={editingItem.explanation} onChange={(event) => setEditingItem({ ...editingItem, explanation: event.target.value })} placeholder={editingItem.kind === "grammar" ? "Formación, uso y excepciones" : "Solo si hace falta aclarar el uso"} /></label>
-              <label className="wide"><span>Ejemplo en español</span><textarea value={editingItem.example} onChange={(event) => setEditingItem({ ...editingItem, example: event.target.value })} placeholder="Una frase clara que muestre el uso" /></label>
-              <label className="wide"><span>Respuestas alternativas aceptadas</span><textarea lang="de" value={editingItem.acceptedAnswers.join("\n")} onChange={(event) => setEditingItem({ ...editingItem, acceptedAnswers: event.target.value.split("\n").map((value) => value.trim()).filter(Boolean) })} placeholder="Una alternativa por línea" /></label>
-            </div>
-            <div className="sb-editor-actions"><button type="button" onClick={() => setEditingItem(null)}>Cancelar</button><button className="sb-primary" disabled={savingItem}>{savingItem ? "Guardando…" : "Guardar cambios"}<span>→</span></button></div>
-          </form>
+        <div className="sb-editor-backdrop" role="dialog" aria-modal="true" aria-label={`${editingItem.kind === "grammar" ? "Regla" : "Vocabulario"}: ${editingItem.spanish}`}>
+          {editorMode === "detail" ? (
+            <section className="sb-item-editor sb-item-detail">
+              <div className="sb-editor-head">
+                <div><p className="sb-eyebrow">{editingItem.kind === "grammar" ? "Mini lección de gramática" : "Contenido de vocabulario"}</p><h2>{editingItem.spanish}</h2></div>
+                <div className="sb-editor-head-actions"><button type="button" className="sb-edit-symbol" onClick={() => setEditorMode("edit")} aria-label="Editar este contenido">✎</button><button type="button" onClick={() => setEditingItem(null)} aria-label="Cerrar">×</button></div>
+              </div>
+              {editingItem.translation && <p className="sb-detail-translation" lang="de">{editingItem.translation}</p>}
+              <div className="sb-learning-blocks">
+                {editingItem.explanation && <section><span>{editingItem.kind === "grammar" ? "Cómo funciona" : "Cómo se usa"}</span><p lang="de">{editingItem.explanation}</p></section>}
+                {editingItem.example && <section className="sb-detail-example"><span>Ejemplo</span><p lang="es">{editingItem.example}</p></section>}
+                {!editingItem.explanation && !editingItem.example && <p className="sb-detail-empty">Todavía no hay una explicación o un ejemplo guardado para este contenido.</p>}
+              </div>
+              <div className="sb-detail-footer"><Sunflower mastery={editingItem.mastery} label={`${editingItem.mastery}% de dominio`} /><div><strong>{masteryLabel(editingItem.mastery)}</strong><span>{editingItem.mastery}% de dominio</span></div></div>
+            </section>
+          ) : (
+            <form className="sb-item-editor" onSubmit={saveEditedItem}>
+              <div className="sb-editor-head"><div><p className="sb-eyebrow">Editar contenido</p><h2>{editingItem.kind === "grammar" ? "Regla gramatical" : "Vocabulario"}</h2></div><button type="button" onClick={() => setEditingItem(null)} aria-label="Cerrar">×</button></div>
+              <div className="sb-editor-grid">
+                <label><span>Tipo de contenido</span><select value={editingItem.learningType} onChange={(event) => setEditingItem({ ...editingItem, learningType: event.target.value as SavedItem["learningType"] })}><option value="word">Palabra</option><option value="collocation">Combinación de palabras</option><option value="fixed_expression">Expresión fija</option><option value="sentence_pattern">Estructura de frase</option><option value="grammar_rule">Regla gramatical</option><option value="conjugation">Conjugación</option></select></label>
+                <label><span>Español</span><input value={editingItem.spanish} onChange={(event) => setEditingItem({ ...editingItem, spanish: event.target.value })} required /><small>En los verbos, incluye la preposición: hablar con, ir a, depender de…</small></label>
+                <label><span>Traducción de tus apuntes</span><input lang="de" value={editingItem.translation} onChange={(event) => setEditingItem({ ...editingItem, translation: event.target.value, acceptedAnswers: [] })} /></label>
+                <label className="wide"><span>{editingItem.kind === "grammar" ? "Explicación de la regla" : "Nota de uso"}</span><textarea lang="de" value={editingItem.explanation} onChange={(event) => setEditingItem({ ...editingItem, explanation: event.target.value })} placeholder={editingItem.kind === "grammar" ? "Formación, uso y excepciones" : "Solo si hace falta aclarar el uso"} /></label>
+                <label className="wide"><span>Ejemplo en español</span><textarea value={editingItem.example} onChange={(event) => setEditingItem({ ...editingItem, example: event.target.value })} placeholder="Una frase clara que muestre el uso" /></label>
+                <label className="wide"><span>Respuestas alternativas aceptadas</span><textarea lang="de" value={editingItem.acceptedAnswers.join("\n")} onChange={(event) => setEditingItem({ ...editingItem, acceptedAnswers: event.target.value.split("\n").map((value) => value.trim()).filter(Boolean) })} placeholder="Una alternativa por línea" /></label>
+              </div>
+              <div className="sb-editor-actions"><button type="button" onClick={cancelItemEditing}>Cancelar</button><button className="sb-primary" disabled={savingItem}>{savingItem ? "Guardando…" : "Guardar cambios"}<span>→</span></button></div>
+            </form>
+          )}
         </div>
       )}
 
       {exercises.length > 0 && (
         <div className="sb-practice" role="dialog" aria-modal="true" aria-label="Práctica diaria">
-          <header><button onClick={closeSession} aria-label="Cerrar práctica">×</button><div><span style={{ width: `${sessionDone ? 100 : ((exerciseIndex + 1) / exercises.length) * 100}%` }} /></div><small>{sessionDone ? exercises.length : exerciseIndex + 1} / {exercises.length}</small></header>
+          <header><button onClick={closeSession} aria-label="Cerrar práctica">×</button><Sunflower className="sb-practice-flower" mastery={sessionDone ? 100 : Math.round(((exerciseIndex + 1) / exercises.length) * 100)} label="Progreso de la práctica" /><div><span style={{ width: `${sessionDone ? 100 : ((exerciseIndex + 1) / exercises.length) * 100}%` }} /></div><small>{sessionDone ? exercises.length : exerciseIndex + 1} / {exercises.length}</small></header>
           {sessionDone ? (
-            <section className="sb-session-summary"><p className="sb-eyebrow">Práctica terminada</p><div className="sb-summary-score"><strong>{sessionCorrect}/{exercises.length}</strong><span>recordados{sessionAlmost > 0 ? ` · ${sessionAlmost} casi` : ""}</span></div><h2>Bien hecho. La próxima práctica ya está mejor adaptada.</h2><p>Lo que todavía cuesta vuelve antes; lo que ya dominas recibe más espacio.</p><button className="sb-primary" onClick={closeSession}>Volver a Hoy <span>→</span></button></section>
+            <section className="sb-session-summary"><p className="sb-eyebrow">Práctica terminada</p><div className="sb-completion-bloom"><Sunflower celebration label="Sesión completada: el girasol ha florecido" /><strong>{sessionCorrect}/{exercises.length}</strong><span>recordados{sessionAlmost > 0 ? ` · ${sessionAlmost} casi` : ""}</span><i className="sb-bloom-spark sb-bloom-spark-one" aria-hidden="true" /><i className="sb-bloom-spark sb-bloom-spark-two" aria-hidden="true" /><i className="sb-bloom-spark sb-bloom-spark-three" aria-hidden="true" /></div><h2>Bien hecho. La próxima práctica ya está mejor adaptada.</h2><p>Lo que todavía cuesta vuelve antes; lo que ya dominas recibe más espacio.</p><button className="sb-primary" onClick={closeSession}>Volver a Hoy <span>→</span></button></section>
           ) : currentExercise && (
             <section className="sb-exercise">
               <div className="sb-exercise-meta"><span>{currentExercise.label}</span><span>{currentExercise.item.lessonTitle}</span></div>
               <div className="sb-exercise-card">
-                <p>{currentExercise.helper}</p>
-                <div className="sb-prompt-row">
-                  <h2>{currentExercise.prompt}</h2>
+                <div className="sb-task-row">
+                  <div className="sb-task-instruction"><small>Tu tarea</small><p>{currentExercise.instruction}</p></div>
                   <button className="sb-info-button" type="button" aria-label="Información y ayuda en alemán" aria-expanded={helpOpen} onClick={() => setHelpOpen((value) => !value)}>i</button>
                 </div>
                 {helpOpen && (
@@ -774,6 +857,8 @@ export default function SpanishBuddy() {
                     )}
                   </aside>
                 )}
+                {currentExercise.context && <div className="sb-exercise-context" lang="es">{currentExercise.context}</div>}
+                <h2 className={currentExercise.context ? "sb-context-question" : ""}>{currentExercise.prompt}</h2>
                 {currentExercise.options?.length ? (
                   <div className="sb-options">{currentExercise.options.map((option) => <button className={revealed ? acceptsAnswer(option, currentExercise.answer, currentExercise.item.acceptedAnswers ?? []) ? "correct" : option === answer ? "incorrect" : "" : ""} key={option} onClick={() => chooseAnswer(option)}>{option}</button>)}</div>
                 ) : !revealed ? (
@@ -781,7 +866,8 @@ export default function SpanishBuddy() {
                 ) : (
                   <div className="sb-submitted-answer"><small>Tu respuesta</small><strong>{answer}</strong></div>
                 )}
-                {revealed && answerFeedback && <div className={`sb-feedback ${needsManualReview ? "review" : result}`}><span>{result === "correct" ? "✓" : result === "almost" ? "≈" : needsManualReview ? "?" : "→"}</span><div><strong>{answerFeedback.title}</strong><p>{answerFeedback.message}</p>{result && <p className="sb-reference">Respuesta de referencia: {currentExercise.answer}</p>}{result === "incorrect" && answerJudgedByModel && <div className="sb-review-choice"><button disabled={recordingAttempt || overridingAnswer} onClick={markJudgedAnswerCorrect}>{overridingAnswer ? "Guardando…" : recordingAttempt ? "Espera un momento…" : "Marcar mi respuesta como correcta"}</button></div>}{needsManualReview && <div className="sb-review-choice"><button onClick={() => resolveManualReview(true)}>Marcar como correcta</button><button onClick={() => resolveManualReview(false)}>Usar la referencia</button></div>}</div></div>}
+                {revealed && answerFeedback && <div className={`sb-feedback ${needsManualReview ? "review" : result}`}><span>{result === "correct" ? "✓" : result === "almost" ? "≈" : needsManualReview ? "?" : "→"}</span><div><strong>{answerFeedback.title}</strong><p>{answerFeedback.message}</p>{result && <div className="sb-reference-block"><p className="sb-reference">Respuesta de referencia: {currentExercise.answer}</p><button type="button" aria-expanded={answerTranslationOpen} onClick={() => setAnswerTranslationOpen((value) => !value)}>{answerTranslationOpen ? "Ocultar alemán" : "Ver en alemán"}</button>{answerTranslationOpen && <p className="sb-answer-translation" lang="de">{currentExercise.answerTranslation}</p>}</div>}{needsManualReview && <div className="sb-review-choice"><button onClick={() => resolveManualReview(true)}>Marcar como correcta</button><button onClick={() => resolveManualReview(false)}>Usar la referencia</button></div>}</div></div>}
+                {result === "incorrect" && answerJudgedByModel && <div className="sb-override-option"><span>¿La evaluación no encaja?</span><button disabled={recordingAttempt || overridingAnswer} onClick={markJudgedAnswerCorrect}>{overridingAnswer ? "Guardando…" : recordingAttempt ? "Espera un momento…" : "Marcar mi respuesta como correcta"}</button></div>}
                 {result && strongHintRevealed && <p className="sb-assisted-note">Con ayuda · esta respuesta aporta menos evidencia de dominio.</p>}
                 {result && <button className="sb-next" disabled={overridingAnswer} onClick={nextExercise}>{exerciseIndex + 1 === exercises.length ? "Ver resultado" : "Continuar"} →</button>}
               </div>

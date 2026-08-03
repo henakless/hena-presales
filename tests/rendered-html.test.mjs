@@ -164,6 +164,7 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(html, /Spanish Buddy · Tu curso, contigo/i);
   assert.match(html, /Tu curso,/i);
   assert.match(html, /recordado\./i);
+  assert.doesNotMatch(html, /Hoy · tu plan adaptativo/i);
   assert.match(html, /Añadir la primera lección/i);
   assert.match(html, /Tu curso, contigo/i);
   assert.doesNotMatch(html, /twitter:title[^>]*Meet Hena/i);
@@ -177,13 +178,16 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(pageSource, /localAnswerVerdict/i);
   assert.match(pageSource, /acceptedAnswers/i);
   assert.match(pageSource, /sb-submitted-answer/i);
-  assert.match(pageSource, /item\.kind === "grammar" && <textarea/i);
+  assert.match(pageSource, /Nota de uso, si es útil/i);
   assert.match(pageSource, /EXERCISE_LIBRARY/i);
   assert.match(pageSource, /Deseleccionar todos/i);
   assert.match(pageSource, /selectedExerciseTypes/i);
   assert.match(pageSource, /apiUrl\("practice"\)/i);
   assert.match(pageSource, /Información y ayuda en alemán/i);
   assert.match(pageSource, /Mostrar más ayuda/i);
+  assert.match(pageSource, /Mini lección de gramática/i);
+  assert.match(pageSource, /Ver en alemán/i);
+  assert.match(pageSource, /sb-exercise-context/i);
   assert.match(pageSource, /strongHintRevealed/i);
   assert.doesNotMatch(pageSource, /Descubrir la respuesta|Piensa la respuesta antes/i);
   assert.match(pageSource, /saveEditedItem/i);
@@ -199,6 +203,8 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(extractionSource, /acceptedAnswers/i);
   assert.match(extractionSource, /natural reference-language synonyms/i);
   assert.match(extractionSource, /hablar con, ir a, alojarse en/i);
+  assert.match(extractionSource, /create one short, natural A2-B1 Spanish example sentence/i);
+  assert.match(extractionSource, /common collocation, a false friend, gender/i);
 
   const exerciseLibrarySource = await readFile(new URL("../lib/spanish-buddy-exercises.ts", import.meta.url), "utf8");
   assert.match(exerciseLibrarySource, /Recuerdo escrito/i);
@@ -213,6 +219,9 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(practiceSource, /germanSupport/i);
   assert.match(practiceSource, /grammarReminder/i);
   assert.match(practiceSource, /strongerHint/i);
+  assert.match(practiceSource, /answerTranslation/i);
+  assert.match(practiceSource, /Never use underscores, blanks, dice metaphors/i);
+  assert.match(practiceSource, /Never repeat the instruction inside prompt or context/i);
 
   const attemptSource = await readFile(new URL("../app/spanishbuddy/api/attempts/route.ts", import.meta.url), "utf8");
   assert.match(attemptSource, /action === "override"/i);

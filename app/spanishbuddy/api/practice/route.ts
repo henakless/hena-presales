@@ -33,9 +33,11 @@ const PRACTICE_SCHEMA = {
           itemId: { type: "string" },
           exerciseType: { type: "string", enum: ACTIVE_EXERCISE_IDS },
           label: { type: "string" },
-          helper: { type: "string" },
+          instruction: { type: "string" },
+          context: { type: "string" },
           prompt: { type: "string" },
           answer: { type: "string" },
+          answerTranslation: { type: "string" },
           options: { type: "array", maxItems: 4, items: { type: "string" } },
           acceptedAnswers: { type: "array", maxItems: 6, items: { type: "string" } },
           gradingFocus: { type: "string" },
@@ -43,7 +45,7 @@ const PRACTICE_SCHEMA = {
           grammarReminder: { type: "string" },
           strongerHint: { type: "string" },
         },
-        required: ["itemId", "exerciseType", "label", "helper", "prompt", "answer", "options", "acceptedAnswers", "gradingFocus", "germanSupport", "grammarReminder", "strongerHint"],
+        required: ["itemId", "exerciseType", "label", "instruction", "context", "prompt", "answer", "answerTranslation", "options", "acceptedAnswers", "gradingFocus", "germanSupport", "grammarReminder", "strongerHint"],
       },
     },
   },
@@ -72,9 +74,11 @@ type PracticeExercise = {
   itemId: string;
   exerciseType: string;
   label: string;
-  helper: string;
+  instruction: string;
+  context: string;
   prompt: string;
   answer: string;
+  answerTranslation: string;
   options: string[];
   acceptedAnswers: string[];
   gradingFocus: string;
@@ -173,10 +177,12 @@ function interleavedDefinitions(selectedIds: string[], useCounts: Map<string, nu
 function normalizeExercise(value: PracticeExercise, planned: { item: SavedItem; exerciseType: string }) {
   if (value.itemId !== planned.item.id || value.exerciseType !== planned.exerciseType) return null;
   const prompt = clean(value.prompt, 900);
+  const instruction = clean(value.instruction, 260);
   const answer = clean(value.answer, 600);
+  const answerTranslation = clean(value.answerTranslation, 700);
   const germanSupport = clean(value.germanSupport, 700);
   const strongerHint = clean(value.strongerHint, 700);
-  if (!prompt || !answer || !germanSupport || !strongerHint) return null;
+  if (!instruction || !prompt || !answer || !answerTranslation || !germanSupport || !strongerHint) return null;
   const options = Array.isArray(value.options)
     ? [...new Set(value.options.map((entry) => clean(entry, 240)).filter(Boolean))].slice(0, 4)
     : [];
@@ -188,9 +194,11 @@ function normalizeExercise(value: PracticeExercise, planned: { item: SavedItem; 
     itemId: planned.item.id,
     exerciseType: planned.exerciseType,
     label: clean(value.label, 80) || "Práctica",
-    helper: clean(value.helper, 220),
+    instruction,
+    context: clean(value.context, 1400),
     prompt,
     answer,
+    answerTranslation,
     options: options.slice(0, 4),
     acceptedAnswers: Array.isArray(value.acceptedAnswers)
       ? [...new Set(value.acceptedAnswers.map((entry) => clean(entry, 300)).filter(Boolean))].slice(0, 6)
@@ -342,10 +350,12 @@ export async function POST(request: Request) {
               "Use the supplied exercise rule as a hard quality requirement. Do not merely paraphrase the catalogue example.",
               "For multiple choice, provide exactly four similarly plausible options from the same semantic or grammatical field. The correct answer must appear exactly once. Otherwise return an empty options array.",
               "For sentence production, use a word, collocation, or grammar constraint as the cue, never a complete target sentence. The answer is one natural reference example, not the only valid wording.",
-              "For reading, write an original compact passage of 45-90 Spanish words using lesson concepts, then include the question in the prompt. Never reproduce a textbook passage.",
+              "Use instruction, context, and prompt consistently. instruction is only the short action the learner must perform, in Spanish. context is only the passage, dialogue, example sentence, or situation the learner works with; use an empty string when no separate context is needed. prompt is only the concrete word, gap, conjugation cue, or question to answer. Never repeat the instruction inside prompt or context.",
+              "For reading, write an original compact passage of 45-90 Spanish words in context, put the direct comprehension question in prompt, and put the action (for example Lee el texto y responde) in instruction. Never reproduce a textbook passage.",
               "Keep one clear learning objective per exercise. Make context sufficient, accept natural alternatives, and avoid trivia or guessable distractors.",
               "gradingFocus must state briefly what should be graded strictly and what natural variation is acceptable.",
-              "germanSupport must always contain concise German support for the prompt. Translate or gloss the surrounding Spanish, but replace the exact tested word, form, or decisive answer with a blank so this first level never spoils the exercise.",
+              "answerTranslation must always be a natural, exact German translation of the reference answer. If the reference answer is already German, repeat it unchanged.",
+              "germanSupport must always be concise, idiomatic German support for understanding the situation or task without revealing the reference answer. Never use underscores, blanks, dice metaphors, literal UI instructions, or awkward word-for-word translations. If the task itself is German-to-Spanish, briefly clarify the intended meaning or register instead of repeating it.",
               "grammarReminder must be one short German sentence explaining what a named tense or grammar concept means and when it is used, without giving the requested ending, conjugated form, or correct option. Return an empty string only when no grammar concept is involved.",
               "strongerHint must always contain a more explicit German translation or answer-level hint. It may reveal enough to make the task easier because the product records its use as assisted practice.",
             ].join("\n\n"),
@@ -354,7 +364,7 @@ export async function POST(request: Request) {
               verbosity: "low",
               format: { type: "json_schema", name: "spanish_practice_session", strict: true, schema: PRACTICE_SCHEMA },
             },
-            max_output_tokens: 2600,
+            max_output_tokens: 3600,
           }),
         });
         const body = await openaiResponse.json() as OpenAIResponse;
