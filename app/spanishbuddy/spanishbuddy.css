@@ -366,12 +366,12 @@
 .sb-sync-connected p { margin: 4px 0 0; color: var(--sb-muted); font-size: 10px; }
 
 @media (max-width: 860px) {
-  .sb-header { grid-template-columns: 1fr auto; }
-  .sb-header nav { position: fixed; right: 0; bottom: 0; left: 0; z-index: 80; height: 62px; justify-content: space-around; gap: 0; border-top: 1px solid var(--sb-line); background: var(--sb-paper); }
-  .sb-header nav button { flex: 1; }
+  .sb-header { grid-template-columns: minmax(0, 1fr) auto; background: var(--sb-bg); backdrop-filter: none; }
+  .sb-header nav { position: fixed; right: 0; bottom: 0; left: 0; z-index: 80; height: calc(64px + env(safe-area-inset-bottom)); justify-content: space-around; gap: 0; padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid var(--sb-line); background: var(--sb-paper); box-shadow: 0 -5px 18px rgba(32, 34, 29, .08); }
+  .sb-header nav button { min-width: 0; min-height: 44px; flex: 1; font-size: 10px; }
   .sb-header nav button::after { top: 0; bottom: auto; }
   .sb-level small i { display: none; }
-  .sb-app { padding-bottom: 62px; }
+  .sb-app { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
   .sb-welcome { grid-template-columns: 1fr; }
   .sb-orbit { display: none; }
   .sb-dashboard-grid { grid-template-columns: 1fr; }
@@ -391,17 +391,25 @@
 }
 
 @media (max-width: 560px) {
-  .sb-header { min-height: 68px; padding-inline: 16px; }
-  .sb-brand-mark { width: 36px; height: 36px; flex-basis: 36px; }
+  .sb-header { min-height: 64px; padding: env(safe-area-inset-top) 14px 0; }
+  .sb-brand { gap: 9px; }
+  .sb-brand-mark { width: 34px; height: 34px; flex-basis: 34px; }
+  .sb-brand > span:last-child { font-size: 12px; }
+  .sb-brand small { display: none; }
   .sb-account-tools { gap: 0; }
-  .sb-shell { padding: 43px 16px 75px; }
+  .sb-level { min-height: 42px; gap: 7px; padding: 4px 9px 4px 5px; border: 1px solid var(--sb-line); border-radius: 999px; background: var(--sb-paper); }
+  .sb-level span { width: 30px; height: 30px; border: 0; background: #eef1e8; font-size: 12px; }
+  .sb-level small b { font-size: 8px; letter-spacing: .05em; }
+  .sb-shell { padding: 34px 16px calc(92px + env(safe-area-inset-bottom)); }
   .sb-welcome h1, .sb-add-intro h1, .sb-library-heading h1 { font-size: 48px; }
   .sb-welcome-title { grid-template-columns: max-content 1fr; gap: 8px; }
   .sb-kicker-flower { width: 82px; height: 82px; justify-self: center; }
-  .sb-dashboard-grid { margin-top: 43px; }
-  .sb-daily-card { min-height: 385px; padding: 26px; box-shadow: 6px 6px 0 var(--sb-ink); }
-  .sb-daily-copy h2 { font-size: 34px; }
-  .sb-recents { margin-top: 70px; }
+  .sb-dashboard-grid { margin-top: 36px; }
+  .sb-daily-card { min-height: 365px; padding: 24px; box-shadow: 6px 6px 0 var(--sb-ink); }
+  .sb-daily-copy h2 { font-size: 33px; }
+  .sb-daily-card .sb-primary { min-height: 58px; }
+  .sb-progress-card { min-height: 0; padding: 28px; }
+  .sb-recents { margin-top: 56px; }
   .sb-section-heading { align-items: start; }
   .sb-starter-empty { align-items: stretch; flex-direction: column; }
   .sb-capture, .sb-review { box-shadow: 6px 6px 0 var(--sb-ink); }
@@ -411,12 +419,13 @@
   .sb-item-fields { grid-template-columns: 1fr; }
   .sb-item-badges { grid-column: 1; }
   .sb-review-actions { align-items: stretch; flex-direction: column; padding: 16px 18px; }
-  .sb-library-heading { align-items: stretch; flex-direction: column; margin-bottom: 50px; }
+  .sb-add-intro { margin-bottom: 38px; }
+  .sb-library-heading { align-items: stretch; flex-direction: column; margin-bottom: 38px; }
   .sb-library-heading .sb-primary { width: 100%; }
   .sb-library-lesson-head { align-items: start; flex-direction: column; gap: 14px; }
   .sb-library-items { grid-template-columns: 1fr; }
   .sb-library-items article { border-left: 1px solid var(--sb-line) !important; }
-  .sb-exercise-library-intro { margin-bottom: 58px; }
+  .sb-exercise-library-intro { margin-bottom: 48px; }
   .sb-exercise-library-intro h1 { font-size: 48px; }
   .sb-selection-panel { max-width: none; }
   .sb-exercise-category-head { align-items: start; }
@@ -438,7 +447,7 @@
   .sb-answer-form { grid-template-columns: 1fr; gap: 8px; }
   .sb-answer-form button { min-height: 48px; }
   .sb-editor-backdrop { padding: 12px; }
-  .sb-item-editor { max-height: calc(100vh - 86px); }
+  .sb-item-editor { max-height: calc(100dvh - 24px); padding: 24px 20px; }
   .sb-item-detail .sb-editor-head h2 { font-size: 38px; }
   .sb-editor-grid { grid-template-columns: 1fr; }
   .sb-editor-grid label.wide { grid-column: 1; }
