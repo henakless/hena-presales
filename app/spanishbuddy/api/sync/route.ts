@@ -21,22 +21,9 @@ function bytesToUuid(bytes: Uint8Array) {
 
 async function syncedOwnerId(passphrase: string) {
   const encoder = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(passphrase.normalize("NFKC")),
-    "PBKDF2",
-    false,
-    ["deriveBits"],
-  );
-  const digest = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      hash: "SHA-256",
-      iterations: 120_000,
-      salt: encoder.encode("spanish-buddy-sync-v1"),
-    },
-    keyMaterial,
-    128,
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    encoder.encode(`spanish-buddy-sync-v2\0${passphrase.normalize("NFKC")}`),
   );
   return bytesToUuid(new Uint8Array(digest));
 }

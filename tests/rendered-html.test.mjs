@@ -197,8 +197,8 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(pageSource, /apiUrl\("sync"\)/i);
 
   const syncSource = await readFile(new URL("../app/spanishbuddy/api/sync/route.ts", import.meta.url), "utf8");
-  assert.match(syncSource, /PBKDF2/i);
-  assert.match(syncSource, /crypto\.subtle\.deriveBits/i);
+  assert.match(syncSource, /spanish-buddy-sync-v2/i);
+  assert.match(syncSource, /crypto\.subtle\.digest/i);
   assert.match(syncSource, /spanish_buddy_sync_profiles/i);
   assert.doesNotMatch(syncSource, /INSERT[^\n]+passphrase/i);
 
