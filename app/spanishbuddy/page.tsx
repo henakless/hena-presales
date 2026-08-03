@@ -613,7 +613,7 @@ export default function SpanishBuddy() {
             <div>
               <div className="sb-welcome-title">
                 <h1>Tu curso,<br /><em>recordado.</em></h1>
-                <Sunflower className="sb-title-flower" label="Girasol de Spanish Buddy" />
+                <Sunflower className="sb-kicker-flower" label="Girasol de Spanish Buddy" />
               </div>
               <p>Tus propios apuntes se convierten en la práctica que necesitas hoy.</p>
             </div>
