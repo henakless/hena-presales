@@ -13,6 +13,14 @@
   "vars": {
     "OPENAI_MODEL": "gpt-5.6-terra"
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "spanish-buddy",
+      "database_id": "d7cb72bd-ee16-40c2-aec4-0b25aa4194cd",
+      "migrations_dir": "drizzle"
+    }
+  ],
   "ratelimits": [
     {
       "name": "BRIEFING_RATE_LIMITER",
