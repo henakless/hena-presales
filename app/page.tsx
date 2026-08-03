@@ -203,16 +203,12 @@ export default function Home() {
   );
 
   useEffect(() => {
-    if (!briefing) {
-      setClosingPhase("idle");
-      return;
-    }
+    if (!briefing) return;
 
     const closingChat = closingChatRef.current;
     if (!closingChat) return;
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setClosingPhase("sent");
       return;
     }
 
@@ -238,6 +234,7 @@ export default function Home() {
     requestRef.current?.abort();
     requestRef.current = null;
     setBriefing(null);
+    setClosingPhase("idle");
     setGuardrail(null);
     setError("");
     setIsPreparing(false);
@@ -251,6 +248,7 @@ export default function Home() {
     const controller = new AbortController();
     requestRef.current = controller;
     setBriefing(null);
+    setClosingPhase("idle");
     setGuardrail(null);
     setError("");
     setIsPreparing(true);
@@ -278,6 +276,9 @@ export default function Home() {
         throw new Error(result.error ?? "The briefing could not be generated.");
       }
 
+      setClosingPhase(
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "sent" : "idle",
+      );
       setBriefing(result.briefing);
       window.setTimeout(() => briefingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
     } catch (requestError) {

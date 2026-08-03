@@ -55,8 +55,29 @@ test("server-renders the AI discovery experience", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
+  assert.equal(
+    response.headers.get("x-robots-tag"),
+    "noindex, nofollow, noarchive, nosnippet, noimageindex",
+  );
+  assert.match(response.headers.get("content-security-policy") ?? "", /frame-ancestors 'none'/i);
+  assert.equal(response.headers.get("cross-origin-opener-policy"), "same-origin");
+  assert.equal(
+    response.headers.get("permissions-policy"),
+    "camera=(), microphone=(), geolocation=()",
+  );
+  assert.equal(response.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
+  assert.equal(
+    response.headers.get("strict-transport-security"),
+    "max-age=31536000; includeSubDomains",
+  );
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(response.headers.get("x-frame-options"), "DENY");
 
   const html = await response.text();
+  assert.match(html, /<meta name="robots" content="[^"]*noindex/i);
+  assert.match(html, /<meta name="googlebot" content="[^"]*noindex/i);
+  assert.match(html, /https:\/\/henakless\.com\/presales\/og\.png/i);
+  assert.doesNotMatch(html, /localhost\/presales\/og\.png/i);
   assert.match(html, /Meet Hena · I built this experience just for you/i);
   assert.match(html, /I built this experience just for you/i);
   assert.match(html, /hena-kless-portrait\.png/i);
@@ -132,6 +153,25 @@ test("redirects the root URL to the presales experience", async () => {
 
   assert.equal(response.status, 308);
   assert.equal(response.headers.get("location"), "https://henakless.com/presales?from=root");
+  assert.match(response.headers.get("x-robots-tag") ?? "", /noindex/i);
+});
+
+test("allows crawling so search engines can observe the noindex directive", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("robots-test", `${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  const response = await worker.fetch(
+    new Request("https://henakless.com/robots.txt"),
+    {
+      ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) },
+    },
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type") ?? "", /^text\/plain\b/i);
+  assert.match(response.headers.get("x-robots-tag") ?? "", /noindex/i);
+  assert.equal(await response.text(), "User-agent: *\nAllow: /\n");
 });
 
 test("redirects the legacy CV filename to the clean download URL", async () => {
@@ -151,6 +191,7 @@ test("redirects the legacy CV filename to the clean download URL", async () => {
     response.headers.get("location"),
     "https://henakless.com/presales/Hena_Kless_CV.pdf",
   );
+  assert.match(response.headers.get("x-robots-tag") ?? "", /noindex/i);
 });
 
 test("serves compiled assets from their Cloudflare path under the base path", async () => {
@@ -169,6 +210,7 @@ test("serves compiled assets from their Cloudflare path under the base path", as
   );
 
   assert.equal(response.status, 200);
+  assert.match(response.headers.get("x-robots-tag") ?? "", /noindex/i);
   assert.deepEqual(await response.json(), { pathname: "/assets/app.css" });
 });
 
@@ -179,6 +221,49 @@ test("binds the compiled Cloudflare asset directory to the Worker", async () => 
 
   assert.equal(workerConfig.assets?.binding, "ASSETS");
   assert.equal(workerConfig.assets?.directory, "../client");
+});
+
+test("blocks briefing generation when the Cloudflare rate limit is exhausted", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("rate-limit-test", `${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  let handlerWasCalled = false;
+
+  const response = await worker.fetch(
+    new Request("https://henakless.com/presales/api/briefing", {
+      method: "POST",
+      headers: {
+        "cf-connecting-ip": "203.0.113.10",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        contactId: "entor",
+        companyId: "token",
+        message: "We need a secure operations assistant.",
+      }),
+    }),
+    {
+      ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) },
+      BRIEFING_RATE_LIMITER: {
+        limit: async ({ key }) => {
+          assert.equal(key, "briefing:203.0.113.10");
+          return { success: false };
+        },
+      },
+    },
+    {
+      waitUntil() {
+        handlerWasCalled = true;
+      },
+      passThroughOnException() {},
+    },
+  );
+
+  assert.equal(response.status, 429);
+  assert.equal(response.headers.get("retry-after"), "60");
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(handlerWasCalled, false);
 });
 
 test("generates a structured briefing through the server endpoint", async () => {

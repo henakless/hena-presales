@@ -13,6 +13,16 @@
   "vars": {
     "OPENAI_MODEL": "gpt-5.6-terra"
   },
+  "ratelimits": [
+    {
+      "name": "BRIEFING_RATE_LIMITER",
+      "namespace_id": "714216308",
+      "simple": {
+        "limit": 5,
+        "period": 60
+      }
+    }
+  ],
   "assets": {
     "binding": "ASSETS"
   },
