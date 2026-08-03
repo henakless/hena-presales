@@ -161,16 +161,16 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.equal(response.headers.get("permissions-policy"), "camera=(self), microphone=(), geolocation=()");
 
   const html = await response.text();
-  assert.match(html, /Spanish Buddy · Your course, remembered/i);
-  assert.match(html, /Keep what you/i);
-  assert.match(html, /Add your first lesson/i);
-  assert.match(html, /Your course, remembered/i);
+  assert.match(html, /Spanish Buddy · Dein Kurs, im Kopf/i);
+  assert.match(html, /Behalte, was du/i);
+  assert.match(html, /Erste Lektion hinzufügen/i);
+  assert.match(html, /Dein Kurs, im Kopf/i);
   assert.doesNotMatch(html, /twitter:title[^>]*Meet Hena/i);
 
   const pageSource = await readFile(new URL("../app/spanishbuddy/page.tsx", import.meta.url), "utf8");
   assert.match(pageSource, /apiUrl\("evaluate"\)/i);
-  assert.match(pageSource, /Also correct\./i);
-  assert.match(pageSource, /Count as correct/i);
+  assert.match(pageSource, /Auch richtig\./i);
+  assert.match(pageSource, /Als richtig werten/i);
 });
 
 test("accepts a semantically equivalent Spanish Buddy translation", async () => {
@@ -188,7 +188,9 @@ test("accepts a semantically equivalent Spanish Buddy translation", async () => 
     assert.equal(requestBody.text.format.type, "json_schema");
     assert.equal(requestBody.text.format.strict, true);
     assert.equal(requestBody.text.format.schema.additionalProperties, false);
+    assert.equal(requestBody.max_output_tokens, 120);
     assert.match(requestBody.instructions, /ellipsis.*open or unspecified complement/i);
+    assert.match(requestBody.instructions, /friendly sentence in German/i);
 
     const submitted = JSON.parse(requestBody.input[0].content);
     assert.equal(submitted.prompt, "Os invito a…");
@@ -206,7 +208,7 @@ test("accepts a semantically equivalent Spanish Buddy translation", async () => 
               text: JSON.stringify({
                 correct: true,
                 equivalence: "equivalent",
-                feedback: "This naturally conveys the same invitation without specifying the activity.",
+                feedback: "Das drückt dieselbe Einladung natürlich aus, ohne die Aktivität zu nennen.",
               }),
             },
           ],
@@ -248,7 +250,7 @@ test("accepts a semantically equivalent Spanish Buddy translation", async () => 
     assert.deepEqual(await response.json(), {
       correct: true,
       equivalence: "equivalent",
-      feedback: "This naturally conveys the same invitation without specifying the activity.",
+      feedback: "Das drückt dieselbe Einladung natürlich aus, ohne die Aktivität zu nennen.",
     });
     assert.equal(response.headers.get("cache-control"), "no-store");
   } finally {

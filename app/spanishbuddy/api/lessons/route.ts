@@ -87,7 +87,7 @@ export async function GET(request: Request) {
     return jsonWithOwner({ lessons, items }, 200, setCookie);
   } catch (error) {
     console.error("Spanish Buddy lessons read failed", error);
-    return jsonWithOwner({ error: "Your learning library could not be loaded." }, 500, setCookie);
+    return jsonWithOwner({ error: "Deine Lernbibliothek konnte nicht geladen werden." }, 500, setCookie);
   }
 }
 
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
   try {
     payload = (await request.json()) as typeof payload;
   } catch {
-    return jsonWithOwner({ error: "That lesson could not be read." }, 400, setCookie);
+    return jsonWithOwner({ error: "Die Lektion konnte nicht gelesen werden." }, 400, setCookie);
   }
 
   const title = typeof payload.title === "string" ? payload.title.trim().slice(0, 100) : "";
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
   ).slice(0, 60);
 
   if (!title || selected.length === 0) {
-    return jsonWithOwner({ error: "Give the lesson a title and approve at least one item." }, 400, setCookie);
+    return jsonWithOwner({ error: "Gib der Lektion einen Titel und bestätige mindestens einen Eintrag." }, 400, setCookie);
   }
 
   try {
@@ -149,6 +149,6 @@ export async function POST(request: Request) {
     return jsonWithOwner({ lessonId, savedItems: selected.length }, 201, setCookie);
   } catch (error) {
     console.error("Spanish Buddy lesson save failed", error);
-    return jsonWithOwner({ error: "The lesson could not be saved." }, 500, setCookie);
+    return jsonWithOwner({ error: "Die Lektion konnte nicht gespeichert werden." }, 500, setCookie);
   }
 }

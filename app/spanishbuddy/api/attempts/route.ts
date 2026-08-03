@@ -20,13 +20,13 @@ export async function POST(request: Request) {
   try {
     payload = (await request.json()) as typeof payload;
   } catch {
-    return jsonWithOwner({ error: "That answer could not be read." }, 400, setCookie);
+    return jsonWithOwner({ error: "Die Antwort konnte nicht gelesen werden." }, 400, setCookie);
   }
 
   const itemId = typeof payload.itemId === "string" ? payload.itemId : "";
   const correct = payload.correct === true;
   const exerciseType = typeof payload.exerciseType === "string" ? payload.exerciseType.slice(0, 40) : "practice";
-  if (!itemId) return jsonWithOwner({ error: "Missing learning item." }, 400, setCookie);
+  if (!itemId) return jsonWithOwner({ error: "Der Lerneintrag fehlt." }, 400, setCookie);
 
   try {
     const db = await getSpanishBuddyDatabase();
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
        FROM spanish_buddy_items WHERE id = ? AND owner_id = ?`,
     ).bind(itemId, ownerId).first<ItemProgress>();
 
-    if (!item) return jsonWithOwner({ error: "Learning item not found." }, 404, setCookie);
+    if (!item) return jsonWithOwner({ error: "Der Lerneintrag wurde nicht gefunden." }, 404, setCookie);
 
     const attempts = item.attempts + 1;
     const correctCount = item.correct_count + (correct ? 1 : 0);
@@ -66,6 +66,6 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error("Spanish Buddy attempt save failed", error);
-    return jsonWithOwner({ error: "Your answer was checked but progress could not be saved." }, 500, setCookie);
+    return jsonWithOwner({ error: "Die Antwort wurde geprüft, aber der Fortschritt konnte nicht gespeichert werden." }, 500, setCookie);
   }
 }

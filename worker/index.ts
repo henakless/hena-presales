@@ -105,7 +105,7 @@ async function enforceSpanishBuddyRateLimit(request: Request, env: Env) {
 
     return secureResponse(
       Response.json(
-        { error: "You’ve analyzed several lessons already. Please try again shortly." },
+        { error: "Du hast bereits mehrere Lektionen analysiert. Versuche es gleich noch einmal." },
         { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "60" } },
       ),
     );
@@ -113,7 +113,7 @@ async function enforceSpanishBuddyRateLimit(request: Request, env: Env) {
     console.error("Spanish Buddy rate limiter failed", error);
     return secureResponse(
       Response.json(
-        { error: "Lesson analysis is temporarily unavailable. Please try again." },
+        { error: "Die Lektionsanalyse ist vorübergehend nicht verfügbar. Versuche es erneut." },
         { status: 503, headers: { "Cache-Control": "no-store" } },
       ),
     );
@@ -129,7 +129,7 @@ async function enforceEvaluationRateLimit(request: Request, env: Env) {
     if (success) return null;
     return secureResponse(
       Response.json(
-        { error: "You’ve checked several alternative phrasings already. Please try again shortly." },
+        { error: "Du hast bereits mehrere alternative Formulierungen geprüft. Versuche es gleich noch einmal." },
         { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "60" } },
       ),
     );
@@ -137,7 +137,7 @@ async function enforceEvaluationRateLimit(request: Request, env: Env) {
     console.error("Spanish Buddy evaluation rate limiter failed", error);
     return secureResponse(
       Response.json(
-        { error: "Answer checking is temporarily unavailable." },
+        { error: "Die Antwortprüfung ist vorübergehend nicht verfügbar." },
         { status: 503, headers: { "Cache-Control": "no-store" } },
       ),
     );

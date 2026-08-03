@@ -69,7 +69,7 @@ function buildExercises(items: SavedItem[]) {
       if (blanked !== item.example) {
         return {
           type,
-          label: "Fill in the blank",
+          label: "Lücke ausfüllen",
           item,
           prompt: blanked,
           answer: item.spanish,
@@ -82,11 +82,11 @@ function buildExercises(items: SavedItem[]) {
       const distractors = shuffled(translations.filter((value) => value !== item.translation)).slice(0, 3);
       return {
         type,
-        label: "Choose the meaning",
+        label: "Bedeutung auswählen",
         item,
         prompt: item.spanish,
         answer: item.translation || item.explanation,
-        helper: "Choose the best match.",
+        helper: "Wähle die passendste Bedeutung.",
         options: shuffled([item.translation || item.explanation, ...distractors]).filter(Boolean),
       };
     }
@@ -94,11 +94,11 @@ function buildExercises(items: SavedItem[]) {
     if (type === "flashcard" || item.kind === "grammar") {
       return {
         type: "flashcard",
-        label: item.kind === "grammar" ? "Explain the rule" : "Recall",
+        label: item.kind === "grammar" ? "Regel erklären" : "Abrufen",
         item,
         prompt: item.spanish,
         answer: item.explanation || item.translation,
-        helper: "Say the answer to yourself before revealing it.",
+        helper: "Sprich die Antwort aus, bevor du sie aufdeckst.",
         selfRate: true,
       };
     }
@@ -106,22 +106,22 @@ function buildExercises(items: SavedItem[]) {
     if (type === "sentence") {
       return {
         type,
-        label: "Build a sentence",
+        label: "Satz bilden",
         item,
-        prompt: `Write one Spanish sentence using “${item.spanish}”.`,
-        answer: item.example || `Use “${item.spanish}” in a complete sentence.`,
-        helper: "A short, natural sentence is enough.",
+        prompt: `Schreibe einen spanischen Satz mit „${item.spanish}“`,
+        answer: item.example || `Verwende „${item.spanish}“ in einem vollständigen Satz.`,
+        helper: "Ein kurzer, natürlicher Satz genügt.",
         selfRate: true,
       };
     }
 
     return {
       type: "translation",
-      label: "Type the translation",
+      label: "Übersetzung eingeben",
       item,
       prompt: item.spanish,
       answer: item.translation || item.explanation,
-      helper: "Translate into the language used in your notes.",
+      helper: "Übersetze in die Sprache deiner Notizen.",
     };
   });
 }
@@ -162,11 +162,11 @@ export default function SpanishBuddy() {
     try {
       const response = await fetch(apiUrl("lessons"), { cache: "no-store" });
       const body = (await response.json()) as { lessons?: SavedLesson[]; items?: SavedItem[]; error?: string };
-      if (!response.ok) throw new Error(body.error || "Your library could not be loaded.");
+      if (!response.ok) throw new Error(body.error || "Deine Bibliothek konnte nicht geladen werden.");
       setLessons(body.lessons ?? []);
       setItems(body.items ?? []);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Your library could not be loaded.");
+      setError(loadError instanceof Error ? loadError.message : "Deine Bibliothek konnte nicht geladen werden.");
     } finally {
       setLoadingLibrary(false);
     }
@@ -194,7 +194,7 @@ export default function SpanishBuddy() {
   async function analyzeLesson(event: FormEvent) {
     event.preventDefault();
     if (!note.trim() && files.length === 0) {
-      setError("Add a photo or paste some notes first.");
+      setError("Füge zuerst ein Foto oder Notizen ein.");
       return;
     }
 
@@ -209,12 +209,12 @@ export default function SpanishBuddy() {
     try {
       const response = await fetch(apiUrl("extract"), { method: "POST", body: formData });
       const body = (await response.json()) as { extraction?: ExtractionResult; sourceDeleted?: boolean; error?: string };
-      if (!response.ok || !body.extraction) throw new Error(body.error || "The lesson could not be analyzed.");
+      if (!response.ok || !body.extraction) throw new Error(body.error || "Die Lektion konnte nicht analysiert werden.");
       setExtraction(body.extraction);
       setTitle(body.extraction.title);
       setSourceDeleted(body.sourceDeleted === true);
     } catch (analysisError) {
-      setError(analysisError instanceof Error ? analysisError.message : "The lesson could not be analyzed.");
+      setError(analysisError instanceof Error ? analysisError.message : "Die Lektion konnte nicht analysiert werden.");
     } finally {
       setBusy(false);
     }
@@ -239,12 +239,12 @@ export default function SpanishBuddy() {
         body: JSON.stringify({
           title: extraction.title,
           summary: extraction.summary,
-          sourceType: files.length ? "images" : "typed notes",
+          sourceType: files.length ? "Bilder" : "Textnotizen",
           items: extraction.items,
         }),
       });
       const body = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(body.error || "The lesson could not be saved.");
+      if (!response.ok) throw new Error(body.error || "Die Lektion konnte nicht gespeichert werden.");
       setExtraction(null);
       setTitle("");
       setNote("");
@@ -252,7 +252,7 @@ export default function SpanishBuddy() {
       await loadLibrary();
       setView("today");
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "The lesson could not be saved.");
+      setError(saveError instanceof Error ? saveError.message : "Die Lektion konnte nicht gespeichert werden.");
     } finally {
       setBusy(false);
     }
@@ -311,7 +311,7 @@ export default function SpanishBuddy() {
 
     if (acceptsAnswer(answer, currentExercise.answer)) {
       setResult("correct");
-      setAnswerFeedback({ title: "Exactly.", message: currentExercise.answer });
+      setAnswerFeedback({ title: "Genau richtig.", message: currentExercise.answer });
       setRevealed(true);
       void recordAttempt(true);
       return;
@@ -340,21 +340,21 @@ export default function SpanishBuddy() {
         error?: string;
       };
       if (!response.ok || typeof body.correct !== "boolean") {
-        throw new Error(body.error || "This phrasing could not be checked right now.");
+        throw new Error(body.error || "Diese Formulierung konnte gerade nicht geprüft werden.");
       }
 
       setResult(body.correct ? "correct" : "incorrect");
       setAnswerFeedback({
-        title: body.correct ? (body.equivalence === "exact" ? "Exactly." : "Also correct.") : "Keep this one close.",
-        message: body.feedback || (body.correct ? "That phrasing works too." : `Reference: ${currentExercise.answer}`),
+        title: body.correct ? (body.equivalence === "exact" ? "Genau richtig." : "Auch richtig.") : "Noch nicht ganz.",
+        message: body.feedback || (body.correct ? "Diese Formulierung passt ebenfalls." : `Referenz: ${currentExercise.answer}`),
       });
       setRevealed(true);
       void recordAttempt(body.correct);
     } catch {
       setNeedsManualReview(true);
       setAnswerFeedback({
-        title: "Your call.",
-        message: "I couldn’t compare the meaning right now. Choose whether your phrasing should count.",
+        title: "Du entscheidest.",
+        message: "Ich konnte die Bedeutung gerade nicht vergleichen. Entscheide, ob deine Formulierung zählen soll.",
       });
       setRevealed(true);
     } finally {
@@ -367,8 +367,8 @@ export default function SpanishBuddy() {
     setNeedsManualReview(false);
     setResult(correct ? "correct" : "incorrect");
     setAnswerFeedback({
-      title: correct ? "Counted as correct." : "Reference answer saved.",
-      message: correct ? "Your phrasing will count for this review." : currentExercise.answer,
+      title: correct ? "Als richtig gewertet." : "Referenzantwort übernommen.",
+      message: correct ? "Deine Formulierung zählt für diese Wiederholung." : currentExercise.answer,
     });
     void recordAttempt(correct);
   }
@@ -379,8 +379,8 @@ export default function SpanishBuddy() {
     const correct = acceptsAnswer(option, currentExercise.answer);
     setResult(correct ? "correct" : "incorrect");
     setAnswerFeedback({
-      title: correct ? "Exactly." : "Keep this one close.",
-      message: correct ? currentExercise.answer : `Answer: ${currentExercise.answer}`,
+      title: correct ? "Genau richtig." : "Noch nicht ganz.",
+      message: correct ? currentExercise.answer : `Antwort: ${currentExercise.answer}`,
     });
     setRevealed(true);
     void recordAttempt(correct);
@@ -416,74 +416,74 @@ export default function SpanishBuddy() {
   }
 
   return (
-    <main className="sb-app">
+    <main className="sb-app" lang="de">
       <header className="sb-header">
-        <button className="sb-brand" onClick={() => { setView("today"); closeSession(); }} aria-label="Spanish Buddy home">
+        <button className="sb-brand" onClick={() => { setView("today"); closeSession(); }} aria-label="Spanish Buddy Startseite">
           <span className="sb-brand-mark" aria-hidden="true">ñ</span>
-          <span>Spanish Buddy<small>Your course, remembered.</small></span>
+          <span>Spanish Buddy<small>Dein Kurs, im Kopf.</small></span>
         </button>
-        <nav aria-label="Main navigation">
-          <button className={view === "today" ? "active" : ""} onClick={() => setView("today")}>Today</button>
-          <button className={view === "add" ? "active" : ""} onClick={() => setView("add")}>Add lesson</button>
-          <button className={view === "library" ? "active" : ""} onClick={() => setView("library")}>Library</button>
+        <nav aria-label="Hauptnavigation">
+          <button className={view === "today" ? "active" : ""} onClick={() => setView("today")}>Heute</button>
+          <button className={view === "add" ? "active" : ""} onClick={() => setView("add")}>Lektion hinzufügen</button>
+          <button className={view === "library" ? "active" : ""} onClick={() => setView("library")}>Bibliothek</button>
         </nav>
-        <div className="sb-level"><span>B1</span><small>European Spanish</small></div>
+        <div className="sb-level"><span>B1</span><small>Spanisch aus Spanien</small></div>
       </header>
 
-      {error && <div className="sb-error" role="alert"><span>{error}</span><button onClick={() => setError("")}>Dismiss</button></div>}
+      {error && <div className="sb-error" role="alert"><span>{error}</span><button onClick={() => setError("")}>Schließen</button></div>}
 
       {view === "today" && (
         <div className="sb-shell">
           <section className="sb-welcome">
             <div>
-              <p className="sb-eyebrow">Hoy · your adaptive plan</p>
-              <h1>Keep what you<br /><em>learned in class.</em></h1>
-              <p>Spanish Buddy turns your own notes into the practice you need today—not somebody else’s curriculum.</p>
+              <p className="sb-eyebrow">Hoy · dein adaptiver Plan</p>
+              <h1>Behalte, was du<br /><em>im Kurs gelernt hast.</em></h1>
+              <p>Spanish Buddy macht aus deinen eigenen Notizen genau das Training, das du heute brauchst.</p>
             </div>
-            <div className="sb-orbit" aria-hidden="true"><span>{averageMastery}%</span><small>confidence</small></div>
+            <div className="sb-orbit" aria-hidden="true"><span>{averageMastery}%</span><small>Sicherheit</small></div>
           </section>
 
           <section className="sb-dashboard-grid">
             <article className="sb-daily-card">
-              <div className="sb-card-topline"><span>01</span><span>{dueItems.length || items.length} items ready</span></div>
+              <div className="sb-card-topline"><span>01</span><span>{dueItems.length || items.length} Einträge bereit</span></div>
               <div className="sb-daily-copy">
-                <p>Daily practice</p>
-                <h2>{items.length ? "A little recall now makes tomorrow easier." : "Your first lesson starts here."}</h2>
-                <span>{items.length ? "About 8 minutes · mixed practice" : "Upload notes or begin with an example"}</span>
+                <p>Tägliches Training</p>
+                <h2>{items.length ? "Ein wenig Wiederholung heute macht es morgen leichter." : "Deine erste Lektion beginnt hier."}</h2>
+                <span>{items.length ? "Etwa 8 Minuten · gemischte Übungen" : "Notizen hochladen oder mit einem Beispiel starten"}</span>
               </div>
               <button className="sb-primary" onClick={() => items.length ? startSession() : setView("add")}>
-                {items.length ? "Start today’s session" : "Add your first lesson"}<span aria-hidden="true">→</span>
+                {items.length ? "Heutiges Training starten" : "Erste Lektion hinzufügen"}<span aria-hidden="true">→</span>
               </button>
             </article>
 
             <aside className="sb-progress-card">
-              <p className="sb-eyebrow">Your learning base</p>
-              <div className="sb-stat-row"><strong>{items.length}</strong><span>words & rules</span></div>
-              <div className="sb-stat-row"><strong>{lessons.length}</strong><span>course lessons</span></div>
-              <div className="sb-stat-row"><strong>{items.filter((item) => item.mastery >= 62).length}</strong><span>familiar or strong</span></div>
+              <p className="sb-eyebrow">Deine Lernbasis</p>
+              <div className="sb-stat-row"><strong>{items.length}</strong><span>Wörter & Regeln</span></div>
+              <div className="sb-stat-row"><strong>{lessons.length}</strong><span>Kurslektionen</span></div>
+              <div className="sb-stat-row"><strong>{items.filter((item) => item.mastery >= 62).length}</strong><span>vertraut oder sicher</span></div>
               <div className="sb-meter"><span style={{ width: `${averageMastery}%` }} /></div>
-              <small>Confidence grows from successful recall—not just reading.</small>
+              <small>Sicherheit entsteht durch erfolgreiches Abrufen – nicht nur durch Lesen.</small>
             </aside>
           </section>
 
           <section className="sb-recents">
-            <div className="sb-section-heading"><div><p className="sb-eyebrow">Continue learning</p><h2>Recent lessons</h2></div><button onClick={() => setView("library")}>View library →</button></div>
-            {loadingLibrary ? <div className="sb-empty">Loading your learning base…</div> : lessons.length ? (
+            <div className="sb-section-heading"><div><p className="sb-eyebrow">Weiterlernen</p><h2>Letzte Lektionen</h2></div><button onClick={() => setView("library")}>Bibliothek ansehen →</button></div>
+            {loadingLibrary ? <div className="sb-empty">Deine Lernbasis wird geladen…</div> : lessons.length ? (
               <div className="sb-lesson-grid">
                 {lessons.slice(0, 3).map((lesson, index) => (
                   <article className="sb-lesson-card" key={lesson.id}>
                     <span className="sb-lesson-number">0{index + 1}</span>
                     <p>{new Date(lesson.createdAt).toLocaleDateString("de-DE", { day: "2-digit", month: "short" })}</p>
                     <h3>{lesson.title}</h3>
-                    <div><span>{lesson.items.length} items</span><span>{Math.round(lesson.items.reduce((sum, item) => sum + item.mastery, 0) / Math.max(lesson.items.length, 1))}%</span></div>
-                    <button onClick={() => startSession(lesson.items)}>Study this lesson</button>
+                    <div><span>{lesson.items.length} Einträge</span><span>{Math.round(lesson.items.reduce((sum, item) => sum + item.mastery, 0) / Math.max(lesson.items.length, 1))}%</span></div>
+                    <button onClick={() => startSession(lesson.items)}>Lektion üben</button>
                   </article>
                 ))}
               </div>
             ) : (
               <div className="sb-empty sb-starter-empty">
-                <div><strong>Nothing saved yet.</strong><span>Try a generated note or upload today’s class.</span></div>
-                <button onClick={() => useExample(EXAMPLE_NOTES[0])}>Use an example note</button>
+                <div><strong>Noch nichts gespeichert.</strong><span>Probiere ein Beispiel oder lade deine heutigen Kursnotizen hoch.</span></div>
+                <button onClick={() => useExample(EXAMPLE_NOTES[0])}>Beispielnotiz verwenden</button>
               </div>
             )}
           </section>
@@ -492,49 +492,49 @@ export default function SpanishBuddy() {
 
       {view === "add" && (
         <div className="sb-shell sb-add-shell">
-          <section className="sb-add-intro"><p className="sb-eyebrow">New lesson</p><h1>What did you learn <em>today?</em></h1><p>Photos are analyzed in memory and deleted immediately. You approve every word and rule before it reaches practice.</p></section>
+          <section className="sb-add-intro"><p className="sb-eyebrow">Neue Lektion</p><h1>Was hast du <em>heute gelernt?</em></h1><p>Fotos werden nur im Arbeitsspeicher analysiert und sofort gelöscht. Du bestätigst jedes Wort und jede Regel vor dem Training.</p></section>
 
           {!extraction ? (
             <form className="sb-capture" onSubmit={analyzeLesson}>
-              <label className="sb-field"><span>Lesson title <small>optional</small></span><input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="e.g. Unidad 5 · Invitations" maxLength={100} /></label>
+              <label className="sb-field"><span>Titel der Lektion <small>optional</small></span><input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="z. B. Unidad 5 · Einladungen" maxLength={100} /></label>
               <div className="sb-upload-grid">
                 <label className="sb-upload-zone">
                   <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" multiple onChange={onFiles} />
                   <span className="sb-camera" aria-hidden="true">+</span>
-                  <strong>Photograph or upload notes</strong>
-                  <small>Handwriting, textbook pages, or scans · up to 6 images</small>
-                  {files.length > 0 && <b>{files.length} image{files.length === 1 ? "" : "s"} selected</b>}
+                  <strong>Notizen fotografieren oder hochladen</strong>
+                  <small>Handschrift, Lehrbuchseiten oder Scans · bis zu 6 Bilder</small>
+                  {files.length > 0 && <b>{files.length} {files.length === 1 ? "Bild" : "Bilder"} ausgewählt</b>}
                 </label>
-                <label className="sb-field sb-notes-field"><span>Or paste your notes</span><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="la amistad — die Freundschaft…" maxLength={12000} /></label>
+                <label className="sb-field sb-notes-field"><span>Oder Notizen einfügen</span><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="la amistad — die Freundschaft…" maxLength={12000} /></label>
               </div>
               <div className="sb-example-strip">
-                <div><p className="sb-eyebrow">Need something to test?</p><strong>Use a generated example</strong></div>
+                <div><p className="sb-eyebrow">Etwas zum Testen?</p><strong>Generiertes Beispiel verwenden</strong></div>
                 {EXAMPLE_NOTES.map((example) => <button type="button" key={example.id} onClick={() => useExample(example)}><span>{example.label}</span>{example.title}</button>)}
               </div>
-              <button className="sb-primary sb-analyze" disabled={busy}>{busy ? "Reading your lesson…" : "Analyze lesson"}<span aria-hidden="true">→</span></button>
+              <button className="sb-primary sb-analyze" disabled={busy}>{busy ? "Lektion wird gelesen…" : "Lektion analysieren"}<span aria-hidden="true">→</span></button>
             </form>
           ) : (
             <section className="sb-review">
               <div className="sb-review-header">
-                <div><p className="sb-eyebrow">Review extraction</p><input aria-label="Lesson title" value={extraction.title} onChange={(event) => setExtraction({ ...extraction, title: event.target.value })} /><p>{extraction.summary}</p></div>
-                <div className="sb-deletion"><span aria-hidden="true">✓</span><div><strong>Source deleted</strong><small>{sourceDeleted ? "Only the structured lesson remains." : "Deletion pending."}</small></div></div>
+                <div><p className="sb-eyebrow">Erkennung prüfen</p><input aria-label="Titel der Lektion" value={extraction.title} onChange={(event) => setExtraction({ ...extraction, title: event.target.value })} /><p>{extraction.summary}</p></div>
+                <div className="sb-deletion"><span aria-hidden="true">✓</span><div><strong>Quelle gelöscht</strong><small>{sourceDeleted ? "Nur die strukturierte Lektion bleibt gespeichert." : "Löschung ausstehend."}</small></div></div>
               </div>
-              <div className="sb-review-tools"><span>{extraction.items.filter((item) => item.selected).length} approved</span><span>{extraction.items.filter((item) => item.confidence === "low").length} need attention</span><button onClick={() => setExtraction(null)}>Start over</button></div>
+              <div className="sb-review-tools"><span>{extraction.items.filter((item) => item.selected).length} bestätigt</span><span>{extraction.items.filter((item) => item.confidence === "low").length} zu prüfen</span><button onClick={() => setExtraction(null)}>Neu beginnen</button></div>
               <div className="sb-review-list">
                 {extraction.items.map((item) => (
                   <article className={`sb-review-item ${item.provenance === "suggested" ? "suggested" : ""}`} key={item.id}>
                     <label className="sb-check"><input type="checkbox" checked={item.selected} onChange={(event) => updateExtractedItem(item.id, { selected: event.target.checked })} /><span /></label>
                     <div className="sb-item-fields">
-                      <div className="sb-item-badges"><span>{item.kind}</span><span>{item.provenance === "suggested" ? "Suggested support" : "From your lesson"}</span>{item.confidence !== "high" && <span className="warning">{item.confidence} confidence</span>}</div>
-                      <input aria-label="Spanish" value={item.spanish} onChange={(event) => updateExtractedItem(item.id, { spanish: event.target.value })} />
-                      <input aria-label="Translation" value={item.translation} onChange={(event) => updateExtractedItem(item.id, { translation: event.target.value })} placeholder="Translation or label" />
-                      <textarea aria-label="Explanation" value={item.explanation} onChange={(event) => updateExtractedItem(item.id, { explanation: event.target.value })} placeholder="Short explanation" />
-                      <input aria-label="Example" value={item.example} onChange={(event) => updateExtractedItem(item.id, { example: event.target.value })} placeholder="Example sentence" />
+                      <div className="sb-item-badges"><span>{item.kind === "grammar" ? "Grammatik" : "Vokabel"}</span><span>{item.provenance === "suggested" ? "Ergänzender Vorschlag" : "Aus deiner Lektion"}</span>{item.confidence !== "high" && <span className="warning">{item.confidence === "low" ? "niedrige" : "mittlere"} Sicherheit</span>}</div>
+                      <input aria-label="Spanisch" value={item.spanish} onChange={(event) => updateExtractedItem(item.id, { spanish: event.target.value })} />
+                      <input aria-label="Übersetzung" value={item.translation} onChange={(event) => updateExtractedItem(item.id, { translation: event.target.value })} placeholder="Übersetzung oder Bezeichnung" />
+                      <textarea aria-label="Erklärung" value={item.explanation} onChange={(event) => updateExtractedItem(item.id, { explanation: event.target.value })} placeholder="Kurze Erklärung" />
+                      <input aria-label="Beispiel" value={item.example} onChange={(event) => updateExtractedItem(item.id, { example: event.target.value })} placeholder="Beispielsatz" />
                     </div>
                   </article>
                 ))}
               </div>
-              <div className="sb-review-actions"><p>You stay in control. Unchecked items will not enter your learning base.</p><button className="sb-primary" disabled={busy || !extraction.items.some((item) => item.selected)} onClick={saveLesson}>{busy ? "Saving…" : "Save & build practice"}<span>→</span></button></div>
+              <div className="sb-review-actions"><p>Du behältst die Kontrolle. Nicht markierte Einträge werden nicht in deine Lernbasis übernommen.</p><button className="sb-primary" disabled={busy || !extraction.items.some((item) => item.selected)} onClick={saveLesson}>{busy ? "Wird gespeichert…" : "Speichern & Training erstellen"}<span>→</span></button></div>
             </section>
           )}
         </div>
@@ -542,25 +542,25 @@ export default function SpanishBuddy() {
 
       {view === "library" && (
         <div className="sb-shell sb-library">
-          <div className="sb-library-heading"><div><p className="sb-eyebrow">Your learning base</p><h1>Everything you’ve <em>learned.</em></h1></div><button className="sb-primary" onClick={() => setView("add")}>Add lesson <span>+</span></button></div>
+          <div className="sb-library-heading"><div><p className="sb-eyebrow">Deine Lernbasis</p><h1>Alles, was du <em>gelernt hast.</em></h1></div><button className="sb-primary" onClick={() => setView("add")}>Lektion hinzufügen <span>+</span></button></div>
           {lessons.length ? lessons.map((lesson) => (
             <section className="sb-library-lesson" key={lesson.id}>
-              <div className="sb-library-lesson-head"><div><span>{new Date(lesson.createdAt).toLocaleDateString("de-DE")}</span><h2>{lesson.title}</h2><p>{lesson.summary}</p></div><button onClick={() => startSession(lesson.items)}>Study lesson →</button></div>
+              <div className="sb-library-lesson-head"><div><span>{new Date(lesson.createdAt).toLocaleDateString("de-DE")}</span><h2>{lesson.title}</h2><p>{lesson.summary}</p></div><button onClick={() => startSession(lesson.items)}>Lektion üben →</button></div>
               <div className="sb-library-items">
                 {lesson.items.map((item) => (
-                  <article key={item.id}><div><span>{item.kind === "grammar" ? "Rule" : "Word"}</span>{item.provenance === "suggested" && <small>Suggested</small>}</div><h3>{item.spanish}</h3><p>{item.translation || item.explanation}</p><div className="sb-item-mastery"><span><i style={{ width: `${item.mastery}%` }} /></span><small>{masteryLabel(item.mastery)} · {item.mastery}%</small></div></article>
+                  <article key={item.id}><div><span>{item.kind === "grammar" ? "Regel" : "Wort"}</span>{item.provenance === "suggested" && <small>Vorschlag</small>}</div><h3>{item.spanish}</h3><p>{item.translation || item.explanation}</p><div className="sb-item-mastery"><span><i style={{ width: `${item.mastery}%` }} /></span><small>{masteryLabel(item.mastery)} · {item.mastery}%</small></div></article>
                 ))}
               </div>
             </section>
-          )) : <div className="sb-empty sb-starter-empty"><div><strong>Your library is ready for its first lesson.</strong><span>Upload course notes or start with one of the examples.</span></div><button onClick={() => setView("add")}>Add a lesson</button></div>}
+          )) : <div className="sb-empty sb-starter-empty"><div><strong>Deine Bibliothek ist bereit für die erste Lektion.</strong><span>Lade Kursnotizen hoch oder starte mit einem Beispiel.</span></div><button onClick={() => setView("add")}>Lektion hinzufügen</button></div>}
         </div>
       )}
 
       {exercises.length > 0 && (
-        <div className="sb-practice" role="dialog" aria-modal="true" aria-label="Daily practice">
-          <header><button onClick={closeSession} aria-label="Close practice">×</button><div><span style={{ width: `${sessionDone ? 100 : ((exerciseIndex + 1) / exercises.length) * 100}%` }} /></div><small>{sessionDone ? exercises.length : exerciseIndex + 1} / {exercises.length}</small></header>
+        <div className="sb-practice" role="dialog" aria-modal="true" aria-label="Tägliches Training">
+          <header><button onClick={closeSession} aria-label="Training schließen">×</button><div><span style={{ width: `${sessionDone ? 100 : ((exerciseIndex + 1) / exercises.length) * 100}%` }} /></div><small>{sessionDone ? exercises.length : exerciseIndex + 1} / {exercises.length}</small></header>
           {sessionDone ? (
-            <section className="sb-session-summary"><p className="sb-eyebrow">Session complete</p><div className="sb-summary-score"><strong>{sessionCorrect}/{exercises.length}</strong><span>solid recalls</span></div><h2>Bien hecho. Your next session is already smarter.</h2><p>Missed material will return sooner. Strong recalls now get more space before the next review.</p><button className="sb-primary" onClick={closeSession}>Back to today <span>→</span></button></section>
+            <section className="sb-session-summary"><p className="sb-eyebrow">Training abgeschlossen</p><div className="sb-summary-score"><strong>{sessionCorrect}/{exercises.length}</strong><span>sicher erinnert</span></div><h2>Bien hecho. Dein nächstes Training ist schon besser angepasst.</h2><p>Unsichere Inhalte kommen früher zurück. Sicheres Wissen bekommt mehr Abstand bis zur nächsten Wiederholung.</p><button className="sb-primary" onClick={closeSession}>Zurück zu heute <span>→</span></button></section>
           ) : currentExercise && (
             <section className="sb-exercise">
               <div className="sb-exercise-meta"><span>{currentExercise.label}</span><span>{currentExercise.item.lessonTitle}</span></div>
@@ -571,15 +571,15 @@ export default function SpanishBuddy() {
                   <div className="sb-options">{currentExercise.options.map((option) => <button className={revealed ? acceptsAnswer(option, currentExercise.answer) ? "correct" : option === answer ? "incorrect" : "" : ""} key={option} onClick={() => chooseAnswer(option)}>{option}</button>)}</div>
                 ) : currentExercise.selfRate ? (
                   <div className="sb-self-rate">
-                    {!revealed ? <button className="sb-reveal" onClick={() => setRevealed(true)}>Reveal answer</button> : <><div className="sb-answer"><small>Suggested answer</small><strong>{currentExercise.answer}</strong></div>{!result && <div><button onClick={() => selfRate(false)}>Needs work</button><button onClick={() => selfRate(true)}>I got it</button></div>}</>}
+                    {!revealed ? <button className="sb-reveal" onClick={() => setRevealed(true)}>Antwort aufdecken</button> : <><div className="sb-answer"><small>Beispielantwort</small><strong>{currentExercise.answer}</strong></div>{!result && <div><button onClick={() => selfRate(false)}>Weiter üben</button><button onClick={() => selfRate(true)}>Gewusst</button></div>}</>}
                   </div>
                 ) : (
-                  <form className="sb-answer-form" onSubmit={submitAnswer}><input autoFocus value={answer} disabled={revealed || checkingAnswer} onChange={(event) => setAnswer(event.target.value)} placeholder="Type your answer…" /><button disabled={revealed || checkingAnswer || !answer.trim()}>{checkingAnswer ? "Checking meaning…" : "Check"}</button></form>
+                  <form className="sb-answer-form" onSubmit={submitAnswer}><input autoFocus value={answer} disabled={revealed || checkingAnswer} onChange={(event) => setAnswer(event.target.value)} placeholder="Antwort eingeben…" /><button disabled={revealed || checkingAnswer || !answer.trim()}>{checkingAnswer ? "Bedeutung wird geprüft…" : "Prüfen"}</button></form>
                 )}
-                {revealed && !currentExercise.selfRate && answerFeedback && <div className={`sb-feedback ${needsManualReview ? "review" : result}`}><span>{result === "correct" ? "✓" : needsManualReview ? "?" : "→"}</span><div><strong>{answerFeedback.title}</strong><p>{answerFeedback.message}</p>{needsManualReview && <div className="sb-review-choice"><button onClick={() => resolveManualReview(true)}>Count as correct</button><button onClick={() => resolveManualReview(false)}>Use reference answer</button></div>}</div></div>}
-                {result && <button className="sb-next" onClick={nextExercise}>{exerciseIndex + 1 === exercises.length ? "See results" : "Continue"} →</button>}
+                {revealed && !currentExercise.selfRate && answerFeedback && <div className={`sb-feedback ${needsManualReview ? "review" : result}`}><span>{result === "correct" ? "✓" : needsManualReview ? "?" : "→"}</span><div><strong>{answerFeedback.title}</strong><p>{answerFeedback.message}</p>{needsManualReview && <div className="sb-review-choice"><button onClick={() => resolveManualReview(true)}>Als richtig werten</button><button onClick={() => resolveManualReview(false)}>Referenzantwort verwenden</button></div>}</div></div>}
+                {result && <button className="sb-next" onClick={nextExercise}>{exerciseIndex + 1 === exercises.length ? "Ergebnis ansehen" : "Weiter"} →</button>}
               </div>
-              <div className="sb-focus-note"><span>Why this?</span><p>{currentExercise.item.mastery < 35 ? "This is new or needs attention, so it appears earlier." : "This item is due for a spaced review."}</p></div>
+              <div className="sb-focus-note"><span>Warum jetzt?</span><p>{currentExercise.item.mastery < 35 ? "Dieser Inhalt ist neu oder noch unsicher und erscheint deshalb früher." : "Für diesen Inhalt ist eine zeitlich verteilte Wiederholung fällig."}</p></div>
             </section>
           )}
         </div>

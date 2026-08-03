@@ -115,7 +115,7 @@ export async function POST(request: Request) {
   try {
     formData = await request.formData();
   } catch {
-    return Response.json({ error: "The lesson upload could not be read." }, { status: 400 });
+    return Response.json({ error: "Der Upload konnte nicht gelesen werden." }, { status: 400 });
   }
 
   const note = clean(formData.get("note"), MAX_NOTE_LENGTH);
@@ -123,22 +123,22 @@ export async function POST(request: Request) {
   const files = formData.getAll("images").filter((value): value is File => value instanceof File && value.size > 0);
 
   if (!note && files.length === 0) {
-    return Response.json({ error: "Add a photo or paste some lesson notes first." }, { status: 400 });
+    return Response.json({ error: "Füge zuerst ein Foto oder Kursnotizen ein." }, { status: 400 });
   }
   if (files.length > MAX_FILES) {
-    return Response.json({ error: `Upload no more than ${MAX_FILES} images at once.` }, { status: 413 });
+    return Response.json({ error: `Lade höchstens ${MAX_FILES} Bilder gleichzeitig hoch.` }, { status: 413 });
   }
   if (files.some((file) => !IMAGE_TYPES.has(file.type) || file.size > MAX_FILE_BYTES)) {
-    return Response.json({ error: "Use JPG, PNG, WEBP, or GIF images under 8 MB each." }, { status: 415 });
+    return Response.json({ error: "Verwende JPG-, PNG-, WEBP- oder GIF-Bilder mit jeweils weniger als 8 MB." }, { status: 415 });
   }
   if (files.reduce((total, file) => total + file.size, 0) > MAX_TOTAL_BYTES) {
-    return Response.json({ error: "Keep the combined image upload under 24 MB." }, { status: 413 });
+    return Response.json({ error: "Alle Bilder zusammen dürfen höchstens 24 MB groß sein." }, { status: 413 });
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_MODEL?.trim() || "gpt-5.6-terra";
   if (!apiKey) {
-    return Response.json({ error: "Lesson analysis is not configured yet." }, { status: 503 });
+    return Response.json({ error: "Die Lektionsanalyse ist noch nicht eingerichtet." }, { status: 503 });
   }
 
   const content: Array<Record<string, unknown>> = [
@@ -201,12 +201,12 @@ export async function POST(request: Request) {
     const body = (await openaiResponse.json()) as OpenAIResponse;
     if (!openaiResponse.ok) {
       console.error("Spanish Buddy extraction failed", openaiResponse.status, body.error?.message);
-      return Response.json({ error: "The lesson could not be analyzed. Please try again." }, { status: 502 });
+      return Response.json({ error: "Die Lektion konnte nicht analysiert werden. Versuche es erneut." }, { status: 502 });
     }
 
     const text = outputText(body);
     if (!text) {
-      return Response.json({ error: "The lesson analysis came back incomplete." }, { status: 502 });
+      return Response.json({ error: "Die Analyse der Lektion war unvollständig." }, { status: 502 });
     }
 
     const parsed = JSON.parse(text) as ModelExtraction;
@@ -216,13 +216,13 @@ export async function POST(request: Request) {
     ].filter((item) => item.spanish.length > 0);
 
     if (items.length === 0) {
-      return Response.json({ error: "No clear Spanish learning material was found." }, { status: 422 });
+      return Response.json({ error: "Es wurden keine eindeutigen spanischen Lerninhalte gefunden." }, { status: 422 });
     }
 
     const result: ExtractionResult = {
-      title: requestedTitle || clean(parsed.title, 100) || "New Spanish lesson",
+      title: requestedTitle || clean(parsed.title, 100) || "Neue Spanischlektion",
       summary: clean(parsed.summary, 300),
-      referenceLanguage: clean(parsed.referenceLanguage, 40) || "German",
+      referenceLanguage: clean(parsed.referenceLanguage, 40) || "Deutsch",
       items,
     };
 
@@ -232,10 +232,10 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      return Response.json({ error: "Lesson analysis took too long. Try fewer or smaller images." }, { status: 504 });
+      return Response.json({ error: "Die Analyse hat zu lange gedauert. Versuche es mit weniger oder kleineren Bildern." }, { status: 504 });
     }
     console.error("Spanish Buddy extraction error", error);
-    return Response.json({ error: "The lesson could not be analyzed. Please try again." }, { status: 500 });
+    return Response.json({ error: "Die Lektion konnte nicht analysiert werden. Versuche es erneut." }, { status: 500 });
   } finally {
     clearTimeout(timeout);
   }
