@@ -435,6 +435,10 @@ export default function Home() {
 
           <section className="selection-review">
             <div className="panel-label"><span>C</span> Read the room</div>
+            <aside className="briefing-handoff-note" aria-label="A note about the limited lead briefing">
+              <span>And yes—this is the entire briefing we got.</span>
+              <b aria-hidden="true">↙</b>
+            </aside>
             <div className="selection-review-grid">
               <article>
                 <span className="mock-tag">Selected contact</span>

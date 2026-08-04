@@ -137,7 +137,9 @@ p, h1, h2, h3, h4, h5, h6, blockquote, dl, dd, ol, ul { margin-top: 0; }
 .radio-mark { width: 15px; height: 15px; border: 1px solid var(--ink); border-radius: 50%; }
 .selection-option.is-active .radio-mark { border: 4px solid var(--ink); background: var(--paper); }
 
-.selection-review { grid-column: 1 / -1; border-top: 1px solid var(--ink); }
+.selection-review { position: relative; grid-column: 1 / -1; border-top: 1px solid var(--ink); }
+.briefing-handoff-note { position: absolute; top: 11px; right: 26px; z-index: 1; display: flex; max-width: 290px; align-items: center; gap: 9px; color: var(--orange); font-family: var(--serif); font-size: 17px; font-style: italic; font-weight: 700; letter-spacing: -.02em; line-height: 1.05; transform: rotate(-1.5deg); }
+.briefing-handoff-note b { flex: 0 0 auto; font-family: var(--sans); font-size: 30px; font-style: normal; font-weight: 400; line-height: 1; transform: rotate(-7deg); }
 .selection-review-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .selection-review-grid article { min-height: 210px; padding: 30px 34px; border-bottom: 1px solid var(--line); }
 .selection-review-grid article:first-child { border-right: 1px solid var(--line); }
@@ -435,6 +437,8 @@ p, h1, h2, h3, h4, h5, h6, blockquote, dl, dd, ol, ul { margin-top: 0; }
   .selection-review-grid { grid-template-columns: 1fr; }
   .selection-review-grid article { min-height: 0; padding: 24px 20px; }
   .selection-review-grid article:first-child { border-right: 0; }
+  .briefing-handoff-note { top: 10px; right: 18px; max-width: 245px; font-size: 15px; }
+  .briefing-handoff-note b { font-size: 26px; }
   .message-field { padding: 24px 20px 12px; }
   .prepare-button { width: calc(100% - 40px); margin: 0 20px 14px; }
   .fiction-note { padding: 0 20px 22px; }
@@ -484,6 +488,10 @@ p, h1, h2, h3, h4, h5, h6, blockquote, dl, dd, ol, ul { margin-top: 0; }
   .site-footer { padding-block: 65px; }
   .footer-actions { width: 100%; flex-direction: column; }
   .footer-actions a { justify-content: center; }
+}
+
+@media (max-width: 430px) {
+  .briefing-handoff-note { position: relative; top: auto; right: auto; justify-content: flex-end; max-width: none; padding: 15px 20px 8px 92px; transform: rotate(-1deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {
