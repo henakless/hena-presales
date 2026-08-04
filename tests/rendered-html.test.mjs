@@ -210,7 +210,11 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(pageSource, /Información y ayuda en alemán/i);
   assert.match(pageSource, /Mostrar más ayuda/i);
   assert.match(pageSource, /Mini lección de gramática/i);
-  assert.match(pageSource, /Entrenamiento corto/i);
+  assert.match(pageSource, /Repaso de 2 minutos/i);
+  assert.match(pageSource, /Abrir repaso/i);
+  assert.match(pageSource, /Comprueba si lo recuerdas/i);
+  assert.match(pageSource, /Ver lo que decían tus apuntes/i);
+  assert.match(pageSource, /Practicar este tema/i);
   assert.match(pageSource, /Tu gramática, explicada para volver a ella/i);
   assert.match(pageSource, /topics\?: LearningTopic\[\]/i);
   assert.match(pageSource, /Ver en alemán/i);
