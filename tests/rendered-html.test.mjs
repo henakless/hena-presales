@@ -485,7 +485,7 @@ test("binds the compiled Cloudflare asset directory to the Worker", async () => 
   assert.equal(workerConfig.assets?.binding, "ASSETS");
   assert.equal(workerConfig.assets?.directory, "../client");
   assert.equal(workerConfig.compatibility_date, "2026-08-04");
-  assert.doesNotMatch(JSON.stringify(workerConfig.compatibility_flags), /nodejs_compat/i);
+  assert.deepEqual(workerConfig.compatibility_flags, ["nodejs_compat_v2"]);
 });
 
 test("blocks briefing generation when the Cloudflare rate limit is exhausted", async () => {
