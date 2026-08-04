@@ -349,7 +349,14 @@ export default function SpanishBuddy() {
 
     try {
       const response = await fetch(apiUrl("extract"), { method: "POST", body: formData });
-      const body = (await response.json()) as { extraction?: ExtractionResult; sourceDeleted?: boolean; error?: string };
+      const responseType = response.headers.get("content-type") ?? "";
+      const body = responseType.includes("application/json")
+        ? (await response.json()) as { extraction?: ExtractionResult; sourceDeleted?: boolean; error?: string }
+        : {
+            error: response.status === 413
+              ? "Las imágenes son demasiado grandes para subirlas. Prueba con menos imágenes o archivos más pequeños."
+              : "No se ha podido analizar la lección.",
+          };
       if (!response.ok || !body.extraction) throw new Error(body.error || "No se ha podido analizar la lección.");
       setExtraction(body.extraction);
       setTitle(body.extraction.title);

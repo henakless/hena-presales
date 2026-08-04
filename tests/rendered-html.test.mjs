@@ -173,6 +173,12 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(pageSource, /apiUrl\("evaluate"\)/i);
   assert.match(pageSource, /type="file"[^>]+accept="image\/jpeg,image\/png,image\/webp,image\/gif"[^>]+multiple/i);
   assert.doesNotMatch(pageSource, /capture="(?:environment|user)"/i);
+  assert.match(pageSource, /response\.headers\.get\("content-type"\)/i);
+  assert.match(pageSource, /response\.status === 413/i);
+  const nextConfigSource = await readFile(new URL("../next.config.ts", import.meta.url), "utf8");
+  assert.match(nextConfigSource, /bodySizeLimit:\s*"26mb"/i);
+  const compiledServerSource = await readFile(new URL("../dist/server/index.js", import.meta.url), "utf8");
+  assert.match(compiledServerSource, /var __MAX_ACTION_BODY_SIZE = 27262976;/i);
   assert.match(pageSource, /También es correcto\./i);
   assert.match(pageSource, /Casi\./i);
   assert.match(pageSource, /Marcar mi respuesta como correcta/i);
