@@ -1,3 +1,10 @@
+import {
+  matchGrammarTopic,
+  TOPIC_CONTENT_VERSION,
+  topicIsReady,
+  type GrammarTopicDefinition,
+} from "./spanish-buddy-topics";
+
 const OWNER_COOKIE = "sb_owner";
 const OWNER_PATTERN = /^[a-f0-9-]{36}$/i;
 
@@ -56,6 +63,15 @@ export async function ensureSpanishBuddySchema(db: D1Database) {
       canonical_key TEXT NOT NULL,
       title TEXT NOT NULL,
       explanation TEXT NOT NULL DEFAULT '',
+      summary TEXT NOT NULL DEFAULT '',
+      definition TEXT NOT NULL DEFAULT '',
+      use_cases TEXT NOT NULL DEFAULT '[]',
+      formation TEXT NOT NULL DEFAULT '',
+      examples TEXT NOT NULL DEFAULT '[]',
+      common_mistakes TEXT NOT NULL DEFAULT '[]',
+      quick_check TEXT NOT NULL DEFAULT '{}',
+      status TEXT NOT NULL DEFAULT 'draft',
+      content_version TEXT NOT NULL DEFAULT 'v1',
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(owner_id, canonical_key)
@@ -146,6 +162,22 @@ export async function ensureSpanishBuddySchema(db: D1Database) {
   if (!(columns.results ?? []).some((column) => column.name === "learning_type")) {
     await db.prepare("ALTER TABLE spanish_buddy_items ADD COLUMN learning_type TEXT NOT NULL DEFAULT 'word'").run();
   }
+  const topicColumns = await db.prepare("PRAGMA table_info(spanish_buddy_topics)").all<{ name: string }>();
+  const topicColumnNames = new Set((topicColumns.results ?? []).map((column) => column.name));
+  const missingTopicColumns = [
+    ["summary", "TEXT NOT NULL DEFAULT ''"],
+    ["definition", "TEXT NOT NULL DEFAULT ''"],
+    ["use_cases", "TEXT NOT NULL DEFAULT '[]'"],
+    ["formation", "TEXT NOT NULL DEFAULT ''"],
+    ["examples", "TEXT NOT NULL DEFAULT '[]'"],
+    ["common_mistakes", "TEXT NOT NULL DEFAULT '[]'"],
+    ["quick_check", "TEXT NOT NULL DEFAULT '{}'"],
+    ["status", "TEXT NOT NULL DEFAULT 'draft'"],
+    ["content_version", "TEXT NOT NULL DEFAULT 'v1'"],
+  ].filter(([name]) => !topicColumnNames.has(name));
+  for (const [name, definition] of missingTopicColumns) {
+    await db.prepare(`ALTER TABLE spanish_buddy_topics ADD COLUMN ${name} ${definition}`).run();
+  }
   const variantColumns = await db.prepare("PRAGMA table_info(spanish_buddy_exercise_variants)").all<{ name: string }>();
   const variantColumnNames = new Set((variantColumns.results ?? []).map((column) => column.name));
   const missingVariantColumns = [
@@ -159,40 +191,125 @@ export async function ensureSpanishBuddySchema(db: D1Database) {
   }
 }
 
-type UnlinkedGrammarItem = {
+type GrammarItemForTopic = {
   id: string;
   spanish: string;
+  translation: string;
   explanation: string;
 };
 
-export async function ensureSpanishBuddyTopicsForOwner(db: D1Database, ownerId: string) {
-  const { learningTopicKey } = await import("./spanish-buddy");
-  const result = await db.prepare(
-    `SELECT i.id, i.spanish, i.explanation
-     FROM spanish_buddy_items i
-     LEFT JOIN spanish_buddy_item_topics it ON it.item_id = i.id AND it.owner_id = i.owner_id
-     WHERE i.owner_id = ? AND i.kind = 'grammar' AND it.item_id IS NULL`,
-  ).bind(ownerId).all<UnlinkedGrammarItem>();
+type StoredTopic = { id: string; canonical_key: string; content_version: string };
+type StoredTopicLink = { item_id: string; canonical_key: string };
 
-  const statements = (result.results ?? []).flatMap((item) => {
-    const key = learningTopicKey(item.spanish);
-    if (!key) return [];
-    const topicId = crypto.randomUUID();
-    return [
-      db.prepare(
-        `INSERT INTO spanish_buddy_topics (id, owner_id, canonical_key, title, explanation)
-         VALUES (?, ?, ?, ?, ?)
-         ON CONFLICT(owner_id, canonical_key) DO UPDATE SET
-           title = CASE WHEN length(excluded.title) > length(title) THEN excluded.title ELSE title END,
-           explanation = CASE WHEN length(excluded.explanation) > length(explanation) THEN excluded.explanation ELSE explanation END,
-           updated_at = CURRENT_TIMESTAMP`,
-      ).bind(topicId, ownerId, key, item.spanish, item.explanation),
-      db.prepare(
+function topicInsertStatement(db: D1Database, ownerId: string, topic: GrammarTopicDefinition, id: string) {
+  return db.prepare(
+    `INSERT INTO spanish_buddy_topics
+     (id, owner_id, canonical_key, title, explanation, summary, definition, use_cases, formation,
+      examples, common_mistakes, quick_check, status, content_version)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(
+    id,
+    ownerId,
+    topic.key,
+    topic.title,
+    topic.definition,
+    topic.summary,
+    topic.definition,
+    JSON.stringify(topic.useCases),
+    topic.formation,
+    JSON.stringify(topic.examples),
+    JSON.stringify(topic.commonMistakes),
+    JSON.stringify(topic.quickCheck),
+    topicIsReady(topic) ? "ready" : "draft",
+    TOPIC_CONTENT_VERSION,
+  );
+}
+
+function topicUpdateStatement(db: D1Database, ownerId: string, topic: GrammarTopicDefinition) {
+  return db.prepare(
+    `UPDATE spanish_buddy_topics
+     SET title = ?, explanation = ?, summary = ?, definition = ?, use_cases = ?, formation = ?,
+         examples = ?, common_mistakes = ?, quick_check = ?, status = ?, content_version = ?, updated_at = CURRENT_TIMESTAMP
+     WHERE owner_id = ? AND canonical_key = ?`,
+  ).bind(
+    topic.title,
+    topic.definition,
+    topic.summary,
+    topic.definition,
+    JSON.stringify(topic.useCases),
+    topic.formation,
+    JSON.stringify(topic.examples),
+    JSON.stringify(topic.commonMistakes),
+    JSON.stringify(topic.quickCheck),
+    topicIsReady(topic) ? "ready" : "draft",
+    TOPIC_CONTENT_VERSION,
+    ownerId,
+    topic.key,
+  );
+}
+
+export async function ensureSpanishBuddyTopicsForOwner(db: D1Database, ownerId: string) {
+  const [itemResult, topicResult, linkResult] = await Promise.all([
+    db.prepare(
+      `SELECT id, spanish, translation, explanation
+       FROM spanish_buddy_items WHERE owner_id = ? AND kind = 'grammar'`,
+    ).bind(ownerId).all<GrammarItemForTopic>(),
+    db.prepare(
+      `SELECT id, canonical_key, content_version
+       FROM spanish_buddy_topics WHERE owner_id = ?`,
+    ).bind(ownerId).all<StoredTopic>(),
+    db.prepare(
+      `SELECT it.item_id, t.canonical_key
+       FROM spanish_buddy_item_topics it
+       JOIN spanish_buddy_topics t ON t.id = it.topic_id AND t.owner_id = it.owner_id
+       WHERE it.owner_id = ?`,
+    ).bind(ownerId).all<StoredTopicLink>(),
+  ]);
+
+  const items = itemResult.results ?? [];
+  const existingTopics = new Map((topicResult.results ?? []).map((topic) => [topic.canonical_key, topic]));
+  const existingLinks = new Map<string, Set<string>>();
+  for (const link of linkResult.results ?? []) {
+    const keys = existingLinks.get(link.item_id) ?? new Set<string>();
+    keys.add(link.canonical_key);
+    existingLinks.set(link.item_id, keys);
+  }
+
+  const desiredByItem = new Map(items.map((item) => [item.id, matchGrammarTopic(item)]));
+  const neededTopics = new Map<string, GrammarTopicDefinition>();
+  for (const topic of desiredByItem.values()) if (topic) neededTopics.set(topic.key, topic);
+
+  const statements: D1PreparedStatement[] = [];
+  for (const topic of neededTopics.values()) {
+    const existing = existingTopics.get(topic.key);
+    if (!existing) statements.push(topicInsertStatement(db, ownerId, topic, crypto.randomUUID()));
+    else if (existing.content_version !== TOPIC_CONTENT_VERSION) statements.push(topicUpdateStatement(db, ownerId, topic));
+  }
+
+  for (const item of items) {
+    const desired = desiredByItem.get(item.id);
+    const currentKeys = existingLinks.get(item.id) ?? new Set<string>();
+    const alreadyCorrect = desired ? currentKeys.size === 1 && currentKeys.has(desired.key) : currentKeys.size === 0;
+    if (alreadyCorrect) continue;
+    statements.push(db.prepare(
+      "DELETE FROM spanish_buddy_item_topics WHERE owner_id = ? AND item_id = ?",
+    ).bind(ownerId, item.id));
+    if (desired) {
+      statements.push(db.prepare(
         `INSERT OR IGNORE INTO spanish_buddy_item_topics (owner_id, item_id, topic_id)
          SELECT ?, ?, id FROM spanish_buddy_topics WHERE owner_id = ? AND canonical_key = ?`,
-      ).bind(ownerId, item.id, ownerId, key),
-    ];
-  });
+      ).bind(ownerId, item.id, ownerId, desired.key));
+      statements.push(db.prepare(
+        "UPDATE spanish_buddy_topics SET updated_at = CURRENT_TIMESTAMP WHERE owner_id = ? AND canonical_key = ?",
+      ).bind(ownerId, desired.key));
+    }
+  }
+  statements.push(db.prepare(
+    `DELETE FROM spanish_buddy_topics
+     WHERE owner_id = ? AND NOT EXISTS (
+       SELECT 1 FROM spanish_buddy_item_topics it WHERE it.owner_id = ? AND it.topic_id = spanish_buddy_topics.id
+     )`,
+  ).bind(ownerId, ownerId));
   if (statements.length) await db.batch(statements);
 }
 

@@ -42,3 +42,5 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+/evals/spanish-buddy/upload-benchmark-*-report.json
+/evals/spanish-buddy/upload-benchmark-*-report.md

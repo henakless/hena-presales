@@ -11,6 +11,7 @@ import {
 } from "../../lib/spanish-buddy-exercises";
 import {
   EXAMPLE_NOTES,
+  MAX_LESSON_ITEMS,
   masteryLabel,
   type ExtractedItem,
   type ExtractionResult,
@@ -20,7 +21,7 @@ import {
 } from "../../lib/spanish-buddy";
 
 type View = "today" | "add" | "library" | "exercises";
-type LibraryFilter = "topics" | "all" | "words" | "expressions" | "collocations" | "grammar";
+type LibraryFilter = "topics" | "all" | "words" | "expressions" | "grammar";
 
 type Exercise = {
   exerciseType: string;
@@ -113,8 +114,8 @@ function mergeExtractions(results: ExtractionResult[], requestedTitle: string): 
   }
 
   const mergedItems = [...byContent.values()];
-  const courseItems = mergedItems.filter((item) => item.provenance === "course").slice(0, 45);
   const suggestedItems = mergedItems.filter((item) => item.provenance === "suggested").slice(0, 6);
+  const courseItems = mergedItems.filter((item) => item.provenance === "course").slice(0, MAX_LESSON_ITEMS - suggestedItems.length);
 
   return {
     title: requestedTitle || results[0]?.title || "Nueva lección de español",
@@ -170,6 +171,8 @@ export default function SpanishBuddy() {
   const [lessons, setLessons] = useState<SavedLesson[]>([]);
   const [items, setItems] = useState<SavedItem[]>([]);
   const [topics, setTopics] = useState<LearningTopic[]>([]);
+  const [selectedTopic, setSelectedTopic] = useState<LearningTopic | null>(null);
+  const [topicAnswerRevealed, setTopicAnswerRevealed] = useState(false);
   const [loadingLibrary, setLoadingLibrary] = useState(true);
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
@@ -230,14 +233,12 @@ export default function SpanishBuddy() {
     { id: "all", label: "Todo" },
     { id: "words", label: "Palabras" },
     { id: "expressions", label: "Expresiones" },
-    { id: "collocations", label: "Combinaciones" },
     { id: "grammar", label: "Gramática" },
   ];
 
   function libraryCategory(item: SavedItem): Exclude<LibraryFilter, "all" | "topics"> {
     if (item.kind === "grammar" || item.learningType === "grammar_rule" || item.learningType === "conjugation") return "grammar";
     if (item.learningType === "fixed_expression" || item.learningType === "sentence_pattern") return "expressions";
-    if (item.learningType === "collocation") return "collocations";
     return "words";
   }
 
@@ -245,12 +246,11 @@ export default function SpanishBuddy() {
     const category = libraryCategory(item);
     if (category === "grammar") return "Regla";
     if (category === "expressions") return "Expresión";
-    if (category === "collocations") return "Combinación";
     return "Palabra";
   }
 
   const libraryCounts = useMemo(() => {
-    const counts: Record<LibraryFilter, number> = { topics: topics.length, all: items.length, words: 0, expressions: 0, collocations: 0, grammar: 0 };
+    const counts: Record<LibraryFilter, number> = { topics: topics.length, all: items.length, words: 0, expressions: 0, grammar: 0 };
     items.forEach((item) => { counts[libraryCategory(item)] += 1; });
     return counts;
   }, [items, topics.length]);
@@ -268,6 +268,17 @@ export default function SpanishBuddy() {
   function openLibraryItem(item: SavedItem) {
     setEditingItem({ ...item, acceptedAnswers: [...item.acceptedAnswers] });
     setEditorMode("detail");
+  }
+
+  function openLearningTopic(topic: LearningTopic) {
+    setSelectedTopic(topic);
+    setTopicAnswerRevealed(false);
+  }
+
+  function itemsForTopic(topic: LearningTopic) {
+    return topic.itemIds
+      .map((id) => items.find((item) => item.id === id))
+      .filter((item): item is SavedItem => Boolean(item));
   }
 
   function cancelItemEditing() {
@@ -1137,32 +1148,22 @@ export default function SpanishBuddy() {
                   <p>Cada lección añade o enriquece estos temas. Léelos cuando necesites refrescar una regla y practica solo ese contenido.</p>
                 </div>
                 <div className="sb-topic-list">
-                  {topics.map((topic, index) => {
-                    const topicItems = topic.itemIds.map((id) => items.find((item) => item.id === id)).filter((item): item is SavedItem => Boolean(item));
-                    return (
-                      <article className="sb-topic-card" key={topic.id}>
-                        <div className="sb-topic-number">{String(index + 1).padStart(2, "0")}</div>
-                        <div className="sb-topic-copy">
-                          <div className="sb-topic-meta"><span>Tema de gramática</span><span>{topic.lessonTitles.length} {topic.lessonTitles.length === 1 ? "lección" : "lecciones"}</span></div>
-                          <h2>{topic.title}</h2>
-                          <p className="sb-topic-explanation" lang="de">{topic.explanation || "Este tema todavía necesita una explicación más completa."}</p>
-                          {topic.examples.length > 0 && (
-                            <div className="sb-topic-examples">
-                              <span>{topic.examples.length === 1 ? "Ejemplo" : "Ejemplos"}</span>
-                              {topic.examples.map((example) => <p lang="es" key={example}>{example}</p>)}
-                            </div>
-                          )}
-                          <p className="sb-topic-sources">De: {topic.lessonTitles.join(" · ")}</p>
-                        </div>
-                        <aside className="sb-topic-action">
-                          <Sunflower mastery={topic.mastery} label={`${topic.title}: ${topic.mastery}% de dominio`} />
-                          <strong>{topic.mastery}%</strong>
-                          <span>{masteryLabel(topic.mastery)}</span>
-                          <button disabled={preparingSession || !topicItems.length} onClick={() => void startSession(topicItems, 4)}>{preparingSession ? "Preparando…" : "Entrenamiento corto →"}</button>
-                        </aside>
-                      </article>
-                    );
-                  })}
+                  {topics.map((topic, index) => (
+                    <article className="sb-topic-index-card" key={topic.id}>
+                      <span className="sb-topic-index-number">{String(index + 1).padStart(2, "0")}</span>
+                      <div className="sb-topic-index-copy">
+                        <div className="sb-topic-meta"><span>Tema de gramática</span><span>Actualizado {new Date(topic.updatedAt).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}</span></div>
+                        <h2>{topic.title}</h2>
+                        <p>{topic.summary}</p>
+                        <small>{topic.lessonTitles.length} {topic.lessonTitles.length === 1 ? "lección conectada" : "lecciones conectadas"}</small>
+                      </div>
+                      <div className="sb-topic-index-progress">
+                        <Sunflower mastery={topic.mastery} label={`${topic.title}: ${topic.mastery}% de dominio`} />
+                        <div><strong>{topic.mastery}%</strong><span>{masteryLabel(topic.mastery)}</span></div>
+                      </div>
+                      <button className="sb-topic-open" onClick={() => openLearningTopic(topic)}>Abrir repaso <span>→</span></button>
+                    </article>
+                  ))}
                 </div>
               </section>
             ) : (
@@ -1196,7 +1197,7 @@ export default function SpanishBuddy() {
             <div>
               <p className="sb-eyebrow">Tu forma de practicar</p>
               <h1>Elige cómo quieres <em>aprender.</em></h1>
-              <p>Elige una combinación para tu situación de hoy y ajusta después cualquier ejercicio individual.</p>
+              <p>Elige una práctica para tu situación de hoy y ajusta después cualquier ejercicio individual.</p>
             </div>
             <div className="sb-selection-panel">
               <strong>{selectedExerciseTypes.length}</strong>
@@ -1213,8 +1214,8 @@ export default function SpanishBuddy() {
 
           <section className="sb-practice-presets" aria-labelledby="sb-practice-presets-title">
             <div className="sb-practice-presets-head">
-              <div><p className="sb-eyebrow">Combinaciones rápidas</p><h2 id="sb-practice-presets-title">¿Qué te apetece ahora?</h2></div>
-              <p>Elige un punto de partida y ajusta después cualquier ejercicio individual. Pulsa otra vez la combinación activa para vaciarla.</p>
+              <div><p className="sb-eyebrow">Prácticas rápidas</p><h2 id="sb-practice-presets-title">¿Qué te apetece ahora?</h2></div>
+              <p>Elige un punto de partida y ajusta después cualquier ejercicio individual. Pulsa otra vez la opción activa para vaciarla.</p>
             </div>
             <div className="sb-practice-preset-grid">
               {EXERCISE_PRESETS.map((preset) => {
@@ -1297,6 +1298,72 @@ export default function SpanishBuddy() {
         </div>
       )}
 
+      {selectedTopic && (
+        <div className="sb-topic-detail-backdrop" role="dialog" aria-modal="true" aria-labelledby="sb-topic-detail-title">
+          <article className="sb-topic-detail">
+            <header className="sb-topic-detail-header">
+              <div><p className="sb-eyebrow">Repaso de 2 minutos</p><h2 id="sb-topic-detail-title">{selectedTopic.title}</h2><p>{selectedTopic.summary}</p></div>
+              <button onClick={() => setSelectedTopic(null)} aria-label="Cerrar repaso">×</button>
+            </header>
+
+            <div className="sb-topic-detail-status">
+              <Sunflower mastery={selectedTopic.mastery} label={`${selectedTopic.mastery}% de dominio`} />
+              <div><strong>{masteryLabel(selectedTopic.mastery)}</strong><span>{selectedTopic.mastery}% de dominio · {selectedTopic.lessonTitles.length} {selectedTopic.lessonTitles.length === 1 ? "lección" : "lecciones"}</span></div>
+            </div>
+
+            <section className="sb-topic-detail-block sb-topic-definition">
+              <p className="sb-eyebrow">Qué significa</p>
+              <p lang="de">{selectedTopic.definition}</p>
+            </section>
+
+            <div className="sb-topic-detail-columns">
+              <section className="sb-topic-detail-block">
+                <p className="sb-eyebrow">Cuándo se usa</p>
+                <ul lang="de">{selectedTopic.useCases.map((useCase) => <li key={useCase}>{useCase}</li>)}</ul>
+              </section>
+              <section className="sb-topic-detail-block">
+                <p className="sb-eyebrow">Cómo se forma</p>
+                <p lang="de">{selectedTopic.formation}</p>
+              </section>
+            </div>
+
+            <section className="sb-topic-detail-block">
+              <p className="sb-eyebrow">Ejemplos</p>
+              <div className="sb-topic-detail-examples">
+                {selectedTopic.examples.map((example) => (
+                  <article key={`${example.spanish}-${example.translation}`}><strong lang="es">{example.spanish}</strong>{example.translation && <span lang="de">{example.translation}</span>}</article>
+                ))}
+              </div>
+            </section>
+
+            {selectedTopic.commonMistakes.length > 0 && (
+              <section className="sb-topic-detail-block sb-topic-warning">
+                <p className="sb-eyebrow">Ojo</p>
+                <ul lang="de">{selectedTopic.commonMistakes.map((mistake) => <li key={mistake}>{mistake}</li>)}</ul>
+              </section>
+            )}
+
+            <section className="sb-topic-detail-block sb-topic-quick-check">
+              <div><p className="sb-eyebrow">Comprueba si lo recuerdas</p><strong>{selectedTopic.quickCheck.prompt}</strong></div>
+              <button aria-expanded={topicAnswerRevealed} onClick={() => setTopicAnswerRevealed((value) => !value)}>{topicAnswerRevealed ? "Ocultar respuesta" : "Ver respuesta"}</button>
+              {topicAnswerRevealed && <p className="sb-topic-quick-answer">{selectedTopic.quickCheck.answer}</p>}
+            </section>
+
+            {selectedTopic.sourceNotes.length > 0 && (
+              <details className="sb-topic-source-notes">
+                <summary>Ver lo que decían tus apuntes</summary>
+                <div>{selectedTopic.sourceNotes.map((note) => <p lang="de" key={note}>{note}</p>)}</div>
+              </details>
+            )}
+
+            <footer className="sb-topic-detail-footer">
+              <p>Contenido conectado: {selectedTopic.lessonTitles.join(" · ")}</p>
+              <button className="sb-primary" disabled={preparingSession || !itemsForTopic(selectedTopic).length} onClick={() => void startSession(itemsForTopic(selectedTopic), 4)}>{preparingSession ? "Preparando…" : "Practicar este tema"}<span>→</span></button>
+            </footer>
+          </article>
+        </div>
+      )}
+
       {editingItem && (
         <div className="sb-editor-backdrop" role="dialog" aria-modal="true" aria-label={`${editingItem.kind === "grammar" ? "Regla" : "Vocabulario"}: ${editingItem.spanish}`}>
           {editorMode === "detail" ? (
@@ -1317,7 +1384,7 @@ export default function SpanishBuddy() {
             <form className="sb-item-editor" onSubmit={saveEditedItem}>
               <div className="sb-editor-head"><div><p className="sb-eyebrow">Editar contenido</p><h2>{editingItem.kind === "grammar" ? "Regla gramatical" : "Vocabulario"}</h2></div><button type="button" onClick={() => setEditingItem(null)} aria-label="Cerrar">×</button></div>
               <div className="sb-editor-grid">
-                <label><span>Tipo de contenido</span><select value={editingItem.learningType} onChange={(event) => setEditingItem({ ...editingItem, learningType: event.target.value as SavedItem["learningType"] })}><option value="word">Palabra</option><option value="collocation">Combinación de palabras</option><option value="fixed_expression">Expresión fija</option><option value="sentence_pattern">Estructura de frase</option><option value="grammar_rule">Regla gramatical</option><option value="conjugation">Conjugación</option></select></label>
+                <label><span>Tipo de contenido</span><select value={editingItem.learningType === "collocation" ? "word" : editingItem.learningType} onChange={(event) => setEditingItem({ ...editingItem, learningType: event.target.value as SavedItem["learningType"] })}><option value="word">Palabra</option><option value="fixed_expression">Expresión fija</option><option value="sentence_pattern">Estructura de frase</option><option value="grammar_rule">Regla gramatical</option><option value="conjugation">Conjugación</option></select></label>
                 <label><span>Español</span><input value={editingItem.spanish} onChange={(event) => setEditingItem({ ...editingItem, spanish: event.target.value })} required /><small>En los verbos, incluye la preposición: hablar con, ir a, depender de…</small></label>
                 <label><span>Traducción de tus apuntes</span><input lang="de" value={editingItem.translation} onChange={(event) => setEditingItem({ ...editingItem, translation: event.target.value, acceptedAnswers: [] })} /></label>
                 <label className="wide"><span>{editingItem.kind === "grammar" ? "Explicación de la regla" : "Nota de uso"}</span><textarea lang="de" value={editingItem.explanation} onChange={(event) => setEditingItem({ ...editingItem, explanation: event.target.value })} placeholder={editingItem.kind === "grammar" ? "Formación, uso y excepciones" : "Solo si hace falta aclarar el uso"} /></label>

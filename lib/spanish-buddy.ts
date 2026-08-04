@@ -1,6 +1,10 @@
+import type { TopicExample, TopicQuickCheck } from "./spanish-buddy-topics";
+
 export type KnowledgeKind = "vocabulary" | "grammar";
 export type LearningType = "word" | "collocation" | "fixed_expression" | "sentence_pattern" | "grammar_rule" | "conjugation";
 export type Provenance = "course" | "suggested";
+
+export const MAX_LESSON_ITEMS = 90;
 
 export type ExtractedItem = {
   id: string;
@@ -45,8 +49,15 @@ export type LearningTopic = {
   id: string;
   key: string;
   title: string;
+  summary: string;
   explanation: string;
-  examples: string[];
+  definition: string;
+  useCases: string[];
+  formation: string;
+  examples: TopicExample[];
+  commonMistakes: string[];
+  quickCheck: TopicQuickCheck;
+  sourceNotes: string[];
   itemIds: string[];
   lessonTitles: string[];
   mastery: number;

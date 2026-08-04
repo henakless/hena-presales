@@ -1,4 +1,4 @@
-import { inferLearningType, type ExtractedItem, type LearningTopic, type LearningType, type SavedItem, type SavedLesson } from "../../../../lib/spanish-buddy";
+import { inferLearningType, MAX_LESSON_ITEMS, resolveLearningType, type ExtractedItem, type LearningTopic, type LearningType, type SavedItem, type SavedLesson } from "../../../../lib/spanish-buddy";
 import {
   ensureSpanishBuddySchema,
   ensureSpanishBuddyTopicsForOwner,
@@ -7,6 +7,7 @@ import {
   jsonWithOwner,
 } from "../../../../lib/spanish-buddy-server";
 import { warmSpanishBuddyExerciseCache } from "../../../../lib/spanish-buddy-exercise-cache";
+import type { TopicExample, TopicQuickCheck } from "../../../../lib/spanish-buddy-topics";
 
 export const runtime = "edge";
 
@@ -41,12 +42,53 @@ type TopicRow = {
   canonical_key: string;
   title: string;
   explanation: string;
+  summary: string;
+  definition: string;
+  use_cases: string;
+  formation: string;
+  topic_examples: string;
+  common_mistakes: string;
+  quick_check: string;
   updated_at: string;
   item_id: string;
-  example: string;
+  item_explanation: string;
+  item_example: string;
   mastery: number;
   lesson_title: string;
+  lesson_created_at: string;
 };
+
+function parseStringArray(value: string) {
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === "string" && Boolean(entry.trim())) : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseTopicExamples(value: string) {
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((entry): entry is TopicExample => (
+      typeof entry?.spanish === "string" && typeof entry?.translation === "string" && Boolean(entry.spanish.trim())
+    )) : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseQuickCheck(value: string): TopicQuickCheck {
+  try {
+    const parsed = JSON.parse(value) as Partial<TopicQuickCheck>;
+    return {
+      prompt: typeof parsed.prompt === "string" ? parsed.prompt : "",
+      answer: typeof parsed.answer === "string" ? parsed.answer : "",
+    };
+  } catch {
+    return { prompt: "", answer: "" };
+  }
+}
 
 function mapItem(row: ItemRow): SavedItem {
   let acceptedAnswers: string[] = [];
@@ -73,10 +115,7 @@ function mapItem(row: ItemRow): SavedItem {
     correctCount: row.correct_count,
     nextReviewAt: row.next_review_at,
   };
-  const inferred = inferLearningType(base);
-  const learningType = (row.kind === "grammar" && row.learning_type === "word") || (row.kind === "vocabulary" && row.learning_type === "word" && inferred !== "word")
-    ? inferred
-    : row.learning_type || inferred;
+  const learningType = resolveLearningType(base, row.learning_type);
   return { ...base, learningType };
 }
 
@@ -104,13 +143,15 @@ export async function GET(request: Request) {
          ORDER BY i.next_review_at ASC, i.mastery ASC, i.created_at DESC`,
       ).bind(ownerId).all<ItemRow>(),
       db.prepare(
-        `SELECT t.id, t.canonical_key, t.title, t.explanation, t.updated_at,
-                i.id AS item_id, i.example, i.mastery, l.title AS lesson_title
+        `SELECT t.id, t.canonical_key, t.title, t.explanation, t.summary, t.definition,
+                t.use_cases, t.formation, t.examples AS topic_examples, t.common_mistakes,
+                t.quick_check, t.updated_at, i.id AS item_id, i.explanation AS item_explanation,
+                i.example AS item_example, i.mastery, l.title AS lesson_title, l.created_at AS lesson_created_at
          FROM spanish_buddy_topics t
          JOIN spanish_buddy_item_topics it ON it.topic_id = t.id AND it.owner_id = t.owner_id
          JOIN spanish_buddy_items i ON i.id = it.item_id AND i.owner_id = t.owner_id
          JOIN spanish_buddy_lessons l ON l.id = i.lesson_id
-         WHERE t.owner_id = ?
+         WHERE t.owner_id = ? AND t.status = 'ready'
          ORDER BY t.updated_at DESC, i.created_at DESC`,
       ).bind(ownerId).all<TopicRow>(),
     ]);
@@ -129,28 +170,44 @@ export async function GET(request: Request) {
     for (const row of topicResult.results ?? []) {
       const existing = topicMap.get(row.id);
       if (existing) {
-        if (row.example && !existing.examples.includes(row.example)) existing.examples.push(row.example);
+        if (row.item_example && !existing.examples.some((example) => example.spanish === row.item_example)) {
+          existing.examples.push({ spanish: row.item_example, translation: "" });
+        }
+        if (row.item_explanation && !existing.sourceNotes.includes(row.item_explanation)) existing.sourceNotes.push(row.item_explanation);
         if (!existing.itemIds.includes(row.item_id)) existing.itemIds.push(row.item_id);
         if (!existing.lessonTitles.includes(row.lesson_title)) existing.lessonTitles.push(row.lesson_title);
+        if (new Date(row.lesson_created_at).getTime() > new Date(existing.updatedAt).getTime()) existing.updatedAt = row.lesson_created_at;
         continue;
+      }
+      const examples = parseTopicExamples(row.topic_examples);
+      if (row.item_example && !examples.some((example) => example.spanish === row.item_example)) {
+        examples.push({ spanish: row.item_example, translation: "" });
       }
       topicMap.set(row.id, {
         id: row.id,
         key: row.canonical_key,
         title: row.title,
+        summary: row.summary,
         explanation: row.explanation,
-        examples: row.example ? [row.example] : [],
+        definition: row.definition || row.explanation,
+        useCases: parseStringArray(row.use_cases),
+        formation: row.formation,
+        examples,
+        commonMistakes: parseStringArray(row.common_mistakes),
+        quickCheck: parseQuickCheck(row.quick_check),
+        sourceNotes: row.item_explanation ? [row.item_explanation] : [],
         itemIds: [row.item_id],
         lessonTitles: [row.lesson_title],
         mastery: 0,
-        updatedAt: row.updated_at,
+        updatedAt: row.lesson_created_at || row.updated_at,
       });
     }
     const topics = [...topicMap.values()].map((topic) => {
       const topicItems = topic.itemIds.map((id) => items.find((item) => item.id === id)).filter((item): item is SavedItem => Boolean(item));
       return {
         ...topic,
-        examples: topic.examples.slice(0, 4),
+        examples: topic.examples.slice(0, 6),
+        sourceNotes: topic.sourceNotes.slice(0, 8),
         mastery: Math.round(topicItems.reduce((sum, item) => sum + item.mastery, 0) / Math.max(topicItems.length, 1)),
       };
     });
@@ -185,7 +242,7 @@ export async function POST(request: Request) {
       (item.kind === "vocabulary" || item.kind === "grammar") &&
       typeof item.spanish === "string" &&
       item.spanish.trim(),
-  ).slice(0, 60);
+  ).slice(0, MAX_LESSON_ITEMS);
 
   if (!title || selected.length === 0) {
     return jsonWithOwner({ error: "Pon un título y confirma al menos un contenido." }, 400, setCookie);

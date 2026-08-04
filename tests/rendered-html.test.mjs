@@ -187,6 +187,7 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(pageSource, /AbortController/i);
   assert.match(pageSource, /Continuar páginas pendientes/i);
   assert.match(pageSource, /cancelAnalysis/i);
+  assert.match(pageSource, /MAX_LESSON_ITEMS - suggestedItems\.length/i);
   const nextConfigSource = await readFile(new URL("../next.config.ts", import.meta.url), "utf8");
   assert.match(nextConfigSource, /bodySizeLimit:\s*"26mb"/i);
   const compiledServerSource = await readFile(new URL("../dist/server/index.js", import.meta.url), "utf8");
@@ -202,6 +203,7 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(pageSource, /EXERCISE_LIBRARY/i);
   assert.match(pageSource, /Deseleccionar todos/i);
   assert.match(pageSource, /selectedExerciseTypes/i);
+  assert.doesNotMatch(pageSource, /Combinaciones|Combinación de palabras/i);
   assert.match(pageSource, /toggleExerciseCategory/i);
   assert.match(pageSource, /Seleccionar.*todos los ejercicios de/i);
   assert.match(pageSource, /apiUrl\("practice"\)/i);
@@ -256,6 +258,7 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(exerciseLibrarySource, /Dado de conjugación/i);
   assert.match(exerciseLibrarySource, /status: "coming_soon"/i);
   assert.match(exerciseLibrarySource, /hablar con · yo · presente/i);
+  assert.doesNotMatch(exerciseLibrarySource, /Colocaciones y expresiones|palabras y combinaciones|palabra o combinación/i);
 
   const practiceSource = await readFile(new URL("../app/spanishbuddy/api/practice/route.ts", import.meta.url), "utf8");
   assert.match(practiceSource, /spanish_buddy_exercise_variants/i);
@@ -280,6 +283,7 @@ test("serves Spanish Buddy at its public path", async () => {
   const lessonSource = await readFile(new URL("../app/spanishbuddy/api/lessons/route.ts", import.meta.url), "utf8");
   assert.match(lessonSource, /warmSpanishBuddyExerciseCache/i);
   assert.match(lessonSource, /quality_status = 'retired'/i);
+  assert.match(lessonSource, /slice\(0, MAX_LESSON_ITEMS\)/i);
 
   const attemptSource = await readFile(new URL("../app/spanishbuddy/api/attempts/route.ts", import.meta.url), "utf8");
   assert.match(attemptSource, /action === "override"/i);

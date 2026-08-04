@@ -4,7 +4,7 @@ import {
   isActiveExerciseId,
   type ExerciseCategory,
 } from "../../../../lib/spanish-buddy-exercises";
-import { inferLearningType, type LearningType, type SavedItem } from "../../../../lib/spanish-buddy";
+import { MAX_LESSON_ITEMS, resolveLearningType, type LearningType, type SavedItem } from "../../../../lib/spanish-buddy";
 import {
   applyExerciseUsabilityGuardrails,
   auditExerciseUsability,
@@ -87,11 +87,7 @@ function mapItem(row: ItemRow): SavedItem {
     correctCount: row.correct_count,
     nextReviewAt: row.next_review_at,
   };
-  const inferred = inferLearningType(item);
-  const learningType = (row.kind === "grammar" && row.learning_type === "word")
-    || (row.kind === "vocabulary" && row.learning_type === "word" && inferred !== "word")
-    ? inferred
-    : row.learning_type || inferred;
+  const learningType = resolveLearningType(item, row.learning_type);
   return { ...item, learningType };
 }
 
@@ -234,7 +230,7 @@ export async function POST(request: Request) {
   }
 
   const itemIds = Array.isArray(payload.itemIds)
-    ? [...new Set(payload.itemIds.filter((value): value is string => typeof value === "string").map((value) => value.slice(0, 80)))].slice(0, 60)
+    ? [...new Set(payload.itemIds.filter((value): value is string => typeof value === "string").map((value) => value.slice(0, 80)))].slice(0, MAX_LESSON_ITEMS)
     : [];
   const selectedTypes = Array.isArray(payload.selectedTypes)
     ? [...new Set(payload.selectedTypes.filter(isActiveExerciseId))]

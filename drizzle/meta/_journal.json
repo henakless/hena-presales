@@ -71,6 +71,13 @@
       "when": 1785878512688,
       "tag": "0009_dry_tag",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1785881655666,
+      "tag": "0010_yielding_deadpool",
+      "breakpoints": true
     }
   ]
 }
