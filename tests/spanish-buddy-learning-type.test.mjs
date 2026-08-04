@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { inferLearningType, learningTopicKey } from "../lib/spanish-buddy.ts";
+import { inferLearningType, learningTopicKey, resolveLearningType } from "../lib/spanish-buddy.ts";
 
 const vocabulary = (spanish) => ({ kind: "vocabulary", spanish, explanation: "" });
 
@@ -15,6 +15,12 @@ test("keeps verbs with governed complements as collocations", () => {
   assert.equal(inferLearningType(vocabulary("hablar con")), "collocation");
   assert.equal(inferLearningType(vocabulary("ir a")), "collocation");
   assert.equal(inferLearningType(vocabulary("alojarse en")), "collocation");
+});
+
+test("keeps self-contained verb phrases with expressions", () => {
+  assert.equal(inferLearningType(vocabulary("manejar la cuenta del banco")), "fixed_expression");
+  assert.equal(inferLearningType(vocabulary("tomar una decisión")), "fixed_expression");
+  assert.equal(resolveLearningType(vocabulary("manejar la cuenta del banco"), "collocation"), "fixed_expression");
 });
 
 test("separates complete expressions and grammar", () => {

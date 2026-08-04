@@ -30,7 +30,7 @@ export const EXERCISE_PRESETS: Array<{ id: string; name: string; description: st
 ];
 
 export const EXERCISE_CATEGORIES: Array<{ id: ExerciseCategory; name: string; description: string }> = [
-  { id: "vocabulary", name: "Vocabulario", description: "Recordar, distinguir y usar palabras y combinaciones." },
+  { id: "vocabulary", name: "Vocabulario", description: "Recordar, distinguir y usar palabras y expresiones." },
   { id: "grammar", name: "Gramática", description: "Formar, elegir y aplicar estructuras con intención." },
   { id: "communication", name: "Comunicación", description: "Resolver situaciones reales con lenguaje natural." },
   { id: "reading", name: "Lectura", description: "Comprender ideas, detalles, relaciones y mensajes." },
@@ -87,8 +87,8 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
     id: "collocations",
     category: "vocabulary",
     mode: "fill-gap",
-    name: "Colocaciones y expresiones",
-    description: "Aprende palabras junto con sus preposiciones y compañeros habituales.",
+    name: "Palabras con preposición",
+    description: "Aprende cada palabra junto con la preposición que necesita.",
     rule: "Los verbos se practican como hablar con, depender de o ir a; no como infinitivos aislados.",
     examplePrompt: "Gracias ___ la invitación.",
     exampleAnswer: "por",
@@ -110,8 +110,8 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
     category: "vocabulary",
     mode: "writing",
     name: "Escribe una frase",
-    description: "Usa una palabra o combinación en una idea propia.",
-    rule: "El estímulo es una palabra o combinación breve, nunca una frase ya completa.",
+    description: "Usa una palabra o expresión en una idea propia.",
+    rule: "El estímulo es una palabra o expresión breve, nunca una frase ya completa.",
     examplePrompt: "Escribe una frase con «aburrimiento».",
     exampleAnswer: "El aburrimiento me hizo salir a dar un paseo.",
     status: "active",

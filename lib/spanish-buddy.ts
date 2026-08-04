@@ -87,14 +87,32 @@ export function inferLearningType(item: Pick<ExtractedItem, "kind" | "spanish" |
 
   // Articles and adjective complements are part of a dictionary headword, not
   // a collocation: "la sencillez", "el/la carterista", "redes sociales".
-  // Reserve collocations for lexical combinations learners must retain
-  // together, especially verbs with their governed preposition or complement.
+  // Reserve collocations for governed combinations learners must retain
+  // together. A self-contained verb phrase such as "manejar la cuenta del
+  // banco" belongs with expressions, not with governed pairs such as
+  // "hablar con" or "depender de".
   const firstWord = words[0].toLocaleLowerCase("es-ES").replace(/[^a-záéíóúüñ/]/g, "");
   const startsWithInfinitive = /(?:ar|er|ir|arse|erse|irse)$/.test(firstWord);
-  if (startsWithInfinitive) return "collocation";
+  const endsWithGovernedPreposition = /\b(?:a|con|de|en|por|para)$/i.test(spanish);
+  if (startsWithInfinitive && endsWithGovernedPreposition) return "collocation";
+  if (startsWithInfinitive) return "fixed_expression";
   if (words.length === 2) return "word";
 
   return /[.…?¿!¡]$/.test(spanish) ? "fixed_expression" : "sentence_pattern";
+}
+
+export function resolveLearningType(
+  item: Pick<ExtractedItem, "kind" | "spanish" | "explanation">,
+  storedType?: LearningType,
+) {
+  const inferred = inferLearningType(item);
+  if (!storedType) return inferred;
+  if (item.kind === "grammar" && storedType === "word") return inferred;
+  if (item.kind === "vocabulary" && storedType === "word" && inferred !== "word") return inferred;
+  // Repair legacy/model classifications that treated every infinitive phrase
+  // as a collocation, while preserving genuine governed combinations.
+  if (item.kind === "vocabulary" && storedType === "collocation" && inferred === "fixed_expression") return inferred;
+  return storedType;
 }
 
 export const EXAMPLE_NOTES = [
