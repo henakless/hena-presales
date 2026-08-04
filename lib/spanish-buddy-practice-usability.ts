@@ -20,6 +20,8 @@ export type ExerciseUsabilityIssueCode =
   | "INCONSISTENT_MULTIPLE_CHOICE_OPTIONS"
   | "UNEXPECTED_OPTIONS"
   | "FILL_GAP_MISSING"
+  | "SENTENCE_ORDER_FRAGMENTS_MISSING"
+  | "SELECTION_INSTRUCTION_WITHOUT_OPTIONS"
   | "READING_CONTEXT_LENGTH"
   | "READING_QUESTION_MISSING"
   | "ANSWER_IN_TASK_CONTEXT"
@@ -232,7 +234,7 @@ export function auditExerciseUsability(exercise: PracticeExerciseForAudit): Exer
   if (SELECTION_EXERCISES.has(exercise.exerciseType)) {
     const normalizedAnswer = normalizeComparable(exercise.answer);
     const answerCount = normalizedOptions.filter((option) => option === normalizedAnswer).length;
-    if (normalizedOptions.length !== 4 || answerCount !== 1) {
+    if (normalizedOptions.length < 2 || normalizedOptions.length > 4 || answerCount !== 1) {
       pushUnique(issues, {
         code: "INVALID_MULTIPLE_CHOICE_OPTIONS",
         severity: "error",
@@ -272,6 +274,15 @@ export function auditExerciseUsability(exercise: PracticeExerciseForAudit): Exer
     });
   }
 
+  if (!normalizedOptions.length && /\b(?:elige|selecciona|escoge)\b/i.test(exercise.instruction)) {
+    pushUnique(issues, {
+      code: "SELECTION_INSTRUCTION_WITHOUT_OPTIONS",
+      severity: "error",
+      fields: ["instruction", "options"],
+      evidence: exercise.instruction,
+    });
+  }
+
   if (FILL_GAP_EXERCISES.has(exercise.exerciseType) && !/_{2,}/.test(`${exercise.context}\n${exercise.prompt}`)) {
     pushUnique(issues, {
       code: "FILL_GAP_MISSING",
@@ -279,6 +290,19 @@ export function auditExerciseUsability(exercise: PracticeExerciseForAudit): Exer
       fields: ["context", "prompt"],
       evidence: exercise.prompt,
     });
+  }
+
+  if (exercise.exerciseType === "sentence-order") {
+    const taskText = `${exercise.context}\n${exercise.prompt}`;
+    const separatorCount = (taskText.match(/(?:\s[/|·→]\s|\n\s*[-•\d]+[.)])/g) ?? []).length;
+    if (separatorCount < 2) {
+      pushUnique(issues, {
+        code: "SENTENCE_ORDER_FRAGMENTS_MISSING",
+        severity: "error",
+        fields: ["context", "prompt"],
+        evidence: exercise.prompt,
+      });
+    }
   }
 
   if (READING_EXERCISES.has(exercise.exerciseType)) {

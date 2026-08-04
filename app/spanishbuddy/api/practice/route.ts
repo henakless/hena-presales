@@ -190,7 +190,7 @@ function normalizeExercise(value: PracticeExercise, planned: { item: SavedItem; 
   }
   const matchingAnswers = options.filter((option) => option.toLocaleLowerCase("es") === answer.toLocaleLowerCase("es"));
   const usesOptions = exerciseModeUsesOptions(definition.mode);
-  if (usesOptions && (options.length !== 4 || matchingAnswers.length !== 1)) return null;
+  if (usesOptions && (options.length < 2 || options.length > 4 || matchingAnswers.length !== 1)) return null;
   if (!usesOptions && options.length > 0) return null;
   if (definition.mode === "fill-gap" && !/_{2,}/.test(`${value.context}\n${prompt}`)) return null;
   const exercise = applyExerciseUsabilityGuardrails({

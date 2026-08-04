@@ -225,6 +225,10 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.doesNotMatch(pageSource, /Descubrir la respuesta|Piensa la respuesta antes/i);
   assert.match(pageSource, /saveEditedItem/i);
   assert.match(pageSource, /Respuesta de referencia/i);
+  assert.match(pageSource, /!currentExercise\.options\?\.length/i);
+  assert.match(pageSource, /answerTranslation\.localeCompare\(currentExercise\.answer/i);
+  assert.match(pageSource, /Has elegido la opción correcta/i);
+  assert.doesNotMatch(pageSource, /message: correct \? currentExercise\.answer/i);
   assert.match(pageSource, /window\.addEventListener\("keydown"/i);
   assert.match(pageSource, /Sincronizar biblioteca/i);
   assert.match(pageSource, /apiUrl\("sync"\)/i);
@@ -280,7 +284,7 @@ test("serves Spanish Buddy at its public path", async () => {
   const practiceContractSource = await readFile(new URL("../lib/spanish-buddy-practice-contract.mjs", import.meta.url), "utf8");
   assert.match(exerciseCacheSource, /DEFAULT_SPANISH_BUDDY_MODEL = "gpt-5\.6-terra"/i);
   assert.match(practiceContractSource, /interactionMode is authoritative/i);
-  assert.match(practiceContractSource, /exactly four distinct, similarly plausible options/i);
+  assert.match(practiceContractSource, /two to four distinct options that are parallel in grammatical form/i);
   assert.match(practiceContractSource, /Return an empty string for germanSupport and grammarReminder/i);
   assert.match(practiceContractSource, /Never repeat the instruction inside prompt or context/i);
   assert.match(exerciseCacheSource, /seedDeterministicExerciseCache/i);

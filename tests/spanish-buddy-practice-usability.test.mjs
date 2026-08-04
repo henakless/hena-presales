@@ -41,15 +41,28 @@ test("replaces generated basic help with a safe exercise-type strategy", () => {
   assert.equal(auditExerciseUsability(guarded).usable, true);
 });
 
-test("requires four unique options containing one correct answer for multiple choice", () => {
+test("requires two to four unique options containing one correct answer for selection tasks", () => {
   const audit = auditExerciseUsability({
     ...applyExerciseUsabilityGuardrails(baseExercise),
     exerciseType: "grammar-choice",
     answer: "Cuál",
     answerTranslation: "Welches",
-    options: ["Qué", "Cuál", "Cuánto"],
+    options: ["Cuál"],
   });
   assert.ok(audit.issues.some((issue) => issue.code === "INVALID_MULTIPLE_CHOICE_OPTIONS"));
+});
+
+test("accepts a meaningful binary grammar contrast without padding it to four options", () => {
+  const audit = auditExerciseUsability({
+    ...applyExerciseUsabilityGuardrails(baseExercise),
+    exerciseType: "grammar-choice",
+    context: "Hay dos opciones conocidas.",
+    prompt: "¿___ prefieres?",
+    answer: "Cuál",
+    answerTranslation: "Welche",
+    options: ["Qué", "Cuál"],
+  });
+  assert.equal(audit.usable, true, JSON.stringify(audit.issues));
 });
 
 test("accepts a fill-gap exercise with one blank and four selectable answers", () => {
@@ -118,4 +131,29 @@ test("rejects a sentence-order task whose context nearly gives the solved senten
     answerTranslation: "Heute hat Pablo die Hausaufgaben beendet.",
   });
   assert.ok(audit.issues.some((issue) => issue.code === "ANSWER_IN_TASK_CONTEXT"));
+});
+
+test("rejects a sentence-order task that does not provide shuffled fragments", () => {
+  const audit = auditExerciseUsability({
+    ...applyExerciseUsabilityGuardrails(baseExercise),
+    exerciseType: "sentence-order",
+    instruction: "Ordena los fragmentos.",
+    context: "Ana ya ha prestado los apuntes a Miguel.",
+    prompt: "¿Cuál es el orden correcto?",
+    answer: "Ana se los ha prestado.",
+    answerTranslation: "Ana hat sie ihm geliehen.",
+  });
+  assert.ok(audit.issues.some((issue) => issue.code === "SENTENCE_ORDER_FRAGMENTS_MISSING"));
+});
+
+test("rejects an open-response task whose instruction promises selectable options", () => {
+  const audit = auditExerciseUsability({
+    ...applyExerciseUsabilityGuardrails(baseExercise),
+    exerciseType: "reading-main-idea",
+    instruction: "Lee el texto y elige la idea principal.",
+    context: Array.from({ length: 50 }, (_, index) => `palabra${index}`).join(" "),
+    prompt: "¿Cuál es la idea principal?",
+    options: [],
+  });
+  assert.ok(audit.issues.some((issue) => issue.code === "SELECTION_INSTRUCTION_WITHOUT_OPTIONS"));
 });

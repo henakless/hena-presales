@@ -1,6 +1,6 @@
 # SpanishBuddy exercise usability eval
 
-This eval checks the learner-visible structure of generated practice exercises. It focuses on answer leakage, repeated content, duplicate options, and whether the basic and stronger help levels contain distinct information.
+This eval checks the learner-visible structure of generated practice exercises. It focuses on answer leakage, repeated content, task coherence, option plausibility, language consistency, and whether the basic and stronger help levels contain distinct information. The fixture set includes regressions reconstructed from real learner screenshots.
 
 ## Run the deterministic eval
 
@@ -52,6 +52,8 @@ OPENAI_API_KEY=... npm run eval:usability -- --model
 Set `OPENAI_EVAL_MODEL` to evaluate with a different model. The model grader is for offline analysis; production blocking uses only deterministic checks to avoid adding latency and model variance to practice generation.
 
 The model scores answer leakage and repetition from 0 (none) to 3 (direct or severe). `helpProgression` ranges from 0 (the help levels are redundant or misplaced) to 3 (each level adds useful information at the right time).
+
+It also scores `taskCoherence` and `optionQuality` from 0 to 3. A score below 2 in either dimension forces the semantic result to unusable, even if the model's initial boolean judgment was more lenient. See `coherence-eval-2026-08-05.md` for the screenshot-driven regression and latest 72-exercise results.
 
 ## Collect real generated exercises
 
