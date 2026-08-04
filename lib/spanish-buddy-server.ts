@@ -1,4 +1,5 @@
 import {
+  inferTopicComponentRole,
   matchGrammarTopic,
   TOPIC_CONTENT_VERSION,
   topicIsReady,
@@ -80,6 +81,7 @@ export async function ensureSpanishBuddySchema(db: D1Database) {
       owner_id TEXT NOT NULL,
       item_id TEXT NOT NULL,
       topic_id TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'concept',
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(owner_id, item_id, topic_id)
     )`),
@@ -178,6 +180,10 @@ export async function ensureSpanishBuddySchema(db: D1Database) {
   for (const [name, definition] of missingTopicColumns) {
     await db.prepare(`ALTER TABLE spanish_buddy_topics ADD COLUMN ${name} ${definition}`).run();
   }
+  const itemTopicColumns = await db.prepare("PRAGMA table_info(spanish_buddy_item_topics)").all<{ name: string }>();
+  if (!(itemTopicColumns.results ?? []).some((column) => column.name === "role")) {
+    await db.prepare("ALTER TABLE spanish_buddy_item_topics ADD COLUMN role TEXT NOT NULL DEFAULT 'concept'").run();
+  }
   const variantColumns = await db.prepare("PRAGMA table_info(spanish_buddy_exercise_variants)").all<{ name: string }>();
   const variantColumnNames = new Set((variantColumns.results ?? []).map((column) => column.name));
   const missingVariantColumns = [
@@ -199,7 +205,7 @@ type GrammarItemForTopic = {
 };
 
 type StoredTopic = { id: string; canonical_key: string; content_version: string };
-type StoredTopicLink = { item_id: string; canonical_key: string };
+type StoredTopicLink = { item_id: string; canonical_key: string; role: string };
 
 function topicInsertStatement(db: D1Database, ownerId: string, topic: GrammarTopicDefinition, id: string) {
   return db.prepare(
@@ -259,7 +265,7 @@ export async function ensureSpanishBuddyTopicsForOwner(db: D1Database, ownerId: 
        FROM spanish_buddy_topics WHERE owner_id = ?`,
     ).bind(ownerId).all<StoredTopic>(),
     db.prepare(
-      `SELECT it.item_id, t.canonical_key
+      `SELECT it.item_id, t.canonical_key, it.role
        FROM spanish_buddy_item_topics it
        JOIN spanish_buddy_topics t ON t.id = it.topic_id AND t.owner_id = it.owner_id
        WHERE it.owner_id = ?`,
@@ -268,16 +274,19 @@ export async function ensureSpanishBuddyTopicsForOwner(db: D1Database, ownerId: 
 
   const items = itemResult.results ?? [];
   const existingTopics = new Map((topicResult.results ?? []).map((topic) => [topic.canonical_key, topic]));
-  const existingLinks = new Map<string, Set<string>>();
+  const existingLinks = new Map<string, StoredTopicLink[]>();
   for (const link of linkResult.results ?? []) {
-    const keys = existingLinks.get(link.item_id) ?? new Set<string>();
-    keys.add(link.canonical_key);
-    existingLinks.set(link.item_id, keys);
+    const links = existingLinks.get(link.item_id) ?? [];
+    links.push(link);
+    existingLinks.set(link.item_id, links);
   }
 
-  const desiredByItem = new Map(items.map((item) => [item.id, matchGrammarTopic(item)]));
+  const desiredByItem = new Map(items.map((item) => {
+    const topic = matchGrammarTopic(item);
+    return [item.id, topic ? { topic, role: inferTopicComponentRole(item) } : null] as const;
+  }));
   const neededTopics = new Map<string, GrammarTopicDefinition>();
-  for (const topic of desiredByItem.values()) if (topic) neededTopics.set(topic.key, topic);
+  for (const desired of desiredByItem.values()) if (desired) neededTopics.set(desired.topic.key, desired.topic);
 
   const statements: D1PreparedStatement[] = [];
   for (const topic of neededTopics.values()) {
@@ -288,20 +297,22 @@ export async function ensureSpanishBuddyTopicsForOwner(db: D1Database, ownerId: 
 
   for (const item of items) {
     const desired = desiredByItem.get(item.id);
-    const currentKeys = existingLinks.get(item.id) ?? new Set<string>();
-    const alreadyCorrect = desired ? currentKeys.size === 1 && currentKeys.has(desired.key) : currentKeys.size === 0;
+    const currentLinks = existingLinks.get(item.id) ?? [];
+    const alreadyCorrect = desired
+      ? currentLinks.length === 1 && currentLinks[0].canonical_key === desired.topic.key && currentLinks[0].role === desired.role
+      : currentLinks.length === 0;
     if (alreadyCorrect) continue;
     statements.push(db.prepare(
       "DELETE FROM spanish_buddy_item_topics WHERE owner_id = ? AND item_id = ?",
     ).bind(ownerId, item.id));
     if (desired) {
       statements.push(db.prepare(
-        `INSERT OR IGNORE INTO spanish_buddy_item_topics (owner_id, item_id, topic_id)
-         SELECT ?, ?, id FROM spanish_buddy_topics WHERE owner_id = ? AND canonical_key = ?`,
-      ).bind(ownerId, item.id, ownerId, desired.key));
+        `INSERT OR IGNORE INTO spanish_buddy_item_topics (owner_id, item_id, topic_id, role)
+         SELECT ?, ?, id, ? FROM spanish_buddy_topics WHERE owner_id = ? AND canonical_key = ?`,
+      ).bind(ownerId, item.id, desired.role, ownerId, desired.topic.key));
       statements.push(db.prepare(
         "UPDATE spanish_buddy_topics SET updated_at = CURRENT_TIMESTAMP WHERE owner_id = ? AND canonical_key = ?",
-      ).bind(ownerId, desired.key));
+      ).bind(ownerId, desired.topic.key));
     }
   }
   statements.push(db.prepare(

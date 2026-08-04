@@ -27,6 +27,8 @@ export type GrammarTopicSource = {
   explanation?: string;
 };
 
+export type TopicComponentRole = "concept" | "use" | "formation" | "exception" | "example" | "contrast";
+
 export const TOPIC_CONTENT_VERSION = "v2";
 
 export const GRAMMAR_TOPIC_DEFINITIONS: GrammarTopicDefinition[] = [
@@ -269,6 +271,16 @@ function normalizedTopicSource(source: GrammarTopicSource) {
 export function matchGrammarTopic(source: GrammarTopicSource) {
   const searchable = normalizedTopicSource(source);
   return GRAMMAR_TOPIC_DEFINITIONS.find((topic) => topic.match.test(searchable)) ?? null;
+}
+
+export function inferTopicComponentRole(source: GrammarTopicSource): TopicComponentRole {
+  const searchable = normalizedTopicSource(source);
+  if (/\b(?:vs|diferenc|contraste|unterschied)\b/i.test(searchable)) return "contrast";
+  if (/\b(?:irregular|excepcion|ausnahme)\b/i.test(searchable)) return "exception";
+  if (/\b(?:conjug(?:acion)?|terminacion(?:es)?|endung(?:en)?|formacion|bildung|raiz|stamm)\b/i.test(searchable)) return "formation";
+  if (/\b(?:uso|usos|cuando se usa|verwendung|gebrauch|wann)\b/i.test(searchable)) return "use";
+  if (/\b(?:ejemplo|beispiel)\b/i.test(searchable) || /[.…?¿!¡]$/.test(source.spanish.trim())) return "example";
+  return "concept";
 }
 
 export function topicIsReady(topic: GrammarTopicDefinition) {

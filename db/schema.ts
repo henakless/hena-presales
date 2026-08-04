@@ -58,6 +58,7 @@ export const spanishBuddyItemTopics = sqliteTable("spanish_buddy_item_topics", {
   ownerId: text("owner_id").notNull(),
   itemId: text("item_id").notNull(),
   topicId: text("topic_id").notNull(),
+  role: text("role", { enum: ["concept", "use", "formation", "exception", "example", "contrast"] }).notNull().default("concept"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [uniqueIndex("sb_item_topics_unique_idx").on(table.ownerId, table.itemId, table.topicId)]);
 

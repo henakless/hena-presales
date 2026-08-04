@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   GRAMMAR_TOPIC_DEFINITIONS,
+  inferTopicComponentRole,
   matchGrammarTopic,
   topicIsReady,
 } from "../lib/spanish-buddy-topics.ts";
@@ -27,6 +28,12 @@ test("recognizes standalone grammar concepts and prioritizes contrasts", () => {
   assert.equal(matchGrammarTopic(grammar("Pretérito indefinido"))?.key, "preterito-indefinido");
   assert.equal(matchGrammarTopic(grammar("Indefinido e imperfecto"))?.key, "indefinido-vs-imperfecto");
   assert.equal(matchGrammarTopic(grammar("Terminación -aron")), null);
+});
+
+test("assigns grammar fragments a role inside their parent topic", () => {
+  assert.equal(inferTopicComponentRole(grammar("Terminaciones", "Die Endungen sind -é, -aste, -ó")), "formation");
+  assert.equal(inferTopicComponentRole(grammar("Excepción", "Raíz irregular tuv-")), "exception");
+  assert.equal(inferTopicComponentRole(grammar("Indefinido vs. imperfecto")), "contrast");
 });
 
 test("publishes only complete refresher topics", () => {

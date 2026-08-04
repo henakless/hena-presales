@@ -1,0 +1,1 @@
+ALTER TABLE `spanish_buddy_item_topics` ADD `role` text DEFAULT 'concept' NOT NULL;
