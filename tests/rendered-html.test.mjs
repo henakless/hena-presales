@@ -215,6 +215,8 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(pageSource, /Comprueba si lo recuerdas/i);
   assert.match(pageSource, /Ver lo que decían tus apuntes/i);
   assert.match(pageSource, /Practicar este tema/i);
+  assert.match(pageSource, /Buscar un tema/i);
+  assert.match(pageSource, /Necesitan repaso/i);
   assert.match(pageSource, /Tu gramática, explicada para volver a ella/i);
   assert.match(pageSource, /topics\?: LearningTopic\[\]/i);
   assert.match(pageSource, /Ver en alemán/i);

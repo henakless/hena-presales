@@ -217,6 +217,8 @@ export default function SpanishBuddy() {
   const [libraryName, setLibraryName] = useState("");
   const [syncError, setSyncError] = useState("");
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("topics");
+  const [topicQuery, setTopicQuery] = useState("");
+  const [topicSort, setTopicSort] = useState<"recent" | "weak" | "az">("recent");
 
   const currentExercise = exercises[exerciseIndex];
   const dueItems = useMemo(
@@ -261,6 +263,17 @@ export default function SpanishBuddy() {
       items: libraryFilter === "all" ? lesson.items : libraryFilter === "topics" ? [] : lesson.items.filter((item) => libraryCategory(item) === libraryFilter),
     }))
     .filter((lesson) => lesson.items.length > 0), [lessons, libraryFilter]);
+  const visibleTopics = useMemo(() => {
+    const query = topicQuery.trim().toLocaleLowerCase("es-ES");
+    const filtered = query
+      ? topics.filter((topic) => `${topic.title} ${topic.summary}`.toLocaleLowerCase("es-ES").includes(query))
+      : [...topics];
+    return filtered.sort((left, right) => {
+      if (topicSort === "weak") return left.mastery - right.mastery || left.title.localeCompare(right.title, "es");
+      if (topicSort === "az") return left.title.localeCompare(right.title, "es");
+      return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
+    });
+  }, [topicQuery, topicSort, topics]);
   function completeExercisePrompt(exercise: Exercise) {
     return [exercise.instruction, exercise.context, exercise.prompt].filter(Boolean).join("\n\n");
   }
@@ -1147,8 +1160,12 @@ export default function SpanishBuddy() {
                   <h2>Tu gramática, explicada para volver a ella.</h2>
                   <p>Cada lección añade o enriquece estos temas. Léelos cuando necesites refrescar una regla y practica solo ese contenido.</p>
                 </div>
+                <div className="sb-topic-tools">
+                  <label><span>Buscar un tema</span><input type="search" value={topicQuery} onChange={(event) => setTopicQuery(event.target.value)} placeholder="p. ej. indefinido" /></label>
+                  <label><span>Ordenar</span><select value={topicSort} onChange={(event) => setTopicSort(event.target.value as typeof topicSort)}><option value="recent">Más recientes</option><option value="weak">Necesitan repaso</option><option value="az">A–Z</option></select></label>
+                </div>
                 <div className="sb-topic-list">
-                  {topics.map((topic, index) => (
+                  {visibleTopics.map((topic, index) => (
                     <article className="sb-topic-index-card" key={topic.id}>
                       <span className="sb-topic-index-number">{String(index + 1).padStart(2, "0")}</span>
                       <div className="sb-topic-index-copy">
@@ -1164,6 +1181,7 @@ export default function SpanishBuddy() {
                       <button className="sb-topic-open" onClick={() => openLearningTopic(topic)}>Abrir repaso <span>→</span></button>
                     </article>
                   ))}
+                  {!visibleTopics.length && <div className="sb-empty">No hay ningún tema que coincida con “{topicQuery}”.</div>}
                 </div>
               </section>
             ) : (
