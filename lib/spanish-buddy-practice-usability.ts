@@ -15,6 +15,10 @@ export type PracticeExerciseForAudit = {
 export type ExerciseUsabilityIssueCode =
   | "ANSWER_IN_BASIC_HELP"
   | "ANSWER_TRANSLATION_IN_BASIC_HELP"
+  | "INVALID_MULTIPLE_CHOICE_OPTIONS"
+  | "UNEXPECTED_OPTIONS"
+  | "READING_CONTEXT_LENGTH"
+  | "READING_QUESTION_MISSING"
   | "REPEATED_TEXT_WITHIN_FIELD"
   | "REPEATED_TEXT_ACROSS_FIELDS"
   | "DUPLICATE_OPTIONS";
@@ -32,8 +36,47 @@ export type ExerciseUsabilityAudit = {
 };
 
 const SOURCE_TRANSLATION_EXERCISES = new Set(["active-translation", "contextual-translation"]);
+const MULTIPLE_CHOICE_EXERCISES = new Set(["lexical-contrast", "grammar-choice", "appropriate-response"]);
+const READING_EXERCISES = new Set(["reading-main-idea", "reading-detail", "reading-reference", "reading-order", "reading-mediation"]);
+const READING_QUESTION_EXERCISES = new Set(["reading-main-idea", "reading-detail", "reading-reference"]);
 const DISPLAY_FIELDS = ["instruction", "context", "prompt", "germanSupport", "grammarReminder", "strongerHint"] as const;
 const BASIC_HELP_FIELDS = ["germanSupport", "grammarReminder"] as const;
+
+const SAFE_BASIC_HELP: Record<string, string> = {
+  "written-recall": "Rufe die vollständige Bedeutung aus dem Gedächtnis ab; die Grundhilfe nennt keine Übersetzung.",
+  "active-translation": "Formuliere selbst auf Spanisch und achte auf Artikel, Präpositionen und die vollständige Wendung.",
+  "reverse-translation": "Formuliere selbst auf Deutsch und übertrage die vollständige Bedeutung, nicht nur einzelne Wörter.",
+  "vocabulary-gap": "Nutze Satzbau, Kongruenz und Bedeutung des gesamten Satzes, bevor du das fehlende Wort einsetzt.",
+  collocations: "Prüfe, welche feste Verbindung die Lücke grammatisch und idiomatisch vervollständigt.",
+  "lexical-contrast": "Vergleiche alle Optionen im gegebenen Kontext; die Grundhilfe schließt keine einzelne Option aus.",
+  "own-sentence": "Bilde ein eigenes natürliches Beispiel; die Referenz ist nur eine mögliche Lösung.",
+  "conjugation-dice": "Bestimme zuerst Person und Zeitform und bilde danach die passende Verbform.",
+  "conjugation-context": "Bestimme aus dem Kontext Person, Zeit und Aussageabsicht, bevor du die Form bildest.",
+  "sentence-transformation": "Verändere nur das verlangte Merkmal und bewahre Personen, Rollen und Hauptbedeutung.",
+  "pronoun-substitution": "Bestimme zuerst die Rollen der Satzteile und ersetze sie anschließend in natürlicher Reihenfolge.",
+  "grammar-choice": "Vergleiche Bedeutung und Satzstruktur aller Optionen; die Grundhilfe nennt keine richtige Auswahl.",
+  "error-correction": "Suche genau einen Fehler, der zum aktuellen Lernziel gehört, und ändere nur das Nötige.",
+  "sentence-order": "Finde zuerst Prädikat und zusammengehörige Satzteile und ordne dann den vollständigen Satz.",
+  "complete-rule": "Rufe die Regel aus dem Kurs ab; die Grundhilfe nennt den fehlenden Fachbegriff nicht.",
+  "guided-production": "Drücke die verlangte Absicht natürlich aus; mehrere Formulierungen können richtig sein.",
+  "dialogue-completion": "Antworte passend auf die kommunikative Absicht; mehrere natürliche Reaktionen sind möglich.",
+  "appropriate-response": "Vergleiche Funktion und Register aller Reaktionen; die Grundhilfe schließt keine Option aus.",
+  "contextual-translation": "Übertrage Absicht und Register natürlich statt Wort für Wort.",
+  "reading-main-idea": "Fasse den Zweck des gesamten Textes zusammen und verliere dich nicht in Einzelheiten.",
+  "reading-detail": "Suche die Textstelle, die deine Antwort belegt, ohne zusätzliche Informationen zu erfinden.",
+  "reading-reference": "Suche einen grammatisch und inhaltlich passenden Bezug im vorherigen Text.",
+  "reading-order": "Nutze Zeitangaben und Konnektoren; die Grundhilfe nennt weder Anfang noch Ende.",
+  "reading-mediation": "Bewahre die wesentlichen Informationen und formuliere sie adressatengerecht statt wörtlich.",
+};
+
+export function applyExerciseUsabilityGuardrails<T extends PracticeExerciseForAudit>(exercise: T): T {
+  return {
+    ...exercise,
+    germanSupport: SAFE_BASIC_HELP[exercise.exerciseType]
+      ?? "Löse die Aufgabe aus dem gegebenen Kontext; die Grundhilfe nennt die Antwort nicht.",
+    grammarReminder: "",
+  };
+}
 
 function normalizeComparable(value: string) {
   return value
@@ -168,6 +211,47 @@ export function auditExerciseUsability(exercise: PracticeExerciseForAudit): Exer
       severity: "error",
       fields: ["options"],
       evidence: exercise.options.join(" | "),
+    });
+  }
+
+  if (MULTIPLE_CHOICE_EXERCISES.has(exercise.exerciseType)) {
+    const normalizedAnswer = normalizeComparable(exercise.answer);
+    const answerCount = normalizedOptions.filter((option) => option === normalizedAnswer).length;
+    if (normalizedOptions.length !== 4 || answerCount !== 1) {
+      pushUnique(issues, {
+        code: "INVALID_MULTIPLE_CHOICE_OPTIONS",
+        severity: "error",
+        fields: ["options", "answer"],
+        evidence: `${exercise.options.length} options; answer appears ${answerCount} times`,
+      });
+    }
+  } else if (normalizedOptions.length) {
+    pushUnique(issues, {
+      code: "UNEXPECTED_OPTIONS",
+      severity: "error",
+      fields: ["options", "exerciseType"],
+      evidence: exercise.exerciseType,
+    });
+  }
+
+  if (READING_EXERCISES.has(exercise.exerciseType)) {
+    const wordCount = normalizeComparable(exercise.context).split(" ").filter(Boolean).length;
+    if (wordCount < 45 || wordCount > 90) {
+      pushUnique(issues, {
+        code: "READING_CONTEXT_LENGTH",
+        severity: "error",
+        fields: ["context"],
+        evidence: `${wordCount} words`,
+      });
+    }
+  }
+
+  if (READING_QUESTION_EXERCISES.has(exercise.exerciseType) && !/[?¿]/.test(exercise.prompt)) {
+    pushUnique(issues, {
+      code: "READING_QUESTION_MISSING",
+      severity: "error",
+      fields: ["prompt"],
+      evidence: exercise.prompt,
     });
   }
 

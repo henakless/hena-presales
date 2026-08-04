@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 
-import { auditExerciseUsability } from "../lib/spanish-buddy-practice-usability.ts";
+import { applyExerciseUsabilityGuardrails, auditExerciseUsability } from "../lib/spanish-buddy-practice-usability.ts";
 
 const cases = fs.readFileSync(new URL("../evals/spanish-buddy/usability-cases.jsonl", import.meta.url), "utf8")
   .split(/\r?\n/)
@@ -18,3 +18,47 @@ for (const testCase of cases) {
     }
   });
 }
+
+const baseExercise = {
+  exerciseType: "own-sentence",
+  instruction: "Escribe una frase.",
+  context: "",
+  prompt: "Escribe una frase con «amistad».",
+  answer: "La amistad es importante para mí.",
+  answerTranslation: "Freundschaft ist für mich wichtig.",
+  options: [],
+  acceptedAnswers: [],
+  germanSupport: "Freundschaft ist für mich wichtig.",
+  grammarReminder: "La amistad es importante para mí.",
+  strongerHint: "Beschreibe eine persönliche Beziehung.",
+};
+
+test("replaces generated basic help with a safe exercise-type strategy", () => {
+  const guarded = applyExerciseUsabilityGuardrails(baseExercise);
+  assert.notEqual(guarded.germanSupport, baseExercise.germanSupport);
+  assert.equal(guarded.grammarReminder, "");
+  assert.equal(guarded.strongerHint, baseExercise.strongerHint);
+  assert.equal(auditExerciseUsability(guarded).usable, true);
+});
+
+test("requires four unique options containing one correct answer for multiple choice", () => {
+  const audit = auditExerciseUsability({
+    ...applyExerciseUsabilityGuardrails(baseExercise),
+    exerciseType: "grammar-choice",
+    answer: "Cuál",
+    answerTranslation: "Welches",
+    options: ["Qué", "Cuál", "Cuánto"],
+  });
+  assert.ok(audit.issues.some((issue) => issue.code === "INVALID_MULTIPLE_CHOICE_OPTIONS"));
+});
+
+test("requires a full reading context and an explicit comprehension question", () => {
+  const audit = auditExerciseUsability({
+    ...applyExerciseUsabilityGuardrails(baseExercise),
+    exerciseType: "reading-detail",
+    context: "Ana trabaja el sábado.",
+    prompt: "El trabajo de Ana",
+  });
+  assert.ok(audit.issues.some((issue) => issue.code === "READING_CONTEXT_LENGTH"));
+  assert.ok(audit.issues.some((issue) => issue.code === "READING_QUESTION_MISSING"));
+});

@@ -6,7 +6,8 @@ import {
   ACTIVE_EXERCISE_IDS,
   EXERCISE_CATEGORIES,
   EXERCISE_LIBRARY,
-  type ExerciseCategory,
+  EXERCISE_MODES,
+  EXERCISE_PRESETS,
 } from "../../lib/spanish-buddy-exercises";
 import {
   EXAMPLE_NOTES,
@@ -20,7 +21,6 @@ import {
 
 type View = "today" | "add" | "library" | "exercises";
 type LibraryFilter = "topics" | "all" | "words" | "expressions" | "collocations" | "grammar";
-type ExerciseFilter = "all" | ExerciseCategory;
 
 type Exercise = {
   exerciseType: string;
@@ -45,6 +45,83 @@ type AnswerFeedback = {
 };
 
 type AnswerResult = "correct" | "almost" | "incorrect";
+
+const MAX_LESSON_IMAGES = 6;
+const MAX_IMAGE_EDGE = 2_000;
+const IMAGE_QUALITY = 0.84;
+const SUPPORTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+
+async function prepareLessonImage(file: File) {
+  let bitmap: ImageBitmap | null = null;
+  let canvas: HTMLCanvasElement | null = null;
+
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const scale = Math.min(1, MAX_IMAGE_EDGE / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+
+    canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d", { alpha: false });
+    if (!context) return file;
+
+    context.fillStyle = "#fff";
+    context.fillRect(0, 0, width, height);
+    context.drawImage(bitmap, 0, 0, width, height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas?.toBlob(resolve, "image/jpeg", IMAGE_QUALITY));
+    if (!blob || (scale === 1 && blob.size >= file.size)) return file;
+
+    const basename = file.name.replace(/\.[^.]+$/, "") || "apuntes";
+    return new File([blob], `${basename}.jpg`, { type: "image/jpeg", lastModified: file.lastModified });
+  } catch {
+    // Some browsers cannot decode every otherwise valid image type. Sending
+    // that page unchanged is still safe because pages are uploaded separately.
+    return file;
+  } finally {
+    bitmap?.close();
+    if (canvas) {
+      canvas.width = 1;
+      canvas.height = 1;
+    }
+  }
+}
+
+function mergeExtractions(results: ExtractionResult[], requestedTitle: string): ExtractionResult {
+  const byContent = new Map<string, ExtractedItem>();
+
+  for (const result of results) {
+    for (const item of result.items) {
+      const key = `${item.kind}:${item.spanish.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es-ES").trim()}`;
+      const existing = byContent.get(key);
+      if (!existing) {
+        byContent.set(key, item);
+        continue;
+      }
+      byContent.set(key, {
+        ...existing,
+        acceptedAnswers: [...new Set([...existing.acceptedAnswers, ...item.acceptedAnswers])].slice(0, 5),
+        confidence: existing.confidence === "high" || item.confidence === "high"
+          ? "high"
+          : existing.confidence === "medium" || item.confidence === "medium" ? "medium" : "low",
+        provenance: existing.provenance === "course" || item.provenance === "course" ? "course" : "suggested",
+        selected: existing.selected || item.selected,
+      });
+    }
+  }
+
+  const mergedItems = [...byContent.values()];
+  const courseItems = mergedItems.filter((item) => item.provenance === "course").slice(0, 45);
+  const suggestedItems = mergedItems.filter((item) => item.provenance === "suggested").slice(0, 6);
+
+  return {
+    title: requestedTitle || results[0]?.title || "Nueva lección de español",
+    summary: results.map((result) => result.summary).filter(Boolean).join(" ").slice(0, 300),
+    referenceLanguage: results[0]?.referenceLanguage || "Deutsch",
+    items: [...courseItems, ...suggestedItems],
+  };
+}
 
 type SunflowerProps = {
   mastery?: number;
@@ -99,6 +176,7 @@ export default function SpanishBuddy() {
   const [extraction, setExtraction] = useState<ExtractionResult | null>(null);
   const [sourceDeleted, setSourceDeleted] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [imageProgress, setImageProgress] = useState("");
   const [error, setError] = useState("");
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [exerciseIndex, setExerciseIndex] = useState(0);
@@ -131,7 +209,6 @@ export default function SpanishBuddy() {
   const [libraryName, setLibraryName] = useState("");
   const [syncError, setSyncError] = useState("");
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("topics");
-  const [exerciseFilter, setExerciseFilter] = useState<ExerciseFilter>("all");
 
   const currentExercise = exercises[exerciseIndex];
   const dueItems = useMemo(
@@ -179,18 +256,6 @@ export default function SpanishBuddy() {
       items: libraryFilter === "all" ? lesson.items : libraryFilter === "topics" ? [] : lesson.items.filter((item) => libraryCategory(item) === libraryFilter),
     }))
     .filter((lesson) => lesson.items.length > 0), [lessons, libraryFilter]);
-  const exerciseFilters: Array<{ id: ExerciseFilter; label: string; count: number }> = [
-    { id: "all", label: "Todo", count: EXERCISE_LIBRARY.length },
-    ...EXERCISE_CATEGORIES.map((category) => ({
-      id: category.id,
-      label: category.name,
-      count: EXERCISE_LIBRARY.filter((exercise) => exercise.category === category.id).length,
-    })),
-  ];
-  const visibleExerciseCategories = exerciseFilter === "all"
-    ? EXERCISE_CATEGORIES
-    : EXERCISE_CATEGORIES.filter((category) => category.id === exerciseFilter);
-
   function completeExercisePrompt(exercise: Exercise) {
     return [exercise.instruction, exercise.context, exercise.prompt].filter(Boolean).join("\n\n");
   }
@@ -276,7 +341,18 @@ export default function SpanishBuddy() {
   });
 
   function onFiles(event: ChangeEvent<HTMLInputElement>) {
-    setFiles(Array.from(event.target.files ?? []).slice(0, 6));
+    const selected = Array.from(event.target.files ?? []);
+    if (selected.length > MAX_LESSON_IMAGES) {
+      setFiles(selected.slice(0, MAX_LESSON_IMAGES));
+      setError(`Puedes añadir hasta ${MAX_LESSON_IMAGES} imágenes por lección.`);
+      return;
+    }
+    if (selected.some((file) => !SUPPORTED_IMAGE_TYPES.has(file.type))) {
+      setFiles([]);
+      setError("Usa imágenes JPG, PNG, WEBP o GIF.");
+      return;
+    }
+    setFiles(selected);
     setError("");
   }
 
@@ -358,31 +434,63 @@ export default function SpanishBuddy() {
     }
 
     setBusy(true);
+    setImageProgress(files.length ? `Preparando página 1 de ${files.length}…` : "");
     setError("");
     setExtraction(null);
-    const formData = new FormData();
-    formData.set("title", title.trim());
-    formData.set("note", note.trim());
-    files.forEach((file) => formData.append("images", file));
 
     try {
-      const response = await fetch(apiUrl("extract"), { method: "POST", body: formData });
-      const responseType = response.headers.get("content-type") ?? "";
-      const body = responseType.includes("application/json")
-        ? (await response.json()) as { extraction?: ExtractionResult; sourceDeleted?: boolean; error?: string }
-        : {
-            error: response.status === 413
-              ? "Las imágenes son demasiado grandes para subirlas. Prueba con menos imágenes o archivos más pequeños."
-              : "No se ha podido analizar la lección.",
-          };
-      if (!response.ok || !body.extraction) throw new Error(body.error || "No se ha podido analizar la lección.");
-      setExtraction(body.extraction);
-      setTitle(body.extraction.title);
-      setSourceDeleted(body.sourceDeleted === true);
+      const inputs: Array<{ file?: File; note: string }> = files.length
+        ? files.map((file, index) => ({ file, note: index === 0 ? note.trim() : "" }))
+        : [{ note: note.trim() }];
+      const results: ExtractionResult[] = [];
+
+      for (let index = 0; index < inputs.length; index += 1) {
+        const input = inputs[index];
+        let preparedFile: File | undefined;
+        if (input.file) {
+          setImageProgress(`Preparando página ${index + 1} de ${inputs.length}…`);
+          preparedFile = await prepareLessonImage(input.file);
+          setImageProgress(`Analizando página ${index + 1} de ${inputs.length}…`);
+        }
+
+        const formData = new FormData();
+        formData.set("title", title.trim());
+        formData.set("note", input.note);
+        if (preparedFile) formData.append("images", preparedFile);
+
+        let response: Response | null = null;
+        let body: { extraction?: ExtractionResult; sourceDeleted?: boolean; error?: string } = {};
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          response = await fetch(apiUrl("extract"), { method: "POST", body: formData });
+          const responseType = response.headers.get("content-type") ?? "";
+          body = responseType.includes("application/json")
+            ? await response.json() as typeof body
+            : {
+                error: response.status === 413
+                  ? "Esta imagen es demasiado grande para analizarla."
+                  : "No se ha podido analizar la lección.",
+              };
+          if (response.ok && body.extraction) break;
+          if (attempt === 0 && response.status >= 500) continue;
+          break;
+        }
+
+        if (!response?.ok || !body.extraction) {
+          const page = files.length ? ` la página ${index + 1}` : " la lección";
+          throw new Error(body.error ? `No se ha podido analizar${page}: ${body.error}` : `No se ha podido analizar${page}.`);
+        }
+        results.push(body.extraction);
+      }
+
+      const merged = mergeExtractions(results, title.trim());
+      setExtraction(merged);
+      setTitle(merged.title);
+      setSourceDeleted(true);
     } catch (analysisError) {
       setError(analysisError instanceof Error ? analysisError.message : "No se ha podido analizar la lección.");
     } finally {
       setBusy(false);
+      setImageProgress("");
     }
   }
 
@@ -439,15 +547,16 @@ export default function SpanishBuddy() {
       : [...selectedExerciseTypes, id]);
   }
 
-  function toggleExerciseCategory(categoryId: string) {
-    const categoryExerciseIds = EXERCISE_LIBRARY
-      .filter((exercise) => exercise.category === categoryId && exercise.status === "active")
+  function toggleExercisePreset(modes: (typeof EXERCISE_MODES)[number]["id"][]) {
+    const presetExerciseIds = EXERCISE_LIBRARY
+      .filter((exercise) => exercise.status === "active" && modes.includes(exercise.mode))
       .map((exercise) => exercise.id);
-    const categoryIsSelected = categoryExerciseIds.every((id) => selectedExerciseTypes.includes(id));
+    const presetIsSelected = presetExerciseIds.length > 0
+      && presetExerciseIds.every((id) => selectedExerciseTypes.includes(id));
 
-    updateExerciseSelection(categoryIsSelected
-      ? selectedExerciseTypes.filter((id) => !categoryExerciseIds.includes(id))
-      : [...new Set([...selectedExerciseTypes, ...categoryExerciseIds])]);
+    updateExerciseSelection(presetIsSelected
+      ? selectedExerciseTypes.filter((id) => !presetExerciseIds.includes(id))
+      : [...new Set([...selectedExerciseTypes, ...presetExerciseIds])]);
   }
 
   async function startSession(sourceItems = items, sessionSize = 8) {
@@ -878,6 +987,7 @@ export default function SpanishBuddy() {
                 <div><p className="sb-eyebrow">¿Quieres probarlo?</p><strong>Usa un ejemplo generado</strong></div>
                 {EXAMPLE_NOTES.map((example) => <button type="button" key={example.id} onClick={() => chooseExample(example)}><span>{example.label}</span>{example.title}</button>)}
               </div>
+              {imageProgress && <p className="sb-image-progress" role="status">{imageProgress}</p>}
               <button className="sb-primary sb-analyze" disabled={busy}>{busy ? "Leyendo la lección…" : "Analizar la lección"}<span aria-hidden="true">→</span></button>
             </form>
           ) : (
@@ -991,7 +1101,7 @@ export default function SpanishBuddy() {
             <div>
               <p className="sb-eyebrow">Tu forma de practicar</p>
               <h1>Elige cómo quieres <em>aprender.</em></h1>
-              <p>Todos los ejercicios escritos están activos por defecto. Desactiva los que no quieras o vacía la selección para crear una práctica dedicada.</p>
+              <p>Elige una combinación para tu situación de hoy y ajusta después cualquier ejercicio individual.</p>
             </div>
             <div className="sb-selection-panel">
               <strong>{selectedExerciseTypes.length}</strong>
@@ -1006,40 +1116,48 @@ export default function SpanishBuddy() {
             </div>
           </section>
 
-          <nav className="sb-library-filters sb-exercise-filters" aria-label="Categorías de ejercicios">
-            {exerciseFilters.map((filter) => (
-              <button
-                type="button"
-                className={exerciseFilter === filter.id ? "active" : ""}
-                aria-pressed={exerciseFilter === filter.id}
-                onClick={() => setExerciseFilter(filter.id)}
-                key={filter.id}
-              >
-                <span>{filter.label}</span><small>{filter.count}</small>
-              </button>
-            ))}
-          </nav>
+          <section className="sb-practice-presets" aria-labelledby="sb-practice-presets-title">
+            <div className="sb-practice-presets-head">
+              <div><p className="sb-eyebrow">Combinaciones rápidas</p><h2 id="sb-practice-presets-title">¿Qué te apetece ahora?</h2></div>
+              <p>Pulsa otra vez una combinación activa para quitar sus ejercicios. Tus ajustes individuales se conservan.</p>
+            </div>
+            <div className="sb-practice-preset-grid">
+              {EXERCISE_PRESETS.map((preset) => {
+                const presetExerciseIds = EXERCISE_LIBRARY
+                  .filter((exercise) => exercise.status === "active" && preset.modes.includes(exercise.mode))
+                  .map((exercise) => exercise.id);
+                const selectedCount = presetExerciseIds.filter((id) => selectedExerciseTypes.includes(id)).length;
+                const selected = presetExerciseIds.length > 0 && selectedCount === presetExerciseIds.length;
+                const unavailable = presetExerciseIds.length === 0;
+                return (
+                  <button
+                    type="button"
+                    className={`sb-practice-preset ${selected ? "selected" : ""}`}
+                    aria-pressed={selected}
+                    disabled={unavailable}
+                    onClick={() => toggleExercisePreset(preset.modes)}
+                    key={preset.id}
+                  >
+                    <span>{unavailable ? "Próximamente" : selected ? "Activo" : `${selectedCount}/${presetExerciseIds.length}`}</span>
+                    <strong>{preset.name}</strong>
+                    <p>{preset.description}</p>
+                    <small>{preset.modes.map((mode) => EXERCISE_MODES.find((entry) => entry.id === mode)?.name).join(" · ")}</small>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
 
-          {visibleExerciseCategories.map((category) => {
+          {EXERCISE_CATEGORIES.map((category) => {
             const categoryExercises = EXERCISE_LIBRARY.filter((exercise) => exercise.category === category.id);
             const activeCategoryExercises = categoryExercises.filter((exercise) => exercise.status === "active");
             const selectedCategoryCount = activeCategoryExercises.filter((exercise) => selectedExerciseTypes.includes(exercise.id)).length;
-            const categoryIsSelected = activeCategoryExercises.length > 0 && selectedCategoryCount === activeCategoryExercises.length;
             return (
               <section className="sb-exercise-category" key={category.id}>
                 <div className="sb-exercise-category-head">
                   <div><p className="sb-eyebrow">{category.name}</p><h2>{category.description}</h2></div>
                   <div className="sb-exercise-category-actions">
                     <span>{activeCategoryExercises.length ? `${selectedCategoryCount}/${activeCategoryExercises.length}` : "Próximamente"}</span>
-                    {activeCategoryExercises.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => toggleExerciseCategory(category.id)}
-                        aria-label={`${categoryIsSelected ? "Deseleccionar" : "Seleccionar"} todos los ejercicios de ${category.name}`}
-                      >
-                        {categoryIsSelected ? "Deseleccionar tema" : "Seleccionar tema"}
-                      </button>
-                    )}
                   </div>
                 </div>
                 <div className="sb-exercise-boxes">
@@ -1055,7 +1173,7 @@ export default function SpanishBuddy() {
                         aria-pressed={comingSoon ? undefined : selected}
                         onClick={() => toggleExerciseType(exercise.id)}
                       >
-                        <div className="sb-exercise-box-top"><span>{comingSoon ? "Próximamente" : selected ? "Activo" : "Inactivo"}</span><i aria-hidden="true">{comingSoon ? "·" : selected ? "✓" : "+"}</i></div>
+                        <div className="sb-exercise-box-top"><span>{comingSoon ? "Próximamente" : selected ? "Activo" : "Inactivo"} · {EXERCISE_MODES.find((mode) => mode.id === exercise.mode)?.name}</span><i aria-hidden="true">{comingSoon ? "·" : selected ? "✓" : "+"}</i></div>
                         <h3>{exercise.name}</h3>
                         <p>{exercise.description}</p>
                         <div className="sb-exercise-example"><small>Ejemplo</small><strong>{exercise.examplePrompt}</strong><span>{exercise.exampleAnswer}</span></div>

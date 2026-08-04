@@ -12,6 +12,9 @@ interface Env {
   BRIEFING_RATE_LIMITER?: {
     limit(options: { key: string }): Promise<{ success: boolean }>;
   };
+  SPANISH_BUDDY_RATE_LIMITER?: {
+    limit(options: { key: string }): Promise<{ success: boolean }>;
+  };
   EVALUATION_RATE_LIMITER?: {
     limit(options: { key: string }): Promise<{ success: boolean }>;
   };
@@ -96,12 +99,12 @@ async function enforceBriefingRateLimit(request: Request, env: Env) {
 }
 
 async function enforceSpanishBuddyRateLimit(request: Request, env: Env) {
-  if (!env.BRIEFING_RATE_LIMITER) return null;
+  if (!env.SPANISH_BUDDY_RATE_LIMITER) return null;
 
   const client = request.headers.get("cf-connecting-ip") ?? "unknown";
 
   try {
-    const { success } = await env.BRIEFING_RATE_LIMITER.limit({
+    const { success } = await env.SPANISH_BUDDY_RATE_LIMITER.limit({
       key: `spanishbuddy:${client}`,
     });
     if (success) return null;

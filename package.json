@@ -14,6 +14,7 @@
     "test:usability": "node --test tests/spanish-buddy-practice-usability.test.mjs",
     "eval:collect": "node --env-file=.env.local evals/spanish-buddy/collect-usability-samples.mjs",
     "eval:usability": "node evals/spanish-buddy/run-usability.mjs",
+    "eval:uploads": "node evals/spanish-buddy/run-upload-benchmark.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"
   },

@@ -178,6 +178,11 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.doesNotMatch(pageSource, /capture="(?:environment|user)"/i);
   assert.match(pageSource, /response\.headers\.get\("content-type"\)/i);
   assert.match(pageSource, /response\.status === 413/i);
+  assert.match(pageSource, /prepareLessonImage/i);
+  assert.match(pageSource, /MAX_IMAGE_EDGE = 2_000/i);
+  assert.match(pageSource, /for \(let index = 0; index < inputs\.length; index \+= 1\)/i);
+  assert.match(pageSource, /mergeExtractions/i);
+  assert.match(pageSource, /Analizando página/i);
   const nextConfigSource = await readFile(new URL("../next.config.ts", import.meta.url), "utf8");
   assert.match(nextConfigSource, /bodySizeLimit:\s*"26mb"/i);
   const compiledServerSource = await readFile(new URL("../dist/server/index.js", import.meta.url), "utf8");
@@ -237,6 +242,8 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(extractionSource, /create one short, natural A2-B1 Spanish example sentence/i);
   assert.match(extractionSource, /common collocation, a false friend, gender/i);
   assert.match(extractionSource, /Name grammar concepts consistently/i);
+  assert.match(extractionSource, /detail: "high"/i);
+  assert.match(extractionSource, /90_000/i);
 
   const exerciseLibrarySource = await readFile(new URL("../lib/spanish-buddy-exercises.ts", import.meta.url), "utf8");
   assert.match(exerciseLibrarySource, /Recuerdo escrito/i);
@@ -255,10 +262,12 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(practiceSource, /strongerHint/i);
   assert.match(practiceSource, /answerTranslation/i);
   const exerciseCacheSource = await readFile(new URL("../lib/spanish-buddy-exercise-cache.ts", import.meta.url), "utf8");
+  const practiceContractSource = await readFile(new URL("../lib/spanish-buddy-practice-contract.mjs", import.meta.url), "utf8");
   assert.match(exerciseCacheSource, /DEFAULT_SPANISH_BUDDY_MODEL = "gpt-5\.6-terra"/i);
-  assert.match(exerciseCacheSource, /Every non-multiple-choice exercise requires the learner to type/i);
-  assert.match(exerciseCacheSource, /Never use underscores, blanks, dice metaphors/i);
-  assert.match(exerciseCacheSource, /Never repeat the instruction inside prompt or context/i);
+  assert.match(practiceContractSource, /interactionMode is authoritative/i);
+  assert.match(practiceContractSource, /exactly four distinct, similarly plausible options/i);
+  assert.match(practiceContractSource, /Return an empty string for germanSupport and grammarReminder/i);
+  assert.match(practiceContractSource, /Never repeat the instruction inside prompt or context/i);
   assert.match(exerciseCacheSource, /seedDeterministicExerciseCache/i);
   assert.match(exerciseCacheSource, /getRequestExecutionContext/i);
 

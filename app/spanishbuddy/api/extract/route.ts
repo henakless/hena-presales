@@ -188,12 +188,14 @@ export async function POST(request: Request) {
     content.push({
       type: "input_image",
       image_url: `data:${file.type};base64,${bytesToBase64(bytes)}`,
-      detail: "original",
+      // High detail is sufficient for handwriting and avoids the latency and
+      // token pressure of sending every phone photo at original resolution.
+      detail: "high",
     });
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 55_000);
+  const timeout = setTimeout(() => controller.abort(), 90_000);
 
   try {
     const openaiResponse = await fetch("https://api.openai.com/v1/responses", {

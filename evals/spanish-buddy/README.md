@@ -83,3 +83,36 @@ node --env-file=.env.local evals/spanish-buddy/run-usability.mjs \
 ## Production behavior
 
 The same deterministic audit runs after a generated exercise is normalized and before it is cached. Cached exercises are audited again when loaded. Exercises with blocking usability issues are discarded, and the server logs issue codes and affected fields without logging lesson or answer content.
+
+## Upload capacity and timing benchmark
+
+The upload benchmark measures the complete extraction path at 1, 2, 4, and 6 images. It records source preparation time, each page's HTTP status and extraction duration, end-to-end duration, extracted item count, source-deletion confirmation, and the highest image count that completed successfully. It writes both JSON and Markdown reports.
+
+By default it performs a cost-free dry run: six synthetic 3024×4032 Spanish-note photos are generated at approximately 3.5 MB each and passed through the same 2,000 px / JPEG quality 84 preparation settings as the browser.
+
+```sh
+npm run eval:uploads
+```
+
+To exercise the deployed API and OpenAI extraction, opt in explicitly:
+
+```sh
+npm run eval:uploads -- \
+  --live \
+  --base-url https://henakless.com/spanishbuddy \
+  --output evals/spanish-buddy/upload-benchmark-report.json
+```
+
+The default live matrix makes 13 extraction requests. Use `--counts 6` for a cheaper single six-page capacity check, or `--counts 1,2,4,6 --repetitions 3` for a more meaningful latency distribution. `--pause-ms` controls the pause between scenarios; use `--pause-ms 60000` for repeated production runs if the report shows HTTP 429 rate limiting.
+
+Real photos can replace the generated fixtures. Files are read in filename order and are never modified:
+
+```sh
+npm run eval:uploads -- \
+  --live \
+  --base-url https://henakless.com/spanishbuddy \
+  --image-dir /absolute/path/to/test-photos \
+  --counts 1,2,4,6
+```
+
+Live extraction does not save lessons or modify a learner library. Uploaded sources are expected to be deleted by the extraction endpoint, and a scenario fails unless every response confirms deletion.

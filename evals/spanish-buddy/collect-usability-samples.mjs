@@ -3,7 +3,8 @@ import path from "node:path";
 import process from "node:process";
 
 import { ACTIVE_EXERCISE_IDS, EXERCISE_LIBRARY } from "../../lib/spanish-buddy-exercises.ts";
-import { PRACTICE_SCHEMA, spanishBuddyPracticeInstructions } from "../../lib/spanish-buddy-exercise-cache.ts";
+import { createSpanishBuddyPracticeSchema, SPANISH_BUDDY_PRACTICE_INSTRUCTIONS } from "../../lib/spanish-buddy-practice-contract.mjs";
+import { applyExerciseUsabilityGuardrails } from "../../lib/spanish-buddy-practice-usability.ts";
 
 const args = process.argv.slice(2);
 const valueAfter = (flag) => {
@@ -15,6 +16,7 @@ const variantsPerType = Math.max(1, Math.min(5, Number(valueAfter("--variants") 
 const model = valueAfter("--model") ?? process.env.OPENAI_MODEL ?? "gpt-5.6-terra";
 const apiKey = process.env.OPENAI_API_KEY;
 if (!apiKey) throw new Error("OPENAI_API_KEY is required. Run with node --env-file=.env.local or export the variable.");
+const practiceSchema = createSpanishBuddyPracticeSchema(ACTIVE_EXERCISE_IDS, 8);
 
 const sourceItems = {
   vocabulary: [
@@ -61,6 +63,7 @@ function exerciseInput(exerciseType, variant) {
       lessonId: "eval-lesson",
       exerciseType,
       exerciseName: definition.name,
+      interactionMode: definition.mode,
       exerciseRule: definition.rule,
       example: { prompt: definition.examplePrompt, answer: definition.exampleAnswer },
       avoidPreviousPrompts: [],
@@ -83,7 +86,7 @@ for (let variant = 0; variant < variantsPerType; variant += 1) {
         model,
         store: false,
         reasoning: { effort: "low" },
-        instructions: spanishBuddyPracticeInstructions(),
+        instructions: SPANISH_BUDDY_PRACTICE_INSTRUCTIONS,
         input: [{
           role: "user",
           content: JSON.stringify({
@@ -91,7 +94,7 @@ for (let variant = 0; variant < variantsPerType; variant += 1) {
             lessonContexts: { "eval-lesson": inputs.map((entry) => entry.contextItem) },
           }),
         }],
-        text: { verbosity: "low", format: { type: "json_schema", name: "spanish_practice_session", strict: true, schema: PRACTICE_SCHEMA } },
+        text: { verbosity: "low", format: { type: "json_schema", name: "spanish_practice_session", strict: true, schema: practiceSchema } },
         max_output_tokens: 3600,
       }),
     });
@@ -103,7 +106,13 @@ for (let variant = 0; variant < variantsPerType; variant += 1) {
     for (const exerciseType of exerciseTypes) {
       const expectedId = `eval-${variant + 1}-${exerciseType}`;
       const exercise = (parsed.exercises ?? []).find((entry) => entry.itemId === expectedId && entry.exerciseType === exerciseType);
-      if (exercise) rows.push({ id: `${exerciseType}-${variant + 1}`, exercise });
+      if (exercise) {
+        rows.push({
+          id: `${exerciseType}-${variant + 1}`,
+          rawHelp: { germanSupport: exercise.germanSupport, grammarReminder: exercise.grammarReminder },
+          exercise: applyExerciseUsabilityGuardrails(exercise),
+        });
+      }
     }
     usages.push(body.usage ?? {});
   }

@@ -1,9 +1,11 @@
 export type ExerciseCategory = "vocabulary" | "grammar" | "communication" | "reading" | "listening" | "speaking";
 export type ExerciseStatus = "active" | "coming_soon";
+export type ExerciseMode = "multiple-choice" | "fill-gap" | "writing" | "reading" | "listening" | "speaking";
 
 export type ExerciseDefinition = {
   id: string;
   category: ExerciseCategory;
+  mode: ExerciseMode;
   name: string;
   description: string;
   rule: string;
@@ -11,6 +13,22 @@ export type ExerciseDefinition = {
   exampleAnswer: string;
   status: ExerciseStatus;
 };
+
+export const EXERCISE_MODES: Array<{ id: ExerciseMode; name: string }> = [
+  { id: "multiple-choice", name: "Opción múltiple" },
+  { id: "fill-gap", name: "Completar huecos" },
+  { id: "writing", name: "Escritura" },
+  { id: "reading", name: "Lectura" },
+  { id: "listening", name: "Escucha" },
+  { id: "speaking", name: "Habla" },
+];
+
+export const EXERCISE_PRESETS: Array<{ id: string; name: string; description: string; modes: ExerciseMode[] }> = [
+  { id: "quick", name: "Rápido y fácil", description: "Opciones y huecos, sin escribir demasiado.", modes: ["multiple-choice", "fill-gap"] },
+  { id: "public", name: "En público", description: "Práctica silenciosa sin escuchar ni hablar.", modes: ["multiple-choice", "fill-gap", "writing", "reading"] },
+  { id: "hands-free", name: "Manos libres", description: "Solo comprensión auditiva y expresión oral.", modes: ["listening", "speaking"] },
+  { id: "full", name: "A fondo", description: "Todos los formatos de ejercicio disponibles.", modes: EXERCISE_MODES.map((mode) => mode.id) },
+];
 
 export const EXERCISE_CATEGORIES: Array<{ id: ExerciseCategory; name: string; description: string }> = [
   { id: "vocabulary", name: "Vocabulario", description: "Recordar, distinguir y usar palabras y combinaciones." },
@@ -25,6 +43,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "written-recall",
     category: "vocabulary",
+    mode: "writing",
     name: "Recuerdo escrito",
     description: "Recupera el significado sin verlo entre opciones.",
     rule: "Siempre se escribe una respuesta; nunca se revela después de pensarlo solamente.",
@@ -35,6 +54,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "active-translation",
     category: "vocabulary",
+    mode: "writing",
     name: "Traducción activa",
     description: "Pasa del alemán al español para activar el vocabulario.",
     rule: "Los sustantivos incluyen artículo y los verbos conservan su complemento: hablar con, ir a.",
@@ -45,6 +65,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "reverse-translation",
     category: "vocabulary",
+    mode: "writing",
     name: "Traducción inversa",
     description: "Comprende una forma española sin opciones.",
     rule: "Se aceptan sinónimos alemanes que conservan el significado.",
@@ -55,6 +76,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "vocabulary-gap",
     category: "vocabulary",
+    mode: "fill-gap",
     name: "Completa con la palabra",
     description: "Recupera vocabulario a partir de un contexto suficiente.",
     rule: "La frase debe dejar clara la respuesta o aceptar todas las alternativas naturales.",
@@ -65,6 +87,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "collocations",
     category: "vocabulary",
+    mode: "fill-gap",
     name: "Colocaciones y expresiones",
     description: "Aprende palabras junto con sus preposiciones y compañeros habituales.",
     rule: "Los verbos se practican como hablar con, depender de o ir a; no como infinitivos aislados.",
@@ -75,6 +98,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "lexical-contrast",
     category: "vocabulary",
+    mode: "multiple-choice",
     name: "Palabras parecidas",
     description: "Distingue palabras cercanas que suelen confundirse.",
     rule: "Todas las opciones pertenecen al mismo campo semántico y son plausibles.",
@@ -85,6 +109,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "own-sentence",
     category: "vocabulary",
+    mode: "writing",
     name: "Escribe una frase",
     description: "Usa una palabra o combinación en una idea propia.",
     rule: "El estímulo es una palabra o combinación breve, nunca una frase ya completa.",
@@ -95,6 +120,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "conjugation-dice",
     category: "grammar",
+    mode: "writing",
     name: "Dado de conjugación",
     description: "Recupera una forma verbal a partir de persona y tiempo.",
     rule: "El verbo conserva su preposición o complemento cuando lo necesita.",
@@ -105,6 +131,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "conjugation-context",
     category: "grammar",
+    mode: "fill-gap",
     name: "Conjugación en contexto",
     description: "Forma el verbo que exige una situación real.",
     rule: "El contexto indica claramente persona, tiempo y complemento.",
@@ -115,6 +142,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "sentence-transformation",
     category: "grammar",
+    mode: "writing",
     name: "Transforma la frase",
     description: "Cambia una forma sin perder el significado principal.",
     rule: "La instrucción especifica exactamente qué debe cambiar.",
@@ -125,6 +153,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "pronoun-substitution",
     category: "grammar",
+    mode: "writing",
     name: "Sustituye por pronombres",
     description: "Convierte objetos explícitos en pronombres correctos.",
     rule: "La respuesta conserva persona, número y orden de los pronombres.",
@@ -135,6 +164,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "grammar-choice",
     category: "grammar",
+    mode: "multiple-choice",
     name: "Elige la forma adecuada",
     description: "Toma una decisión gramatical por su significado.",
     rule: "Las opciones representan un contraste real y no formas aleatorias.",
@@ -145,6 +175,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "error-correction",
     category: "grammar",
+    mode: "writing",
     name: "Corrige el error",
     description: "Detecta y repara un error habitual de la regla actual.",
     rule: "Cada frase contiene un solo problema relevante para el objetivo.",
@@ -155,6 +186,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "sentence-order",
     category: "grammar",
+    mode: "writing",
     name: "Ordena la frase",
     description: "Reconstruye el orden natural del español.",
     rule: "Solo se usa cuando existe un orden claramente defendible.",
@@ -165,6 +197,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "complete-rule",
     category: "grammar",
+    mode: "fill-gap",
     name: "Completa la regla",
     description: "Recuerda de forma explícita cómo funciona una estructura.",
     rule: "Aporta menos evidencia que usar la regla y aparece con moderación.",
@@ -175,6 +208,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "guided-production",
     category: "grammar",
+    mode: "writing",
     name: "Producción guiada",
     description: "Expresa una intención usando una regla concreta.",
     rule: "La situación y la restricción están claras, pero la frase no viene dada.",
@@ -185,6 +219,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "dialogue-completion",
     category: "communication",
+    mode: "fill-gap",
     name: "Completa el diálogo",
     description: "Combina vocabulario y gramática en una conversación.",
     rule: "Se aceptan todas las respuestas naturales que cumplen la función comunicativa.",
@@ -195,6 +230,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "appropriate-response",
     category: "communication",
+    mode: "multiple-choice",
     name: "Elige la reacción adecuada",
     description: "Selecciona una respuesta natural para una situación.",
     rule: "Todas las opciones son respuestas verosímiles del mismo tipo.",
@@ -205,6 +241,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "contextual-translation",
     category: "communication",
+    mode: "writing",
     name: "Traducción contextual",
     description: "Transmite una intención de forma natural, no palabra por palabra.",
     rule: "La evaluación es semántica y la referencia es solo un ejemplo.",
@@ -215,6 +252,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "reading-main-idea",
     category: "reading",
+    mode: "reading",
     name: "Idea principal",
     description: "Comprende el propósito general sin traducir todo.",
     rule: "El texto es breve, original y reutiliza contenido del curso.",
@@ -225,6 +263,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "reading-detail",
     category: "reading",
+    mode: "reading",
     name: "Detalles e inferencias",
     description: "Encuentra información y saca una conclusión razonable.",
     rule: "La explicación distingue lo dicho de lo inferido.",
@@ -235,6 +274,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "reading-reference",
     category: "reading",
+    mode: "reading",
     name: "Referencias y conectores",
     description: "Identifica pronombres y relaciones entre ideas.",
     rule: "La referencia tiene un antecedente inequívoco en el texto.",
@@ -245,6 +285,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "reading-order",
     category: "reading",
+    mode: "reading",
     name: "Reconstruye el texto",
     description: "Ordena acontecimientos usando lógica y conectores.",
     rule: "El texto contiene pistas suficientes para un solo orden principal.",
@@ -255,6 +296,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "reading-mediation",
     category: "reading",
+    mode: "reading",
     name: "Resume o transmite",
     description: "Conserva la información esencial al explicarla a otra persona.",
     rule: "Se evalúa la información preservada, no la copia literal.",
@@ -265,6 +307,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "listening-main-idea",
     category: "listening",
+    mode: "listening",
     name: "Escucha: idea general",
     description: "Identifica situación, propósito o intención.",
     rule: "Primera escucha sin transcripción.",
@@ -275,6 +318,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "listening-detail",
     category: "listening",
+    mode: "listening",
     name: "Escucha: información concreta",
     description: "Extrae una hora, razón, persona o dato.",
     rule: "El audio completo se oye antes de ofrecer ayudas.",
@@ -285,6 +329,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "selective-dictation",
     category: "listening",
+    mode: "listening",
     name: "Dictado selectivo",
     description: "Conecta sonido, ortografía y forma gramatical.",
     rule: "Usa fragmentos breves y significativos.",
@@ -295,6 +340,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "sound-contrast",
     category: "listening",
+    mode: "listening",
     name: "Distingue lo que oyes",
     description: "Diferencia formas cercanas en habla natural.",
     rule: "Solo contrasta formas que realmente puedan confundirse.",
@@ -305,6 +351,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "repeat-and-compare",
     category: "speaking",
+    mode: "speaking",
     name: "Repite y compara",
     description: "Practica pronunciación, acento y ritmo.",
     rule: "Prioriza la inteligibilidad, no un acento nativo.",
@@ -315,6 +362,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "quick-response",
     category: "speaking",
+    mode: "speaking",
     name: "Respuesta rápida",
     description: "Responde con lenguaje conocido sin preparación larga.",
     rule: "Acepta varias respuestas naturales.",
@@ -325,6 +373,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "oral-transformation",
     category: "speaking",
+    mode: "speaking",
     name: "Transformación oral",
     description: "Cambia una forma gramatical en voz alta.",
     rule: "Solo cambia el rasgo indicado.",
@@ -335,6 +384,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "role-play",
     category: "speaking",
+    mode: "speaking",
     name: "Situación o juego de rol",
     description: "Resuelve una situación comunicativa real.",
     rule: "El éxito comunicativo pesa más que los errores secundarios.",
@@ -345,6 +395,7 @@ export const EXERCISE_LIBRARY: ExerciseDefinition[] = [
   {
     id: "oral-summary",
     category: "speaking",
+    mode: "speaking",
     name: "Cuenta o resume",
     description: "Produce varias frases conectadas.",
     rule: "Empieza con veinte segundos y repite una tarea parecida más adelante.",

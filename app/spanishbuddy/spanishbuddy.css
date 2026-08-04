@@ -143,6 +143,7 @@
 .sb-example-strip button:hover { border-color: var(--sb-red); }
 .sb-example-strip button span { display: block; margin-bottom: 4px; color: var(--sb-red-dark); font-size: 7px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
 .sb-analyze { width: 100%; margin-top: 28px; }
+.sb-image-progress { margin: 22px 0 -12px; color: var(--sb-muted); font-size: 10px; font-weight: 800; text-align: center; }
 
 .sb-review { border: 1px solid var(--sb-ink); background: var(--sb-paper); box-shadow: 10px 10px 0 var(--sb-ink); }
 .sb-review-header { display: grid; grid-template-columns: 1fr auto; gap: 30px; padding: 34px; border-bottom: 1px solid var(--sb-ink); }
@@ -230,6 +231,19 @@
 .sb-selection-panel > div { display: flex; gap: 12px; margin-bottom: 22px; }
 .sb-selection-panel > div button { padding: 0 0 4px; border: 0; border-bottom: 1px solid #cbd7d0; background: transparent; color: #fff; font-size: 9px; cursor: pointer; }
 .sb-selection-panel .sb-primary { width: 100%; min-width: 0; background: var(--sb-red); color: white !important; box-shadow: 4px 4px 0 #071c14; }
+.sb-practice-presets { margin-bottom: 76px; }
+.sb-practice-presets-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 380px); gap: 48px; align-items: end; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--sb-ink); }
+.sb-practice-presets-head h2 { margin: 7px 0 0; font-family: Georgia, serif; font-size: 32px; font-weight: 400; }
+.sb-practice-presets-head > p { margin: 0; color: var(--sb-muted); font-size: 11px; line-height: 1.6; }
+.sb-practice-preset-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.sb-practice-preset { min-height: 210px; padding: 22px; border: 1px solid var(--sb-line); background: var(--sb-paper); color: var(--sb-ink); text-align: left; cursor: pointer; transition: border-color .16s ease, background .16s ease, box-shadow .16s ease, transform .16s ease; }
+.sb-practice-preset:hover:not(:disabled) { border-color: var(--sb-red); background: #fff8f4; }
+.sb-practice-preset.selected { border: 2px solid var(--sb-red); background: #fff8f4; box-shadow: 4px 4px 0 var(--sb-red); transform: translate(-1px, -1px); }
+.sb-practice-preset:disabled { background: #e8e7df; color: #7a7b77; cursor: not-allowed; opacity: .72; }
+.sb-practice-preset > span { display: block; color: var(--sb-red-dark); font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
+.sb-practice-preset > strong { display: block; margin-top: 24px; font-family: Georgia, serif; font-size: 25px; font-weight: 400; line-height: 1.08; }
+.sb-practice-preset > p { min-height: 48px; margin: 10px 0 18px; color: var(--sb-muted); font-size: 10px; line-height: 1.5; }
+.sb-practice-preset > small { display: block; padding-top: 13px; border-top: 1px solid currentColor; font-size: 7px; font-weight: 800; line-height: 1.5; text-transform: uppercase; letter-spacing: .05em; }
 .sb-exercise-category { margin-bottom: 76px; }
 .sb-exercise-category-head { display: flex; justify-content: space-between; align-items: end; gap: 30px; padding-bottom: 18px; border-bottom: 1px solid var(--sb-ink); }
 .sb-exercise-category-head h2 { max-width: 680px; margin: 7px 0 0; font-family: Georgia, serif; font-size: 25px; font-weight: 400; }
@@ -424,6 +438,7 @@
   .sb-topic-action button { width: auto; margin: 0 0 0 auto; }
   .sb-exercise-library-intro { grid-template-columns: 1fr; gap: 35px; }
   .sb-selection-panel { max-width: 420px; }
+  .sb-practice-preset-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sb-exercise-boxes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sb-exercise-box:nth-child(3n + 1) { border-left: 0; }
   .sb-exercise-box:nth-child(2n + 1) { border-left: 1px solid var(--sb-line); }
@@ -475,6 +490,9 @@
   .sb-exercise-library-intro { margin-bottom: 48px; }
   .sb-exercise-library-intro h1 { font-size: 48px; }
   .sb-selection-panel { max-width: none; }
+  .sb-practice-presets-head { grid-template-columns: 1fr; gap: 12px; }
+  .sb-practice-preset-grid { grid-template-columns: 1fr; }
+  .sb-practice-preset { min-height: 185px; }
   .sb-exercise-category-head { align-items: start; }
   .sb-exercise-category-head h2 { font-size: 20px; }
   .sb-exercise-category-actions { align-items: flex-end; flex-direction: column; gap: 6px; }

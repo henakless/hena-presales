@@ -6,6 +6,7 @@ import {
 } from "../../../../lib/spanish-buddy-exercises";
 import { inferLearningType, type LearningType, type SavedItem } from "../../../../lib/spanish-buddy";
 import {
+  applyExerciseUsabilityGuardrails,
   auditExerciseUsability,
   type PracticeExerciseForAudit,
 } from "../../../../lib/spanish-buddy-practice-usability";
@@ -162,13 +163,15 @@ function chooseCachedVariant(rows: CachedRow[]) {
 
 function normalizeExercise(value: PracticeExercise, planned: { item: SavedItem; exerciseType: string }) {
   if (value.itemId !== planned.item.id || value.exerciseType !== planned.exerciseType) return null;
+  const definition = EXERCISE_LIBRARY.find((entry) => entry.id === planned.exerciseType);
+  if (!definition) return null;
   const prompt = clean(value.prompt, 900);
   const instruction = clean(value.instruction, 260);
   const answer = clean(value.answer, 600);
   const answerTranslation = clean(value.answerTranslation, 700);
   const germanSupport = clean(value.germanSupport, 700);
   const strongerHint = clean(value.strongerHint, 700);
-  if (!instruction || !prompt || !answer || !answerTranslation || !germanSupport || !strongerHint) return null;
+  if (!instruction || !prompt || !answer || !answerTranslation || !strongerHint) return null;
   const options = Array.isArray(value.options)
     ? [...new Set(value.options.map((entry) => clean(entry, 240)).filter(Boolean))].slice(0, 4)
     : [];
@@ -176,7 +179,10 @@ function normalizeExercise(value: PracticeExercise, planned: { item: SavedItem; 
     if (options.length >= 4) options[options.length - 1] = answer;
     else options.push(answer);
   }
-  const exercise = {
+  const matchingAnswers = options.filter((option) => option.toLocaleLowerCase("es") === answer.toLocaleLowerCase("es"));
+  if (definition.mode === "multiple-choice" && (options.length !== 4 || matchingAnswers.length !== 1)) return null;
+  if (definition.mode !== "multiple-choice" && options.length > 0) return null;
+  const exercise = applyExerciseUsabilityGuardrails({
     itemId: planned.item.id,
     exerciseType: planned.exerciseType,
     label: clean(value.label, 80) || "Práctica",
@@ -193,7 +199,7 @@ function normalizeExercise(value: PracticeExercise, planned: { item: SavedItem; 
     germanSupport,
     grammarReminder: clean(value.grammarReminder, 400),
     strongerHint,
-  } satisfies PracticeExercise;
+  } satisfies PracticeExercise);
   const audit = auditExerciseUsability(exercise);
   if (!audit.usable) {
     console.warn("Spanish Buddy rejected an unusable exercise", {
@@ -310,13 +316,13 @@ export async function POST(request: Request) {
       }
       if (exercises.some((entry) => entry.item.id === plan.item.id && entry.exercise.exerciseType === plan.exerciseType)) continue;
 
-      const fallback = normalizeExercise(deterministicPracticeExercise(plan) as PracticeExercise, plan);
+      const fallback = normalizeExercise(deterministicPracticeExercise(plan, items) as PracticeExercise, plan);
       if (!fallback) continue;
       const cacheId = crypto.randomUUID();
       await db.prepare(
         `INSERT INTO spanish_buddy_exercise_variants
          (id, owner_id, item_id, lesson_id, exercise_type, payload, item_content_hash, generator_version)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'deterministic-v2')`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'deterministic-v3')`,
       ).bind(cacheId, ownerId, plan.item.id, plan.item.lessonId, plan.exerciseType, JSON.stringify(fallback), hashes.get(plan.item.id)).run();
       exercises.push({ exercise: fallback, item: plan.item, cacheId });
       if (!refillPlans.some((entry) => entry.item.id === plan.item.id && entry.exerciseType === plan.exerciseType)) refillPlans.push(plan);
