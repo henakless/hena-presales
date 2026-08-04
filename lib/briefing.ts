@@ -9,7 +9,7 @@ export type Briefing = {
     profile: string;
     noteworthyEvents: string[];
   };
-  openaiRelevance: {
+  aiRelevance: {
     motion: string;
     rationale: string;
     workflows: string[];
@@ -60,7 +60,7 @@ export const BRIEFING_SCHEMA = {
       },
       required: ["profile", "noteworthyEvents"],
     },
-    openaiRelevance: {
+    aiRelevance: {
       type: "object",
       additionalProperties: false,
       properties: {
@@ -78,7 +78,7 @@ export const BRIEFING_SCHEMA = {
     "executiveSummary",
     "person",
     "company",
-    "openaiRelevance",
+    "aiRelevance",
     "compliance",
     "risks",
     "discoveryQuestions",
@@ -116,10 +116,10 @@ export function isBriefing(value: unknown): value is Briefing {
     !!briefing.company &&
     typeof briefing.company.profile === "string" &&
     isStringArray(briefing.company.noteworthyEvents, 3) &&
-    !!briefing.openaiRelevance &&
-    typeof briefing.openaiRelevance.motion === "string" &&
-    typeof briefing.openaiRelevance.rationale === "string" &&
-    isStringArray(briefing.openaiRelevance.workflows, 3) &&
+    !!briefing.aiRelevance &&
+    typeof briefing.aiRelevance.motion === "string" &&
+    typeof briefing.aiRelevance.rationale === "string" &&
+    isStringArray(briefing.aiRelevance.workflows, 3) &&
     isStringArray(briefing.compliance, 3) &&
     isStringArray(briefing.risks, 3) &&
     isStringArray(briefing.discoveryQuestions, 6)

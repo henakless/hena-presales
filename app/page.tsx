@@ -57,7 +57,7 @@ const CONTACTS: Contact[] = [
     name: "Paige Turner",
     role: "Chief Knowledge Officer",
     brief:
-      "Oversees research and document management at an international consulting firm. Wants ChatGPT Enterprise to accelerate analysis, summarize client materials, and surface institutional knowledge.",
+      "Oversees research and document management at an international consulting firm. Wants an enterprise AI assistant to accelerate analysis, summarize client materials, and surface institutional knowledge.",
     authority:
       "Strong business owner for knowledge workflows and adoption. Likely needs the CIO, security, legal, and practice leaders to approve the platform and data-access model.",
     priorities: ["Research quality", "Knowledge reuse", "Client confidentiality"],
@@ -68,7 +68,7 @@ const CONTACTS: Contact[] = [
     name: "Al Gorithm",
     role: "VP of AI Transformation",
     brief:
-      "Runs automation initiatives for a large retail group. Evaluating OpenAI for customer support, merchandising insights, and employee productivity—with governance and security as priorities.",
+      "Runs automation initiatives for a large retail group. Evaluating enterprise AI platforms for customer support, merchandising insights, and employee productivity—with governance and security as priorities.",
     authority:
       "Likely orchestrates the evaluation and owns the transformation roadmap. Budget may sit across technology and business units; production ownership is probably distributed.",
     priorities: ["Scaled automation", "Measurable value", "Governed deployment"],
@@ -97,9 +97,9 @@ const COMPANIES: Company[] = [
     ],
     compliance: ["Client confidentiality and ethical walls", "Data residency and retention", "Source traceability", "Role-based knowledge access"],
     risks: ["A generic seat rollout without workflow ownership", "Low trust if answers cannot point to sources", "Overlapping Microsoft or in-house knowledge initiatives"],
-    motion: "ChatGPT Enterprise + selective API workflows",
+    motion: "Enterprise AI assistant + selective API workflows",
     motionDetail:
-      "ChatGPT Enterprise is the clearest starting point for broad knowledge work. The API becomes relevant where proposal or close-out workflows need structured actions in document systems.",
+      "A secure enterprise assistant is the clearest starting point for broad knowledge work. Model APIs become relevant where proposal or close-out workflows need structured actions in document systems.",
   },
   {
     id: "model",
@@ -118,13 +118,13 @@ const COMPANIES: Company[] = [
     workflows: [
       "Compliance-analysis assistant that compares policy changes with internal controls and preserves a review trail.",
       "Employee support agent grounded in approved procedures, with deterministic escalation for regulated decisions.",
-      "Codex-enabled engineering workflow for legacy modernization, test generation, and secure code review.",
+      "AI-assisted engineering workflow for legacy modernization, test generation, and secure code review.",
     ],
     compliance: ["EU AI Act role and risk classification", "DORA and operational resilience", "Model-risk management", "PII, banking secrecy, and audit logging"],
     risks: ["Treating a sandbox approval as production approval", "Unclear accountability for model outputs", "Legacy data access becoming the critical path"],
-    motion: "API Platform + Codex, with a governed ChatGPT pilot",
+    motion: "Model API platform + coding assistant, with a governed workplace pilot",
     motionDetail:
-      "Purpose-built applications fit regulated workflows; Codex supports the teams building them. A contained ChatGPT Enterprise cohort can validate lower-risk employee productivity use cases.",
+      "Purpose-built applications fit regulated workflows; an AI coding assistant supports the teams building them. A contained workplace-assistant cohort can validate lower-risk employee productivity use cases.",
   },
   {
     id: "token",
@@ -147,9 +147,9 @@ const COMPANIES: Company[] = [
     ],
     compliance: ["Cross-border data transfers", "Trade and sanctions controls", "Customer and shipment confidentiality", "Human control of operational decisions"],
     risks: ["Real-time data quality and system latency", "Automation crossing from advice into operational control", "Unclear value baseline across regions"],
-    motion: "API Platform + agentic workflows + Realtime",
+    motion: "Model API platform + agentic workflows + real-time AI",
     motionDetail:
-      "The highest-value use cases are integrated and event-driven. ChatGPT Enterprise may still support corporate knowledge work, but the core motion is a governed application layer.",
+      "The highest-value use cases are integrated and event-driven. An enterprise assistant may still support corporate knowledge work, but the core motion is a governed application layer.",
   },
 ];
 
@@ -159,7 +159,7 @@ const RESEARCH_OBJECTIVES = [
   "Person, company, and likely buying authority",
   "Business trigger behind the inquiry",
   "Specific, valuable AI workflows",
-  "Best-fit OpenAI product motion",
+  "Best-fit AI solution and delivery model",
   "Technical, security, data, and compliance needs",
   "Risks, objections, competitors, and buying process",
   "A focused first-discovery meeting plan",
@@ -391,7 +391,7 @@ export default function Home() {
           </div>
           <p>
             <strong className="discovery-prompt">Help create the lead that came in through the website.</strong>
-            Choose the contact and company independently, then edit their inquiry. OpenAI will generate
+            Choose the contact and company independently, then edit their inquiry. The AI will generate
             a fresh, seven-part briefing from the fictional scenario you assemble.
           </p>
         </header>
@@ -563,13 +563,13 @@ export default function Home() {
                 <section className="brief-section relevance-section">
                   <span>04</span>
                   <div>
-                    <h4>How OpenAI is relevant</h4>
+                    <h4>How AI can help</h4>
                     <div className="motion-callout">
-                      <strong>{briefing.openaiRelevance.motion}</strong>
-                      <p>{briefing.openaiRelevance.rationale}</p>
+                      <strong>{briefing.aiRelevance.motion}</strong>
+                      <p>{briefing.aiRelevance.rationale}</p>
                     </div>
                     <h6>Workflows worth validating</h6>
-                    <ol>{briefing.openaiRelevance.workflows.map((item) => <li key={item}>{item}</li>)}</ol>
+                    <ol>{briefing.aiRelevance.workflows.map((item) => <li key={item}>{item}</li>)}</ol>
                   </div>
                 </section>
 
@@ -579,7 +579,7 @@ export default function Home() {
                     <div>
                       <h4>Regulatory & compliance</h4>
                       <ul>{briefing.compliance.map((item) => <li key={item}>{item}</li>)}</ul>
-                      <p className="brief-note">Confirm whether OpenAI is acting as a workplace platform, an application component, or both—the control model differs.</p>
+                      <p className="brief-note">Confirm whether AI is acting as a workplace platform, an application component, or both—the control model differs.</p>
                     </div>
                   </section>
                   <section className="brief-section risk-section">
@@ -603,7 +603,7 @@ export default function Home() {
 
               <footer className="brief-footer">
                 <span>Prepared for Hena Kless</span>
-                <span>Generated with OpenAI · fictional scenario hypotheses require validation</span>
+                <span>AI-generated · fictional scenario hypotheses require validation</span>
                 <span>01 / 01</span>
               </footer>
             </article>
@@ -628,8 +628,8 @@ export default function Home() {
               <h3>Enterprise sales researcher for a first discovery meeting.</h3>
               <p>
                 The live AI reasons over the fictional lead, company profile, scenario signals, and inquiry
-                you select. Product fit stays open until the use case has been analyzed: ChatGPT Enterprise
-                or Business, Codex, the OpenAI API Platform, an agentic or multimodal application, Realtime,
+                you select. Product fit stays open until the use case has been analyzed: a secure workplace
+                assistant, an AI coding tool, a model API, an agentic or multimodal application, real-time AI,
                 or a combination. Hypotheses are explicitly framed for validation rather than presented as
                 externally researched facts.
               </p>

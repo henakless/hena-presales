@@ -50,8 +50,8 @@ const MOCK_BRIEFING = {
     profile: "A fictional global logistics operator.",
     noteworthyEvents: ["Modernization program", "Contract backlog", "Operations refresh"],
   },
-  openaiRelevance: {
-    motion: "API Platform + agentic workflows",
+  aiRelevance: {
+    motion: "Model API platform + agentic workflows",
     rationale: "The workflows are integrated and operational.",
     workflows: ["Operations copilot", "Contract intake", "Multilingual service"],
   },
@@ -104,7 +104,8 @@ test("server-renders the AI discovery experience", async () => {
   assert.match(html, /great, qualified lead with a proper briefing/i);
   assert.match(html, /Discovery starts before the meeting/i);
   assert.match(html, /Help create the lead that came in through the website/i);
-  assert.match(html, /OpenAI will generate a fresh, seven-part briefing/i);
+  assert.match(html, /The AI will generate a fresh, seven-part briefing/i);
+  assert.doesNotMatch(html, /OpenAI|ChatGPT|Codex/i);
   assert.match(html, /Entor Price/i);
   assert.match(html, /Paige Turner/i);
   assert.match(html, /Al Gorithm/i);
@@ -137,7 +138,8 @@ test("server-renders the AI discovery experience", async () => {
   assert.match(pageSource, /Executive summary/i);
   assert.match(pageSource, /Person information/i);
   assert.match(pageSource, /Company information/i);
-  assert.match(pageSource, /How OpenAI is relevant/i);
+  assert.match(pageSource, /How AI can help/i);
+  assert.doesNotMatch(pageSource, /OpenAI|ChatGPT|Codex/i);
   assert.match(pageSource, /Regulatory & compliance/i);
   assert.match(pageSource, /Risks to qualify/i);
   assert.match(pageSource, /Best discovery questions/i);
@@ -595,7 +597,7 @@ test("generates a structured briefing through the server endpoint", async () => 
     assert.equal(response.status, 200);
     const body = await response.json();
     assert.deepEqual(body.briefing, MOCK_BRIEFING);
-    assert.equal(body.model, "gpt-5.6-terra");
+    assert.equal(body.model, undefined);
   } finally {
     globalThis.fetch = originalFetch;
     if (originalApiKey === undefined) delete process.env.OPENAI_API_KEY;

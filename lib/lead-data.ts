@@ -42,7 +42,7 @@ export const CONTACTS: Contact[] = [
     name: "Paige Turner",
     role: "Chief Knowledge Officer",
     brief:
-      "Oversees research and document management at an international consulting firm. Wants ChatGPT Enterprise to accelerate analysis, summarize client materials, and surface institutional knowledge.",
+      "Oversees research and document management at an international consulting firm. Wants an enterprise AI assistant to accelerate analysis, summarize client materials, and surface institutional knowledge.",
     authority:
       "Strong business owner for knowledge workflows and adoption. Likely needs the CIO, security, legal, and practice leaders to approve the platform and data-access model.",
     priorities: ["Research quality", "Knowledge reuse", "Client confidentiality"],
@@ -53,7 +53,7 @@ export const CONTACTS: Contact[] = [
     name: "Al Gorithm",
     role: "VP of AI Transformation",
     brief:
-      "Runs automation initiatives for a large retail group. Evaluating OpenAI for customer support, merchandising insights, and employee productivity—with governance and security as priorities.",
+      "Runs automation initiatives for a large retail group. Evaluating enterprise AI platforms for customer support, merchandising insights, and employee productivity—with governance and security as priorities.",
     authority:
       "Likely orchestrates the evaluation and owns the transformation roadmap. Budget may sit across technology and business units; production ownership is probably distributed.",
     priorities: ["Scaled automation", "Measurable value", "Governed deployment"],
@@ -91,9 +91,9 @@ export const COMPANIES: Company[] = [
       "Low trust if answers cannot point to sources",
       "Overlapping Microsoft or in-house knowledge initiatives",
     ],
-    motion: "ChatGPT Enterprise + selective API workflows",
+    motion: "Enterprise AI assistant + selective API workflows",
     motionDetail:
-      "ChatGPT Enterprise is the clearest starting point for broad knowledge work. The API becomes relevant where proposal or close-out workflows need structured actions in document systems.",
+      "A secure enterprise assistant is the clearest starting point for broad knowledge work. Model APIs become relevant where proposal or close-out workflows need structured actions in document systems.",
   },
   {
     id: "model",
@@ -112,7 +112,7 @@ export const COMPANIES: Company[] = [
     workflows: [
       "Compliance-analysis assistant that compares policy changes with internal controls and preserves a review trail.",
       "Employee support agent grounded in approved procedures, with deterministic escalation for regulated decisions.",
-      "Codex-enabled engineering workflow for legacy modernization, test generation, and secure code review.",
+      "AI-assisted engineering workflow for legacy modernization, test generation, and secure code review.",
     ],
     compliance: [
       "EU AI Act role and risk classification",
@@ -125,9 +125,9 @@ export const COMPANIES: Company[] = [
       "Unclear accountability for model outputs",
       "Legacy data access becoming the critical path",
     ],
-    motion: "API Platform + Codex, with a governed ChatGPT pilot",
+    motion: "Model API platform + coding assistant, with a governed workplace pilot",
     motionDetail:
-      "Purpose-built applications fit regulated workflows; Codex supports the teams building them. A contained ChatGPT Enterprise cohort can validate lower-risk employee productivity use cases.",
+      "Purpose-built applications fit regulated workflows; an AI coding assistant supports the teams building them. A contained workplace-assistant cohort can validate lower-risk employee productivity use cases.",
   },
   {
     id: "token",
@@ -159,9 +159,9 @@ export const COMPANIES: Company[] = [
       "Automation crossing from advice into operational control",
       "Unclear value baseline across regions",
     ],
-    motion: "API Platform + agentic workflows + Realtime",
+    motion: "Model API platform + agentic workflows + real-time AI",
     motionDetail:
-      "The highest-value use cases are integrated and event-driven. ChatGPT Enterprise may still support corporate knowledge work, but the core motion is a governed application layer.",
+      "The highest-value use cases are integrated and event-driven. An enterprise assistant may still support corporate knowledge work, but the core motion is a governed application layer.",
   },
 ];
 
