@@ -385,7 +385,8 @@ p, h1, h2, h3, h4, h5, h6, blockquote, dl, dd, ol, ul { margin-top: 0; }
   .site-header { grid-template-columns: 1fr auto; }
   .cv-grid { grid-template-columns: 1fr 290px; }
   .reference-card { grid-template-columns: 100px 1fr; }
-  .reference-arrow { margin: 6px 28px 0 auto; transform: rotate(90deg); }
+  .reference-copy { position: relative; padding-bottom: 58px; }
+  .reference-arrow { position: absolute; right: 28px; bottom: 2px; margin: 0; transform: rotate(90deg); }
   .reference-proof { grid-column: 1 / -1; }
 }
 
@@ -488,6 +489,7 @@ p, h1, h2, h3, h4, h5, h6, blockquote, dl, dd, ol, ul { margin-top: 0; }
   .cv-timeline article { grid-template-columns: 1fr; gap: 8px; }
   .reference-card { grid-template-columns: 1fr; gap: 22px; padding: 25px 22px; }
   .reference-stamp { width: 82px; height: 82px; }
+  .reference-copy { padding-bottom: 0; }
   .reference-attribution a { width: auto; flex-wrap: wrap; gap: 2px 7px; white-space: normal; }
   .reference-arrow { display: none; }
   .reference-proof { grid-column: auto; }
