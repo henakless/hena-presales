@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState, type CSSProperties } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { acceptsAnswer, localAnswerVerdict } from "../../lib/spanish-buddy-answer";
 import {
   ACTIVE_EXERCISE_IDS,
@@ -49,6 +49,7 @@ type AnswerResult = "correct" | "almost" | "incorrect";
 const MAX_LESSON_IMAGES = 6;
 const MAX_IMAGE_EDGE = 2_000;
 const IMAGE_QUALITY = 0.84;
+const IMAGE_EXTRACTION_CONCURRENCY = 2;
 const SUPPORTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
 async function prepareLessonImage(file: File) {
@@ -177,7 +178,11 @@ export default function SpanishBuddy() {
   const [sourceDeleted, setSourceDeleted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [imageProgress, setImageProgress] = useState("");
+  const [completedImageCount, setCompletedImageCount] = useState(0);
   const [error, setError] = useState("");
+  const extractionAbortRef = useRef<AbortController | null>(null);
+  const extractionCacheRef = useRef<{ signature: string; results: Map<number, ExtractionResult> }>({ signature: "", results: new Map() });
+  const cancelRequestedRef = useRef(false);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [exerciseIndex, setExerciseIndex] = useState(0);
   const [answer, setAnswer] = useState("");
@@ -344,15 +349,35 @@ export default function SpanishBuddy() {
     const selected = Array.from(event.target.files ?? []);
     if (selected.length > MAX_LESSON_IMAGES) {
       setFiles(selected.slice(0, MAX_LESSON_IMAGES));
+      resetExtractionCache();
       setError(`Puedes añadir hasta ${MAX_LESSON_IMAGES} imágenes por lección.`);
       return;
     }
     if (selected.some((file) => !SUPPORTED_IMAGE_TYPES.has(file.type))) {
       setFiles([]);
+      resetExtractionCache();
       setError("Usa imágenes JPG, PNG, WEBP o GIF.");
       return;
     }
     setFiles(selected);
+    resetExtractionCache();
+    setError("");
+  }
+
+  function resetExtractionCache() {
+    extractionCacheRef.current = { signature: "", results: new Map() };
+    setCompletedImageCount(0);
+  }
+
+  function cancelAnalysis() {
+    cancelRequestedRef.current = true;
+    extractionAbortRef.current?.abort();
+  }
+
+  function restartExtraction() {
+    resetExtractionCache();
+    setExtraction(null);
+    setSourceDeleted(false);
     setError("");
   }
 
@@ -420,6 +445,7 @@ export default function SpanishBuddy() {
     setTitle(example.title);
     setNote(example.text);
     setFiles([]);
+    resetExtractionCache();
     setExtraction(null);
     setSourceDeleted(false);
     setView("add");
@@ -437,31 +463,46 @@ export default function SpanishBuddy() {
     setImageProgress(files.length ? `Preparando página 1 de ${files.length}…` : "");
     setError("");
     setExtraction(null);
+    cancelRequestedRef.current = false;
+    const controller = new AbortController();
+    extractionAbortRef.current = controller;
 
     try {
       const inputs: Array<{ file?: File; note: string }> = files.length
         ? files.map((file, index) => ({ file, note: index === 0 ? note.trim() : "" }))
         : [{ note: note.trim() }];
-      const results: ExtractionResult[] = [];
+      const signature = JSON.stringify({
+        note: note.trim(),
+        files: files.map((file) => [file.name, file.size, file.lastModified]),
+      });
+      if (extractionCacheRef.current.signature !== signature) {
+        extractionCacheRef.current = { signature, results: new Map() };
+        setCompletedImageCount(0);
+      }
+      const cachedResults = extractionCacheRef.current.results;
+      const pending = inputs.map((input, index) => ({ input, index })).filter(({ index }) => !cachedResults.has(index));
+      const prepared = new Map<number, File>();
+      for (const { input, index } of pending) {
+        if (!input.file) continue;
+        setImageProgress(`Preparando página ${index + 1} de ${inputs.length}…`);
+        prepared.set(index, await prepareLessonImage(input.file));
+        if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
+      }
 
-      for (let index = 0; index < inputs.length; index += 1) {
-        const input = inputs[index];
-        let preparedFile: File | undefined;
-        if (input.file) {
-          setImageProgress(`Preparando página ${index + 1} de ${inputs.length}…`);
-          preparedFile = await prepareLessonImage(input.file);
-          setImageProgress(`Analizando página ${index + 1} de ${inputs.length}…`);
-        }
-
+      let nextPending = 0;
+      let fatalError: Error | null = null;
+      let completed = cachedResults.size;
+      const extractInput = async (input: { file?: File; note: string }, index: number) => {
         const formData = new FormData();
         formData.set("title", title.trim());
         formData.set("note", input.note);
+        const preparedFile = prepared.get(index);
         if (preparedFile) formData.append("images", preparedFile);
 
         let response: Response | null = null;
         let body: { extraction?: ExtractionResult; sourceDeleted?: boolean; error?: string } = {};
         for (let attempt = 0; attempt < 2; attempt += 1) {
-          response = await fetch(apiUrl("extract"), { method: "POST", body: formData });
+          response = await fetch(apiUrl("extract"), { method: "POST", body: formData, signal: controller.signal });
           const responseType = response.headers.get("content-type") ?? "";
           body = responseType.includes("application/json")
             ? await response.json() as typeof body
@@ -470,27 +511,58 @@ export default function SpanishBuddy() {
                   ? "Esta imagen es demasiado grande para analizarla."
                   : "No se ha podido analizar la lección.",
               };
-          if (response.ok && body.extraction) break;
+          if (response.ok && body.extraction && body.sourceDeleted === true) break;
           if (attempt === 0 && response.status >= 500) continue;
           break;
         }
 
-        if (!response?.ok || !body.extraction) {
+        if (!response?.ok || !body.extraction || body.sourceDeleted !== true) {
           const page = files.length ? ` la página ${index + 1}` : " la lección";
           throw new Error(body.error ? `No se ha podido analizar${page}: ${body.error}` : `No se ha podido analizar${page}.`);
         }
-        results.push(body.extraction);
+        cachedResults.set(index, body.extraction);
+        completed += 1;
+        setCompletedImageCount(completed);
+        setImageProgress(`${completed} de ${inputs.length} ${completed === 1 ? "página analizada" : "páginas analizadas"}…`);
+      };
+
+      const worker = async () => {
+        while (!fatalError && !controller.signal.aborted && nextPending < pending.length) {
+          const task = pending[nextPending];
+          nextPending += 1;
+          try {
+            await extractInput(task.input, task.index);
+          } catch (taskError) {
+            if (taskError instanceof Error && taskError.name === "AbortError") return;
+            fatalError = taskError instanceof Error ? taskError : new Error("No se ha podido analizar la lección.");
+            controller.abort();
+          }
+        }
+      };
+      setImageProgress(pending.length ? `Analizando ${pending.length} ${pending.length === 1 ? "página pendiente" : "páginas pendientes"}…` : "Completando la lección…");
+      await Promise.all(Array.from({ length: Math.min(IMAGE_EXTRACTION_CONCURRENCY, Math.max(1, pending.length)) }, () => worker()));
+
+      if (cancelRequestedRef.current) {
+        const retained = cachedResults.size;
+        throw new Error(retained
+          ? `Análisis cancelado. ${retained} ${retained === 1 ? "página queda guardada" : "páginas quedan guardadas"}; puedes continuar cuando quieras.`
+          : "Análisis cancelado.");
       }
+      if (fatalError) throw fatalError;
+      const results = inputs.map((_, index) => cachedResults.get(index)).filter((result): result is ExtractionResult => Boolean(result));
+      if (results.length !== inputs.length) throw new Error("No se han podido completar todas las páginas.");
 
       const merged = mergeExtractions(results, title.trim());
       setExtraction(merged);
       setTitle(merged.title);
       setSourceDeleted(true);
+      resetExtractionCache();
     } catch (analysisError) {
       setError(analysisError instanceof Error ? analysisError.message : "No se ha podido analizar la lección.");
     } finally {
       setBusy(false);
       setImageProgress("");
+      extractionAbortRef.current = null;
     }
   }
 
@@ -523,6 +595,7 @@ export default function SpanishBuddy() {
       setTitle("");
       setNote("");
       setFiles([]);
+      resetExtractionCache();
       await loadLibrary();
       setView("today");
     } catch (saveError) {
@@ -988,7 +1061,10 @@ export default function SpanishBuddy() {
                 {EXAMPLE_NOTES.map((example) => <button type="button" key={example.id} onClick={() => chooseExample(example)}><span>{example.label}</span>{example.title}</button>)}
               </div>
               {imageProgress && <p className="sb-image-progress" role="status">{imageProgress}</p>}
-              <button className="sb-primary sb-analyze" disabled={busy}>{busy ? "Leyendo la lección…" : "Analizar la lección"}<span aria-hidden="true">→</span></button>
+              <div className="sb-analysis-actions">
+                <button className="sb-primary sb-analyze" disabled={busy}>{busy ? "Leyendo la lección…" : completedImageCount ? "Continuar páginas pendientes" : "Analizar la lección"}<span aria-hidden="true">→</span></button>
+                {busy && <button className="sb-cancel-analysis" type="button" onClick={cancelAnalysis}>Cancelar</button>}
+              </div>
             </form>
           ) : (
             <section className="sb-review">
@@ -996,7 +1072,7 @@ export default function SpanishBuddy() {
                 <div><p className="sb-eyebrow">Revisar la extracción</p><input aria-label="Título de la lección" value={extraction.title} onChange={(event) => setExtraction({ ...extraction, title: event.target.value })} /><p>{extraction.summary}</p></div>
                 <div className="sb-deletion"><span aria-hidden="true">✓</span><div><strong>Fuente eliminada</strong><small>{sourceDeleted ? "Solo queda la lección estructurada." : "Eliminación pendiente."}</small></div></div>
               </div>
-              <div className="sb-review-tools"><span>{extraction.items.filter((item) => item.selected).length} confirmados</span><span>{extraction.items.filter((item) => item.confidence === "low").length} por revisar</span><button onClick={() => setExtraction(null)}>Empezar de nuevo</button></div>
+              <div className="sb-review-tools"><span>{extraction.items.filter((item) => item.selected).length} confirmados</span><span>{extraction.items.filter((item) => item.confidence === "low").length} por revisar</span><button onClick={restartExtraction}>Empezar de nuevo</button></div>
               <div className="sb-review-list">
                 {extraction.items.map((item) => (
                   <article className={`sb-review-item ${item.provenance === "suggested" ? "suggested" : ""}`} key={item.id}>

@@ -183,6 +183,10 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(pageSource, /for \(let index = 0; index < inputs\.length; index \+= 1\)/i);
   assert.match(pageSource, /mergeExtractions/i);
   assert.match(pageSource, /Analizando página/i);
+  assert.match(pageSource, /IMAGE_EXTRACTION_CONCURRENCY = 2/i);
+  assert.match(pageSource, /AbortController/i);
+  assert.match(pageSource, /Continuar páginas pendientes/i);
+  assert.match(pageSource, /cancelAnalysis/i);
   const nextConfigSource = await readFile(new URL("../next.config.ts", import.meta.url), "utf8");
   assert.match(nextConfigSource, /bodySizeLimit:\s*"26mb"/i);
   const compiledServerSource = await readFile(new URL("../dist/server/index.js", import.meta.url), "utf8");

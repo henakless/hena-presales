@@ -62,3 +62,15 @@ test("requires a full reading context and an explicit comprehension question", (
   assert.ok(audit.issues.some((issue) => issue.code === "READING_CONTEXT_LENGTH"));
   assert.ok(audit.issues.some((issue) => issue.code === "READING_QUESTION_MISSING"));
 });
+
+test("rejects a sentence-order task whose context nearly gives the solved sentence", () => {
+  const audit = auditExerciseUsability({
+    ...applyExerciseUsabilityGuardrails(baseExercise),
+    exerciseType: "sentence-order",
+    context: "Hoy Pablo ha terminado sus deberes.",
+    prompt: "Ordena: terminado / Hoy / los deberes / ha / Pablo",
+    answer: "Hoy Pablo ha terminado los deberes.",
+    answerTranslation: "Heute hat Pablo die Hausaufgaben beendet.",
+  });
+  assert.ok(audit.issues.some((issue) => issue.code === "ANSWER_IN_TASK_CONTEXT"));
+});

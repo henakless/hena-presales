@@ -61,7 +61,7 @@ Generate three fresh variants for every active exercise type using the productio
 npm run eval:collect
 ```
 
-The collector calls the Responses API directly and does not modify a learner's library or cache. It intentionally captures raw structured generations before the production usability gate filters them. By default it writes `evals/spanish-buddy/generated-exercises.jsonl`. Useful options are:
+The collector calls the Responses API directly and does not modify a learner's library or cache. Each row preserves the model's raw basic-help fields under `rawHelp` and stores the exercise after the same server-owned basic-help guardrail used in production. The subsequent eval applies the production usability gate. By default it writes `evals/spanish-buddy/generated-exercises.jsonl`. Useful options are:
 
 ```sh
 npm run eval:collect -- \
@@ -86,7 +86,7 @@ The same deterministic audit runs after a generated exercise is normalized and b
 
 ## Upload capacity and timing benchmark
 
-The upload benchmark measures the complete extraction path at 1, 2, 4, and 6 images. It records source preparation time, each page's HTTP status and extraction duration, end-to-end duration, extracted item count, source-deletion confirmation, and the highest image count that completed successfully. It writes both JSON and Markdown reports.
+The upload benchmark measures the complete extraction path at 1, 2, 4, and 6 images with the same controlled concurrency of two used by the product. It records source preparation time, each page's HTTP status and extraction duration, end-to-end duration, extracted item count, source-deletion confirmation, and the highest image count that completed successfully. It writes both JSON and Markdown reports. Use `--concurrency 1` to compare against the previous sequential behavior.
 
 By default it performs a cost-free dry run: six synthetic 3024×4032 Spanish-note photos are generated at approximately 3.5 MB each and passed through the same 2,000 px / JPEG quality 84 preparation settings as the browser.
 

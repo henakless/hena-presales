@@ -1,0 +1,136 @@
+{
+  "generatedAt": "2026-08-04T21:44:09.992Z",
+  "dryRun": false,
+  "baseUrl": "https://henakless.com/spanishbuddy",
+  "fixtureSource": "synthetic 3024×4032 Spanish note photos targeting 3.5 MB each",
+  "counts": [
+    6
+  ],
+  "sourceImages": [
+    {
+      "index": 1,
+      "name": "page-1.jpg",
+      "sourceBytes": 3634863,
+      "preparedBytes": 374882,
+      "preparationMs": 70.5
+    },
+    {
+      "index": 2,
+      "name": "page-2.jpg",
+      "sourceBytes": 3638154,
+      "preparedBytes": 375750,
+      "preparationMs": 66.6
+    },
+    {
+      "index": 3,
+      "name": "page-3.jpg",
+      "sourceBytes": 3636714,
+      "preparedBytes": 374892,
+      "preparationMs": 66.1
+    },
+    {
+      "index": 4,
+      "name": "page-4.jpg",
+      "sourceBytes": 3635731,
+      "preparedBytes": 375209,
+      "preparationMs": 65.9
+    },
+    {
+      "index": 5,
+      "name": "page-5.jpg",
+      "sourceBytes": 3636217,
+      "preparedBytes": 374951,
+      "preparationMs": 66
+    },
+    {
+      "index": 6,
+      "name": "page-6.jpg",
+      "sourceBytes": 3637020,
+      "preparedBytes": 375143,
+      "preparationMs": 66.6
+    }
+  ],
+  "scenarios": [
+    {
+      "imageCount": 6,
+      "success": true,
+      "preparationMs": 401.7,
+      "extractionMs": 59921.8,
+      "totalUserFlowMs": 60323.5,
+      "sourceBytes": 21818699,
+      "preparedBytes": 2250827,
+      "failure": null,
+      "pages": [
+        {
+          "page": 1,
+          "success": true,
+          "status": 200,
+          "durationMs": 8171.1,
+          "itemCount": 7,
+          "sourceDeleted": true,
+          "error": null,
+          "attempts": 1
+        },
+        {
+          "page": 2,
+          "success": true,
+          "status": 200,
+          "durationMs": 10654.5,
+          "itemCount": 7,
+          "sourceDeleted": true,
+          "error": null,
+          "attempts": 1
+        },
+        {
+          "page": 3,
+          "success": true,
+          "status": 200,
+          "durationMs": 9135.2,
+          "itemCount": 8,
+          "sourceDeleted": true,
+          "error": null,
+          "attempts": 1
+        },
+        {
+          "page": 4,
+          "success": true,
+          "status": 200,
+          "durationMs": 11755.7,
+          "itemCount": 11,
+          "sourceDeleted": true,
+          "error": null,
+          "attempts": 1
+        },
+        {
+          "page": 5,
+          "success": true,
+          "status": 200,
+          "durationMs": 9207.7,
+          "itemCount": 9,
+          "sourceDeleted": true,
+          "error": null,
+          "attempts": 1
+        },
+        {
+          "page": 6,
+          "success": true,
+          "status": 200,
+          "durationMs": 10985,
+          "itemCount": 9,
+          "sourceDeleted": true,
+          "error": null,
+          "attempts": 1
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "successfulScenarios": 1,
+    "highestSuccessfulImageCount": 6,
+    "pageDurationMs": {
+      "p50": 9207.7,
+      "p95": 11755.7,
+      "max": 11755.7
+    }
+  }
+}

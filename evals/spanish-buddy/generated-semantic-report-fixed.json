@@ -1,0 +1,2764 @@
+{
+  "generatedAt": "2026-08-04T21:48:50.874Z",
+  "input": "/Users/maxkless/Documents/hena-ai-playground/site/evals/spanish-buddy/generated-exercises-fixed.jsonl",
+  "total": 72,
+  "usable": 67,
+  "unusable": 5,
+  "usabilityRate": 0.9305555555555556,
+  "expectationMismatches": [],
+  "failuresByIssue": {
+    "READING_CONTEXT_LENGTH": 4,
+    "REPEATED_TEXT_ACROSS_FIELDS": 1
+  },
+  "byExerciseType": {
+    "active-translation": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 2,
+      "modelUnusable": 1,
+      "modelUsabilityRate": 0.6666666666666666
+    },
+    "appropriate-response": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 2,
+      "modelUnusable": 1,
+      "modelUsabilityRate": 0.6666666666666666
+    },
+    "collocations": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 2,
+      "modelUnusable": 1,
+      "modelUsabilityRate": 0.6666666666666666
+    },
+    "complete-rule": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 3,
+      "modelUnusable": 0,
+      "modelUsabilityRate": 1
+    },
+    "conjugation-context": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 3,
+      "modelUnusable": 0,
+      "modelUsabilityRate": 1
+    },
+    "conjugation-dice": {
+      "total": 3,
+      "usable": 2,
+      "unusable": 1,
+      "usabilityRate": 0.6666666666666666,
+      "modelUsable": 1,
+      "modelUnusable": 2,
+      "modelUsabilityRate": 0.3333333333333333
+    },
+    "contextual-translation": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 3,
+      "modelUnusable": 0,
+      "modelUsabilityRate": 1
+    },
+    "dialogue-completion": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 3,
+      "modelUnusable": 0,
+      "modelUsabilityRate": 1
+    },
+    "error-correction": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 3,
+      "modelUnusable": 0,
+      "modelUsabilityRate": 1
+    },
+    "grammar-choice": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 2,
+      "modelUnusable": 1,
+      "modelUsabilityRate": 0.6666666666666666
+    },
+    "guided-production": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 2,
+      "modelUnusable": 1,
+      "modelUsabilityRate": 0.6666666666666666
+    },
+    "lexical-contrast": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 1,
+      "modelUnusable": 2,
+      "modelUsabilityRate": 0.3333333333333333
+    },
+    "own-sentence": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 3,
+      "modelUnusable": 0,
+      "modelUsabilityRate": 1
+    },
+    "pronoun-substitution": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 2,
+      "modelUnusable": 1,
+      "modelUsabilityRate": 0.6666666666666666
+    },
+    "reading-detail": {
+      "total": 3,
+      "usable": 2,
+      "unusable": 1,
+      "usabilityRate": 0.6666666666666666,
+      "modelUsable": 3,
+      "modelUnusable": 0,
+      "modelUsabilityRate": 1
+    },
+    "reading-main-idea": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 3,
+      "modelUnusable": 0,
+      "modelUsabilityRate": 1
+    },
+    "reading-mediation": {
+      "total": 3,
+      "usable": 2,
+      "unusable": 1,
+      "usabilityRate": 0.6666666666666666,
+      "modelUsable": 3,
+      "modelUnusable": 0,
+      "modelUsabilityRate": 1
+    },
+    "reading-order": {
+      "total": 3,
+      "usable": 1,
+      "unusable": 2,
+      "usabilityRate": 0.3333333333333333,
+      "modelUsable": 3,
+      "modelUnusable": 0,
+      "modelUsabilityRate": 1
+    },
+    "reading-reference": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 3,
+      "modelUnusable": 0,
+      "modelUsabilityRate": 1
+    },
+    "reverse-translation": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 3,
+      "modelUnusable": 0,
+      "modelUsabilityRate": 1
+    },
+    "sentence-order": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 2,
+      "modelUnusable": 1,
+      "modelUsabilityRate": 0.6666666666666666
+    },
+    "sentence-transformation": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 3,
+      "modelUnusable": 0,
+      "modelUsabilityRate": 1
+    },
+    "vocabulary-gap": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 2,
+      "modelUnusable": 1,
+      "modelUsabilityRate": 0.6666666666666666
+    },
+    "written-recall": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1,
+      "modelUsable": 3,
+      "modelUnusable": 0,
+      "modelUsabilityRate": 1
+    }
+  },
+  "modelSummary": {
+    "usable": 60,
+    "unusable": 12,
+    "usabilityRate": 0.8333333333333334,
+    "disagreements": [
+      "vocabulary-gap-1",
+      "conjugation-dice-1",
+      "guided-production-1",
+      "reading-detail-1",
+      "reading-order-1",
+      "reading-mediation-1",
+      "active-translation-2",
+      "lexical-contrast-2",
+      "pronoun-substitution-2",
+      "grammar-choice-2",
+      "sentence-order-2",
+      "appropriate-response-2",
+      "reading-order-2",
+      "collocations-3",
+      "lexical-contrast-3"
+    ],
+    "usage": {
+      "inputTokens": 32924,
+      "outputTokens": 20305,
+      "totalTokens": 53229
+    }
+  },
+  "results": [
+    {
+      "id": "written-recall-1",
+      "exerciseType": "written-recall",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 1,
+          "helpProgression": 1,
+          "usable": true,
+          "evidence": [
+            "strongerHint gives the required article directly: «Empieza por “die”», but not the noun.",
+            "germanSupport mostly repeats a restriction («nennt keine Übersetzung») instead of offering task-relevant recall support.",
+            "The help sequence has limited progression: generic recall advice is followed by an answer component, with no intermediate clarifying aid."
+          ]
+        },
+        "usage": {
+          "input_tokens": 405,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 280,
+          "output_tokens_details": {
+            "reasoning_tokens": 172
+          },
+          "total_tokens": 685
+        }
+      }
+    },
+    {
+      "id": "active-translation-1",
+      "exerciseType": "active-translation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 2,
+          "repetition": 1,
+          "helpProgression": 2,
+          "usable": true,
+          "evidence": [
+            "strongerHint: «Empieza por “el abu-”» reveals the article and opening of the target word, making the answer highly recoverable.",
+            "germanSupport repeats the article focus already stated in instruction («incluye el artículo»), though it also reminds learners to produce a complete Spanish response.",
+            "The progression is broadly appropriate: prompt requires translation, basic help remains general, and strongerHint adds targeted assistance."
+          ]
+        },
+        "usage": {
+          "input_tokens": 412,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 240,
+          "output_tokens_details": {
+            "reasoning_tokens": 118
+          },
+          "total_tokens": 652
+        }
+      }
+    },
+    {
+      "id": "reverse-translation-1",
+      "exerciseType": "reverse-translation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 0,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "«germanSupport» aclara que debe traducirse el significado completo sin dar equivalencias concretas.",
+            "«strongerHint» añade solo la preposición «mit», sin completar la respuesta.",
+            "No hay repetición sustancial entre la instrucción y las ayudas."
+          ]
+        },
+        "usage": {
+          "input_tokens": 425,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 266,
+          "output_tokens_details": {
+            "reasoning_tokens": 174
+          },
+          "total_tokens": 691
+        }
+      }
+    },
+    {
+      "id": "vocabulary-gap-1",
+      "exerciseType": "vocabulary-gap",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 3,
+          "repetition": 0,
+          "helpProgression": 1,
+          "usable": false,
+          "evidence": [
+            "`strongerHint` makes the required form directly recoverable from the sentence frame: the existing `se van a` plus “sin «se» delante” yields `alojar en`, already named by `instruction` as «alojarse en».",
+            "`germanSupport` is generic and does not clarify the specific pronominal-placement issue; `grammarReminder` is empty.",
+            "`strongerHint` inaccurately calls the required form an “infinitivo pronominal” while directing the non-pronominal form `alojar en`; this is confusing for the stated `gradingFocus`."
+          ]
+        },
+        "usage": {
+          "input_tokens": 443,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 492,
+          "output_tokens_details": {
+            "reasoning_tokens": 330
+          },
+          "total_tokens": 935
+        }
+      }
+    },
+    {
+      "id": "collocations-1",
+      "exerciseType": "collocations",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 2,
+          "repetition": 1,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "strongerHint: “Indica compañía o relación entre personas.” orienta muy directamente hacia «con» en una tarea de una sola preposición.",
+            "germanSupport: “feste Verbindung … grammatisch und idiomatisch” aclara que se busca una colocación sin revelar la respuesta.",
+            "El contexto, el prompt y strongerHint repiten la idea de relación entre personas, aunque la pista añade una orientación semántica útil."
+          ]
+        },
+        "usage": {
+          "input_tokens": 409,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 252,
+          "output_tokens_details": {
+            "reasoning_tokens": 126
+          },
+          "total_tokens": 661
+        }
+      }
+    },
+    {
+      "id": "lexical-contrast-1",
+      "exerciseType": "lexical-contrast",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 2,
+          "repetition": 2,
+          "helpProgression": 2,
+          "usable": true,
+          "evidence": [
+            "strongerHint: “Es la sensación de no tener nada interesante que hacer” directly defines the correct option in a multiple-choice set, making «aburrimiento» readily recoverable.",
+            "context, prompt, and strongerHint repeat the same ‘nothing interesting to do/no plans’ idea with little added support.",
+            "germanSupport appropriately tells learners to compare options and explicitly does not eliminate one; it does not leak the answer."
+          ]
+        },
+        "usage": {
+          "input_tokens": 442,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 241,
+          "output_tokens_details": {
+            "reasoning_tokens": 118
+          },
+          "total_tokens": 683
+        }
+      }
+    },
+    {
+      "id": "own-sentence-1",
+      "exerciseType": "own-sentence",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 1,
+          "helpProgression": 2,
+          "usable": true,
+          "evidence": [
+            "germanSupport clarifies that learners should create their own natural example and that the reference is only one possibility.",
+            "strongerHint («Mañana voy a...») supplies the exact opening of the reference answer, mildly steering an open-ended production task toward it.",
+            "The instruction and germanSupport overlap on writing an own sentence, but the support adds useful clarification."
+          ]
+        },
+        "usage": {
+          "input_tokens": 420,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 250,
+          "output_tokens_details": {
+            "reasoning_tokens": 140
+          },
+          "total_tokens": 670
+        }
+      }
+    },
+    {
+      "id": "conjugation-dice-1",
+      "exerciseType": "conjugation-dice",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 2,
+          "helpProgression": 1,
+          "usable": false,
+          "evidence": [
+            "germanSupport is unrelated to choosing «qué» or «cuál»: it asks for person, tense, and verb formation.",
+            "strongerHint repeats the already displayed alternatives from context and prompt: “la azul y la negra.”",
+            "The stronger hint is relevant, but basic help does not clarify the actual grammar choice, so support does not progress effectively."
+          ]
+        },
+        "usage": {
+          "input_tokens": 421,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 362,
+          "output_tokens_details": {
+            "reasoning_tokens": 252
+          },
+          "total_tokens": 783
+        }
+      }
+    },
+    {
+      "id": "conjugation-context-1",
+      "exerciseType": "conjugation-context",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 3,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "strongerHint: \"Añade la terminación -ía al infinitivo.\" plus the cue \"(llevar)\" makes the exact answer \"llevaría\" directly recoverable.",
+            "germanSupport gives process guidance without supplying a form or translation.",
+            "The instruction states the target tense, basic help supports analysis, and strongerHint supplies formation guidance; these have distinct roles."
+          ]
+        },
+        "usage": {
+          "input_tokens": 430,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 321,
+          "output_tokens_details": {
+            "reasoning_tokens": 207
+          },
+          "total_tokens": 751
+        }
+      }
+    },
+    {
+      "id": "sentence-transformation-1",
+      "exerciseType": "sentence-transformation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 2,
+          "repetition": 0,
+          "helpProgression": 2,
+          "usable": true,
+          "evidence": [
+            "strongerHint explicitly supplies the target pronoun sequence: «se» delante de «lo», making the core transformation readily recoverable from the prompt.",
+            "germanSupport is generic and does not reveal or translate the required pronouns.",
+            "No repeated sentence or duplicated explanation appears across the fields.",
+            "The help escalates from a general preservation reminder to a specific pronoun-order rule, though the basic help is only loosely task-specific."
+          ]
+        },
+        "usage": {
+          "input_tokens": 442,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 389,
+          "output_tokens_details": {
+            "reasoning_tokens": 266
+          },
+          "total_tokens": 831
+        }
+      }
+    },
+    {
+      "id": "pronoun-substitution-1",
+      "exerciseType": "pronoun-substitution",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 2,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "germanSupport gives a general method without revealing the pronouns or answer.",
+            "strongerHint explicitly supplies both required substitutions: “masculino plural” and “a sus compañeros” → “se”, making “se los” readily recoverable.",
+            "The help progresses from task instruction, to role-identification guidance, to a targeted assisted hint without repetition."
+          ]
+        },
+        "usage": {
+          "input_tokens": 459,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 236,
+          "output_tokens_details": {
+            "reasoning_tokens": 127
+          },
+          "total_tokens": 695
+        }
+      }
+    },
+    {
+      "id": "grammar-choice-1",
+      "exerciseType": "grammar-choice",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 2,
+          "repetition": 0,
+          "helpProgression": 2,
+          "usable": true,
+          "evidence": [
+            "strongerHint: «Se elige uno de varios postres ya mencionados» makes «Cuál» directly inferable from the options and context.",
+            "germanSupport gives a non-answering strategy («Vergleiche Bedeutung und Satzstruktur...»), while strongerHint adds contextual guidance.",
+            "grammarReminder is empty, but no repeated sentence or idea is displayed."
+          ]
+        },
+        "usage": {
+          "input_tokens": 419,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 273,
+          "output_tokens_details": {
+            "reasoning_tokens": 164
+          },
+          "total_tokens": 692
+        }
+      }
+    },
+    {
+      "id": "error-correction-1",
+      "exerciseType": "error-correction",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 1,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "germanSupport clarifies that there is exactly one target-related error and that only the necessary change should be made, without supplying the correction.",
+            "strongerHint appropriately adds the specific usted/third-person-singular cue after the basic help; it makes the form easy to infer but does not state «traería».",
+            "instruction and germanSupport overlap on correcting the sentence, but germanSupport adds the useful one-error/minimal-change constraint."
+          ]
+        },
+        "usage": {
+          "input_tokens": 450,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 326,
+          "output_tokens_details": {
+            "reasoning_tokens": 201
+          },
+          "total_tokens": 776
+        }
+      }
+    },
+    {
+      "id": "sentence-order-1",
+      "exerciseType": "sentence-order",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 0,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "germanSupport gives a general ordering strategy without supplying any prompt element order.",
+            "strongerHint adds a distinct, more specific cue about subject-first order and pronoun placement, without stating «se las».",
+            "The context supports the intended meaning but does not directly provide the cliticized target sentence."
+          ]
+        },
+        "usage": {
+          "input_tokens": 436,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 614,
+          "output_tokens_details": {
+            "reasoning_tokens": 516
+          },
+          "total_tokens": 1050
+        }
+      }
+    },
+    {
+      "id": "complete-rule-1",
+      "exerciseType": "complete-rule",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 0,
+          "repetition": 0,
+          "helpProgression": 1,
+          "usable": true,
+          "evidence": [
+            "germanSupport does not reveal or translate «participio»; it only tells the learner to recall the rule.",
+            "strongerHint gives examples («comido», «hablado», «vivido») without naming the required term.",
+            "The basic help is largely meta-commentary («nennt den fehlenden Fachbegriff nicht») rather than a clarifying grammar aid; the stronger hint is the first substantive support."
+          ]
+        },
+        "usage": {
+          "input_tokens": 424,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 373,
+          "output_tokens_details": {
+            "reasoning_tokens": 252
+          },
+          "total_tokens": 797
+        }
+      }
+    },
+    {
+      "id": "guided-production-1",
+      "exerciseType": "guided-production",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 3,
+          "repetition": 1,
+          "helpProgression": 1,
+          "usable": false,
+          "evidence": [
+            "strongerHint: «Empieza con “¿Cuál” y usa el verbo “preferir”» makes the expected answer «¿Cuál prefieres?» directly recoverable.",
+            "germanSupport says «mehrere Formulierungen können richtig sein», but acceptedAnswers only accept variants of «¿Cuál prefieres?», creating misleading expectations.",
+            "instruction, context, and prompt repeat the same choice-question goal; the stronger hint adds the missing verb but over-solves the task."
+          ]
+        },
+        "usage": {
+          "input_tokens": 438,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 372,
+          "output_tokens_details": {
+            "reasoning_tokens": 239
+          },
+          "total_tokens": 810
+        }
+      }
+    },
+    {
+      "id": "dialogue-completion-1",
+      "exerciseType": "dialogue-completion",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 1,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "germanSupport clarifies that several natural responses are possible without supplying wording or a translation.",
+            "strongerHint «Empieza con “Gracias por...”» is optional and gives a useful sentence frame, but overlaps somewhat with the requested thanking function.",
+            "Help progresses from communicative task to general support to a more concrete starter."
+          ]
+        },
+        "usage": {
+          "input_tokens": 452,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 226,
+          "output_tokens_details": {
+            "reasoning_tokens": 124
+          },
+          "total_tokens": 678
+        }
+      }
+    },
+    {
+      "id": "appropriate-response-1",
+      "exerciseType": "appropriate-response",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 2,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "strongerHint narrows the choice to the unique option with «deseo» followed by «impedimento», making the answer readily identifiable without quoting it.",
+            "germanSupport adds a distinct comparison strategy («Funktion und Register») and explicitly avoids excluding options.",
+            "The instruction states the communicative goal, basic help suggests how to evaluate options, and strongerHint provides a more specific semantic criterion."
+          ]
+        },
+        "usage": {
+          "input_tokens": 498,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 319,
+          "output_tokens_details": {
+            "reasoning_tokens": 201
+          },
+          "total_tokens": 817
+        }
+      }
+    },
+    {
+      "id": "contextual-translation-1",
+      "exerciseType": "contextual-translation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 2,
+          "repetition": 2,
+          "helpProgression": 2,
+          "usable": true,
+          "evidence": [
+            "strongerHint gives the exact opening phrase: «Gracias por la invitación», which directly supplies a substantial part of the expected answer.",
+            "prompt and answerTranslation repeat the identical German sentence: «Danke für die Einladung, ich komme gern.»",
+            "germanSupport gives useful register guidance, and strongerHint is optional and more specific, but it moves into supplying answer wording rather than merely assisting."
+          ]
+        },
+        "usage": {
+          "input_tokens": 466,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 274,
+          "output_tokens_details": {
+            "reasoning_tokens": 158
+          },
+          "total_tokens": 740
+        }
+      }
+    },
+    {
+      "id": "reading-main-idea-1",
+      "exerciseType": "reading-main-idea",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 0,
+          "repetition": 1,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "The German basic help (“Fasse den Zweck des gesamten Textes zusammen…”) clarifies how to identify the main idea without supplying it.",
+            "The stronger hint progressively directs attention to the final decision and its cause; this is appropriate support for a reading task because both are in the passage.",
+            "“Idea principal” is repeated in the label, instruction, and prompt, but this is minor task framing repetition."
+          ]
+        },
+        "usage": {
+          "input_tokens": 528,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 241,
+          "output_tokens_details": {
+            "reasoning_tokens": 122
+          },
+          "total_tokens": 769
+        }
+      }
+    },
+    {
+      "id": "reading-detail-1",
+      "exerciseType": "reading-detail",
+      "deterministic": {
+        "usable": false,
+        "issues": [
+          {
+            "code": "READING_CONTEXT_LENGTH",
+            "severity": "error",
+            "fields": [
+              "context"
+            ],
+            "evidence": "43 words"
+          }
+        ]
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "germanSupport clarifies that the answer must be evidenced in the text without revealing it.",
+            "strongerHint narrows the search to «habla con» in the second sentence but does not state the person.",
+            "Help progresses from reading instruction to evidence-based support to a targeted optional hint."
+          ]
+        },
+        "usage": {
+          "input_tokens": 482,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 208,
+          "output_tokens_details": {
+            "reasoning_tokens": 112
+          },
+          "total_tokens": 690
+        }
+      }
+    },
+    {
+      "id": "reading-reference-1",
+      "exerciseType": "reading-reference",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "El prompt y el contexto permiten localizar el antecedente; en una tarea de lectura, el pasaje puede aportar esa información.",
+            "germanSupport orienta a buscar un referente previo sin nombrar ni traducir «la pensión».",
+            "strongerHint concreta la búsqueda como «el alojamiento mencionado justo antes», pero no da la respuesta literal; por eso supone una filtración leve asistida.",
+            "La ayuda progresa de estrategia general a pista contextual específica, sin repetir la misma formulación."
+          ]
+        },
+        "usage": {
+          "input_tokens": 491,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 280,
+          "output_tokens_details": {
+            "reasoning_tokens": 144
+          },
+          "total_tokens": 771
+        }
+      }
+    },
+    {
+      "id": "reading-order-1",
+      "exerciseType": "reading-order",
+      "deterministic": {
+        "usable": false,
+        "issues": [
+          {
+            "code": "READING_CONTEXT_LENGTH",
+            "severity": "error",
+            "fields": [
+              "context"
+            ],
+            "evidence": "38 words"
+          }
+        ]
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "instruction y prompt explican claramente que hay que ordenar fragmentos.",
+            "germanSupport orienta a usar tiempo y conectores sin identificar una posición concreta.",
+            "strongerHint identifica de forma recuperable el fragmento inicial, pero no da la secuencia completa.",
+            "No hay repetición sustancial entre tarea y ayudas."
+          ]
+        },
+        "usage": {
+          "input_tokens": 498,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 195,
+          "output_tokens_details": {
+            "reasoning_tokens": 94
+          },
+          "total_tokens": 693
+        }
+      }
+    },
+    {
+      "id": "reading-mediation-1",
+      "exerciseType": "reading-mediation",
+      "deterministic": {
+        "usable": false,
+        "issues": [
+          {
+            "code": "READING_CONTEXT_LENGTH",
+            "severity": "error",
+            "fields": [
+              "context"
+            ],
+            "evidence": "30 words"
+          }
+        ]
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 0,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "`prompt` clearly specifies German mediation; the Spanish `context` supplies the needed information.",
+            "`germanSupport` gives a reformulation strategy without supplying German wording or answer content.",
+            "`strongerHint` usefully narrows attention to the two required points without translating or completing the German response."
+          ]
+        },
+        "usage": {
+          "input_tokens": 584,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 367,
+          "output_tokens_details": {
+            "reasoning_tokens": 269
+          },
+          "total_tokens": 951
+        }
+      }
+    },
+    {
+      "id": "written-recall-2",
+      "exerciseType": "written-recall",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 0,
+          "helpProgression": 1,
+          "usable": true,
+          "evidence": [
+            "The instruction and prompt clearly request a German translation of “el aburrimiento.”",
+            "germanSupport is generic and repeats the recall goal without adding practical clarification; grammarReminder is empty.",
+            "strongerHint (“Empieza por «die».”) reveals part of the expected German answer, but not the noun itself.",
+            "No sentence or idea is unnecessarily repeated across the displayed fields."
+          ]
+        },
+        "usage": {
+          "input_tokens": 400,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 271,
+          "output_tokens_details": {
+            "reasoning_tokens": 158
+          },
+          "total_tokens": 671
+        }
+      }
+    },
+    {
+      "id": "active-translation-2",
+      "exerciseType": "active-translation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 3,
+          "repetition": 1,
+          "helpProgression": 1,
+          "usable": false,
+          "evidence": [
+            "strongerHint gives «hablar», the required verb in the accepted answer; with the prompt «sprechen mit», this makes «hablar con» directly recoverable.",
+            "germanSupport mostly repeats the translation task («Formuliere selbst auf Spanisch») rather than adding targeted clarification.",
+            "grammarReminder is empty, so there is no meaningful intermediate support between the generic basic help and the answer-revealing hint."
+          ]
+        },
+        "usage": {
+          "input_tokens": 402,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 238,
+          "output_tokens_details": {
+            "reasoning_tokens": 116
+          },
+          "total_tokens": 640
+        }
+      }
+    },
+    {
+      "id": "reverse-translation-2",
+      "exerciseType": "reverse-translation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 1,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "The Spanish prompt provides the required source language for a reverse translation, and the instruction clearly asks for German.",
+            "germanSupport clarifies that the full meaning, including the preposition, should be translated without supplying German vocabulary.",
+            "strongerHint reveals the expected German verb «übernachten», so it partially exposes the answer, but it is appropriately reserved for stronger optional help.",
+            "The instruction and germanSupport overlap slightly about producing German, but the support adds the useful reminder not to translate word by word."
+          ]
+        },
+        "usage": {
+          "input_tokens": 410,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 275,
+          "output_tokens_details": {
+            "reasoning_tokens": 138
+          },
+          "total_tokens": 685
+        }
+      }
+    },
+    {
+      "id": "vocabulary-gap-2",
+      "exerciseType": "vocabulary-gap",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 2,
+          "repetition": 1,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "germanSupport gives strategy only and does not reveal or translate the target word.",
+            "strongerHint narrows the answer strongly through “sustantivo femenino” and “relación cercana,” making “amistad” readily inferable from the sentence.",
+            "The relationship idea appears in context, prompt, and strongerHint, though the hint adds useful gender information.",
+            "Help progresses from completing the sentence, to general solving strategy, to a more specific optional semantic/grammar clue."
+          ]
+        },
+        "usage": {
+          "input_tokens": 422,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 297,
+          "output_tokens_details": {
+            "reasoning_tokens": 165
+          },
+          "total_tokens": 719
+        }
+      }
+    },
+    {
+      "id": "collocations-2",
+      "exerciseType": "collocations",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 2,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "germanSupport aclara que se busca una combinación fija sin revelar ni traducir la respuesta.",
+            "strongerHint («lo contrario de sentirse entretenido») apunta directamente al concepto de «aburrimiento», aunque mantiene la exigencia de producir el sustantivo.",
+            "No hay información repetida: instrucción, ayuda básica y pista fuerte cumplen funciones distintas."
+          ]
+        },
+        "usage": {
+          "input_tokens": 427,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 212,
+          "output_tokens_details": {
+            "reasoning_tokens": 103
+          },
+          "total_tokens": 639
+        }
+      }
+    },
+    {
+      "id": "lexical-contrast-2",
+      "exerciseType": "lexical-contrast",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 3,
+          "repetition": 0,
+          "helpProgression": 2,
+          "usable": false,
+          "evidence": [
+            "strongerHint: «se usa “con”» makes the only matching option «hablar con» directly recoverable.",
+            "germanSupport is generic and does not repeat the stronger hint.",
+            "grammarReminder is empty; help moves from generic comparison to a decisive answer cue."
+          ]
+        },
+        "usage": {
+          "input_tokens": 435,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 318,
+          "output_tokens_details": {
+            "reasoning_tokens": 225
+          },
+          "total_tokens": 753
+        }
+      }
+    },
+    {
+      "id": "own-sentence-2",
+      "exerciseType": "own-sentence",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 0,
+          "repetition": 1,
+          "helpProgression": 2,
+          "usable": true,
+          "evidence": [
+            "germanSupport clarifies that the learner should create an original natural example and that a reference would not be the only valid solution; it does not reveal an answer.",
+            "strongerHint adds the useful structural detail that the reflexive pronoun and «en» should precede the place, without supplying a place or full sentence.",
+            "The instruction, context, and German support partly repeat the idea of making an appropriate/original sentence, but the repetition is minor."
+          ]
+        },
+        "usage": {
+          "input_tokens": 431,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 242,
+          "output_tokens_details": {
+            "reasoning_tokens": 112
+          },
+          "total_tokens": 673
+        }
+      }
+    },
+    {
+      "id": "conjugation-dice-2",
+      "exerciseType": "conjugation-dice",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 0,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "instruction states the production task; germanSupport adds a usable strategy without revealing the form.",
+            "strongerHint narrows help to the conditional tú ending «-ías» without supplying the stem or full answer.",
+            "The help progresses from identifying person/tense to a targeted morphological cue."
+          ]
+        },
+        "usage": {
+          "input_tokens": 408,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 141,
+          "output_tokens_details": {
+            "reasoning_tokens": 47
+          },
+          "total_tokens": 549
+        }
+      }
+    },
+    {
+      "id": "conjugation-context-2",
+      "exerciseType": "conjugation-context",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 1,
+          "helpProgression": 1,
+          "usable": true,
+          "evidence": [
+            "The prompt supplies both targets in “(el informe / a sus compañeros)”; the strongerHint additionally points to the change before “lo”, making the indirect-pronoun choice much easier but not explicitly giving “se”.",
+            "context and prompt repeat the same delivery relationship, though the prompt uses it as the actual gap-fill sentence and changes the time expression.",
+            "germanSupport (“Person, Zeit und Aussageabsicht”) is generic and not relevant to choosing object pronouns; grammarReminder is empty, while strongerHint is the first directly relevant help."
+          ]
+        },
+        "usage": {
+          "input_tokens": 435,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 398,
+          "output_tokens_details": {
+            "reasoning_tokens": 250
+          },
+          "total_tokens": 833
+        }
+      }
+    },
+    {
+      "id": "sentence-transformation-2",
+      "exerciseType": "sentence-transformation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 0,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "La instrucción y el contexto definen claramente el cambio al pretérito perfecto.",
+            "germanSupport es general y no revela la respuesta.",
+            "strongerHint añade una pista específica («he» y participio) sin repetir la ayuda básica ni dar la frase completa."
+          ]
+        },
+        "usage": {
+          "input_tokens": 451,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 313,
+          "output_tokens_details": {
+            "reasoning_tokens": 221
+          },
+          "total_tokens": 764
+        }
+      }
+    },
+    {
+      "id": "pronoun-substitution-2",
+      "exerciseType": "pronoun-substitution",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 0,
+          "repetition": 0,
+          "helpProgression": 1,
+          "usable": false,
+          "evidence": [
+            "`instruction` says to replace a highlighted complement, but `prompt` contains no highlighted complement and instead requires an interrogative choice word (`Cuál`).",
+            "`germanSupport` repeats a generic substitution procedure but cannot clarify what is to be substituted in this prompt.",
+            "`strongerHint` adds relevant choice context without revealing `Cuál`, but it does not repair the mismatch between exercise type/instruction and expected answer."
+          ]
+        },
+        "usage": {
+          "input_tokens": 418,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 228,
+          "output_tokens_details": {
+            "reasoning_tokens": 107
+          },
+          "total_tokens": 646
+        }
+      }
+    },
+    {
+      "id": "grammar-choice-2",
+      "exerciseType": "grammar-choice",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 3,
+          "repetition": 0,
+          "helpProgression": 2,
+          "usable": false,
+          "evidence": [
+            "strongerHint: «Busca la forma terminada en “-ías”» identifica de forma única «Podrías» entre las opciones.",
+            "germanSupport propone comparar significado y estructura; orienta sin traducir ni señalar una opción.",
+            "No hay repetición sustancial entre instruction, germanSupport y strongerHint."
+          ]
+        },
+        "usage": {
+          "input_tokens": 434,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 260,
+          "output_tokens_details": {
+            "reasoning_tokens": 158
+          },
+          "total_tokens": 694
+        }
+      }
+    },
+    {
+      "id": "error-correction-2",
+      "exerciseType": "error-correction",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 2,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "strongerHint identifies the exact offending form and rule (“Delante de «los», no se usa «le»”), making the required replacement highly recoverable.",
+            "germanSupport usefully limits the correction to one target-related change without supplying it.",
+            "The instruction, basic help, and stronger hint have distinct roles and do not repeat wording or content."
+          ]
+        },
+        "usage": {
+          "input_tokens": 414,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 264,
+          "output_tokens_details": {
+            "reasoning_tokens": 156
+          },
+          "total_tokens": 678
+        }
+      }
+    },
+    {
+      "id": "sentence-order-2",
+      "exerciseType": "sentence-order",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 3,
+          "repetition": 2,
+          "helpProgression": 2,
+          "usable": false,
+          "evidence": [
+            "The context, “Hoy Pablo ha terminado sus deberes.”, gives an accepted answer almost verbatim; only “sus” must be replaced by the prompt chunk “los deberes.”",
+            "The prompt repeats the same sentence content already supplied in context, making the ordering task largely redundant.",
+            "germanSupport gives a general ordering strategy, while strongerHint adds the specific auxiliary–participle relation; these have distinct roles, but the context already makes the answer recoverable."
+          ]
+        },
+        "usage": {
+          "input_tokens": 440,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 244,
+          "output_tokens_details": {
+            "reasoning_tokens": 111
+          },
+          "total_tokens": 684
+        }
+      }
+    },
+    {
+      "id": "complete-rule-2",
+      "exerciseType": "complete-rule",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 0,
+          "helpProgression": 1,
+          "usable": true,
+          "evidence": [
+            "`strongerHint` narrows the answer to the accented selection word, making the target fairly easy to infer, though it does not state it.",
+            "`germanSupport` only tells the learner to recall the course rule and `grammarReminder` is empty, so basic help does not clarify the qué/cuál distinction.",
+            "There is no repeated sentence or duplicated explanation across `instruction`, `germanSupport`, and `strongerHint`."
+          ]
+        },
+        "usage": {
+          "input_tokens": 407,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 340,
+          "output_tokens_details": {
+            "reasoning_tokens": 214
+          },
+          "total_tokens": 747
+        }
+      }
+    },
+    {
+      "id": "guided-production-2",
+      "exerciseType": "guided-production",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 2,
+          "repetition": 0,
+          "helpProgression": 2,
+          "usable": true,
+          "evidence": [
+            "strongerHint gives the exact conditional opener «¿Podrías...?» and required verb «prestarme», making the target response largely recoverable from the context.",
+            "germanSupport is general and does not translate or supply answer content; it adds a distinct basic-help role.",
+            "grammarReminder is empty, so the basic help does not explicitly clarify how to form the requested conditional.",
+            "No sentence or idea is unnecessarily repeated across the visible task fields."
+          ]
+        },
+        "usage": {
+          "input_tokens": 467,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 309,
+          "output_tokens_details": {
+            "reasoning_tokens": 181
+          },
+          "total_tokens": 776
+        }
+      }
+    },
+    {
+      "id": "dialogue-completion-2",
+      "exerciseType": "dialogue-completion",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 2,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "strongerHint gives the exact opening «Me gustaría», making the target response pattern substantially recoverable together with the context.",
+            "germanSupport clarifies that a context-appropriate response is needed and allows multiple natural answers without supplying content.",
+            "Help progresses from general communicative guidance to a concrete optional sentence scaffold; the two fields do not repeat the same wording."
+          ]
+        },
+        "usage": {
+          "input_tokens": 491,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 223,
+          "output_tokens_details": {
+            "reasoning_tokens": 114
+          },
+          "total_tokens": 714
+        }
+      }
+    },
+    {
+      "id": "appropriate-response-2",
+      "exerciseType": "appropriate-response",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 3,
+          "repetition": 1,
+          "helpProgression": 2,
+          "usable": false,
+          "evidence": [
+            "strongerHint: \"Busca la opción que agradece directamente que te hayan invitado\" uniquely identifies the correct option among the choices.",
+            "germanSupport gives a general comparison strategy and does not exclude an option, but the stronger hint largely repeats the prompt’s target function."
+          ]
+        },
+        "usage": {
+          "input_tokens": 445,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 273,
+          "output_tokens_details": {
+            "reasoning_tokens": 180
+          },
+          "total_tokens": 718
+        }
+      }
+    },
+    {
+      "id": "contextual-translation-2",
+      "exerciseType": "contextual-translation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "germanSupport clarifies natural translation and register without supplying Spanish wording or translating the prompt.",
+            "strongerHint supplies the key opening «Me gustaría» and connector «pero», but does not complete the response or provide the medical-appointment wording.",
+            "Help progresses from general translation guidance to a more concrete sentence-pattern cue without redundant repetition."
+          ]
+        },
+        "usage": {
+          "input_tokens": 470,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 219,
+          "output_tokens_details": {
+            "reasoning_tokens": 115
+          },
+          "total_tokens": 689
+        }
+      }
+    },
+    {
+      "id": "reading-main-idea-2",
+      "exerciseType": "reading-main-idea",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 0,
+          "repetition": 1,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "germanSupport gives a general reading strategy without translating or revealing the answer.",
+            "strongerHint appropriately narrows attention to the joint decision after the conversation; the passage itself supports this for a reading task.",
+            "instruction and prompt both ask for the main idea, creating minor repetition but no meaningful usability problem."
+          ]
+        },
+        "usage": {
+          "input_tokens": 531,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 171,
+          "output_tokens_details": {
+            "reasoning_tokens": 73
+          },
+          "total_tokens": 702
+        }
+      }
+    },
+    {
+      "id": "reading-detail-2",
+      "exerciseType": "reading-detail",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 0,
+          "repetition": 1,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "germanSupport clarifies that the answer must be supported by the passage without supplying or translating it.",
+            "strongerHint progressively narrows the search to the clause after «Como» but does not state the answer.",
+            "instruction and germanSupport both emphasize locating textual evidence, creating minor overlap."
+          ]
+        },
+        "usage": {
+          "input_tokens": 506,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 218,
+          "output_tokens_details": {
+            "reasoning_tokens": 123
+          },
+          "total_tokens": 724
+        }
+      }
+    },
+    {
+      "id": "reading-reference-2",
+      "exerciseType": "reading-reference",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "germanSupport gives a general reference-finding strategy without identifying «Irene».",
+            "strongerHint narrows the referent to the invitation recipient, making the answer easily inferable from the passage but not stating it.",
+            "The instruction, basic help, and strongerHint have distinct increasing levels of guidance."
+          ]
+        },
+        "usage": {
+          "input_tokens": 488,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 259,
+          "output_tokens_details": {
+            "reasoning_tokens": 160
+          },
+          "total_tokens": 747
+        }
+      }
+    },
+    {
+      "id": "reading-order-2",
+      "exerciseType": "reading-order",
+      "deterministic": {
+        "usable": false,
+        "issues": [
+          {
+            "code": "READING_CONTEXT_LENGTH",
+            "severity": "error",
+            "fields": [
+              "context"
+            ],
+            "evidence": "92 words"
+          }
+        ]
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "germanSupport gives a general ordering strategy without naming or translating fragments.",
+            "strongerHint progressively narrows the first relation (“la invitación” → “el motivo”), revealing only a partial sequence rather than the full order.",
+            "instruction and help are complementary; grammarReminder is empty but not misleading."
+          ]
+        },
+        "usage": {
+          "input_tokens": 599,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 324,
+          "output_tokens_details": {
+            "reasoning_tokens": 227
+          },
+          "total_tokens": 923
+        }
+      }
+    },
+    {
+      "id": "reading-mediation-2",
+      "exerciseType": "reading-mediation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 2,
+          "repetition": 1,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "strongerHint names both required content points directly: “la amistad cercana” and “mantendrán el contacto después de la mudanza.”",
+            "germanSupport gives a general mediation strategy without translating or supplying the German response.",
+            "The help sequence progresses from the task, to summarising guidance, to an optional content-focused hint."
+          ]
+        },
+        "usage": {
+          "input_tokens": 588,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 346,
+          "output_tokens_details": {
+            "reasoning_tokens": 242
+          },
+          "total_tokens": 934
+        }
+      }
+    },
+    {
+      "id": "written-recall-3",
+      "exerciseType": "written-recall",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 2,
+          "repetition": 1,
+          "helpProgression": 1,
+          "usable": true,
+          "evidence": [
+            "strongerHint gives the required verb «hablar» and asks for the only missing preposition, making «hablar con» nearly directly recoverable.",
+            "germanSupport does not translate or reveal the answer, but mostly repeats the recall requirement rather than clarifying how to respond.",
+            "The help sequence has a basic-versus-stronger distinction, but the basic help adds little practical support."
+          ]
+        },
+        "usage": {
+          "input_tokens": 411,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 260,
+          "output_tokens_details": {
+            "reasoning_tokens": 143
+          },
+          "total_tokens": 671
+        }
+      }
+    },
+    {
+      "id": "active-translation-3",
+      "exerciseType": "active-translation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 1,
+          "helpProgression": 2,
+          "usable": true,
+          "evidence": [
+            "The prompt supplies the required German source phrase (“übernachten in”) without revealing the Spanish infinitive.",
+            "Basic help (“Formuliere selbst…”) does not give the translation, though its mention of “Artikel” is not relevant to the expected answer.",
+            "The stronger hint adds useful form guidance (“se” and “en”) without supplying the verb stem; it partly overlaps with the basic help’s mention of prepositions."
+          ]
+        },
+        "usage": {
+          "input_tokens": 426,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 300,
+          "output_tokens_details": {
+            "reasoning_tokens": 178
+          },
+          "total_tokens": 726
+        }
+      }
+    },
+    {
+      "id": "reverse-translation-3",
+      "exerciseType": "reverse-translation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 0,
+          "repetition": 2,
+          "helpProgression": 1,
+          "usable": true,
+          "evidence": [
+            "germanSupport clarifies that the learner should produce the full German meaning without revealing or translating the answer.",
+            "strongerHint (“Es una relación entre amigos.”) largely repeats the Spanish context about an affective relationship between friends and adds little assistance.",
+            "The stronger hint does not build meaningfully beyond the task and basic help."
+          ]
+        },
+        "usage": {
+          "input_tokens": 402,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 222,
+          "output_tokens_details": {
+            "reasoning_tokens": 119
+          },
+          "total_tokens": 624
+        }
+      }
+    },
+    {
+      "id": "vocabulary-gap-3",
+      "exerciseType": "vocabulary-gap",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 0,
+          "repetition": 1,
+          "helpProgression": 1,
+          "usable": true,
+          "evidence": [
+            "germanSupport gives a general strategy without revealing or translating the missing word.",
+            "strongerHint («Es un sustantivo masculino: “el ...”») repeats information already explicit in the prompt’s «El ___» and adds little assistance.",
+            "The context and sentence provide an appropriate semantic basis for a vocabulary-gap response."
+          ]
+        },
+        "usage": {
+          "input_tokens": 424,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 148,
+          "output_tokens_details": {
+            "reasoning_tokens": 46
+          },
+          "total_tokens": 572
+        }
+      }
+    },
+    {
+      "id": "collocations-3",
+      "exerciseType": "collocations",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 3,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": false,
+          "evidence": [
+            "strongerHint: «Es la preposición española de “mit”» makes the expected answer directly recoverable.",
+            "germanSupport gives a general collocation-checking strategy without supplying the preposition.",
+            "Help progresses from completion task, to checking fixed usage, to a substantially stronger translation cue; it is not repetitive."
+          ]
+        },
+        "usage": {
+          "input_tokens": 407,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 490,
+          "output_tokens_details": {
+            "reasoning_tokens": 388
+          },
+          "total_tokens": 897
+        }
+      }
+    },
+    {
+      "id": "lexical-contrast-3",
+      "exerciseType": "lexical-contrast",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 3,
+          "repetition": 0,
+          "helpProgression": 2,
+          "usable": false,
+          "evidence": [
+            "strongerHint: \"Se refiere a hospedarse temporalmente\" is effectively a direct synonym/definition of the correct option \"alojarse en\", making the answer readily recoverable.",
+            "germanSupport gives process guidance without excluding or translating an option: \"Vergleiche alle Optionen im gegebenen Kontext...\".",
+            "There is no substantial repeated wording or duplicated sentence across the task and help fields.",
+            "The sequence is nominally task → general basic help → stronger semantic hint, but the stronger hint jumps to near-answer-level guidance."
+          ]
+        },
+        "usage": {
+          "input_tokens": 447,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 331,
+          "output_tokens_details": {
+            "reasoning_tokens": 187
+          },
+          "total_tokens": 778
+        }
+      }
+    },
+    {
+      "id": "own-sentence-3",
+      "exerciseType": "own-sentence",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 0,
+          "repetition": 1,
+          "helpProgression": 2,
+          "usable": true,
+          "evidence": [
+            "`germanSupport` restates the own-sentence task ('Bilde ein eigenes natürliches Beispiel') but does not supply a sentence or translate the target word.",
+            "`strongerHint` ('Puedes comenzar con «La amistad ...»') gives an optional sentence start without making the rest of the expected answer recoverable.",
+            "The required word is already in `prompt`, so repeating it in `strongerHint` adds only limited new support."
+          ]
+        },
+        "usage": {
+          "input_tokens": 414,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 223,
+          "output_tokens_details": {
+            "reasoning_tokens": 96
+          },
+          "total_tokens": 637
+        }
+      }
+    },
+    {
+      "id": "conjugation-dice-3",
+      "exerciseType": "conjugation-dice",
+      "deterministic": {
+        "usable": false,
+        "issues": [
+          {
+            "code": "REPEATED_TEXT_ACROSS_FIELDS",
+            "severity": "error",
+            "fields": [
+              "context",
+              "prompt"
+            ],
+            "evidence": "Pedro ha regalado las entradas a sus primas."
+          }
+        ]
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 3,
+          "repetition": 0,
+          "helpProgression": 0,
+          "usable": false,
+          "evidence": [
+            "`germanSupport` asks to identify person and tense and form a verb, but the task requires replacing complements with pronouns; it does not clarify the needed operation.",
+            "`strongerHint` directly supplies both required substitutions: “A sus primas” → “se” and “las entradas” → “las”, making the expected sentence directly recoverable from `prompt`.",
+            "`grammarReminder` is empty, so there is no useful basic grammar support between the task and the answer-revealing stronger hint."
+          ]
+        },
+        "usage": {
+          "input_tokens": 457,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 271,
+          "output_tokens_details": {
+            "reasoning_tokens": 130
+          },
+          "total_tokens": 728
+        }
+      }
+    },
+    {
+      "id": "conjugation-context-3",
+      "exerciseType": "conjugation-context",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 3,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "strongerHint directly supplies the required construction and participle: «haber» for «Marta y yo» plus «hablado», making «hemos hablado» recoverable.",
+            "germanSupport gives strategy only and does not reveal or translate the answer.",
+            "Help progresses from task instruction to general context analysis to an explicit assisted hint; no repeated wording."
+          ]
+        },
+        "usage": {
+          "input_tokens": 442,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 258,
+          "output_tokens_details": {
+            "reasoning_tokens": 149
+          },
+          "total_tokens": 700
+        }
+      }
+    },
+    {
+      "id": "sentence-transformation-3",
+      "exerciseType": "sentence-transformation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 1,
+          "helpProgression": 2,
+          "usable": true,
+          "evidence": [
+            "strongerHint narrows the target to an interrogative for choosing, but does not state «cuál» or complete the answer.",
+            "instruction, context, and strongerHint all mention two options; the hint adds the useful grammatical function rather than only repeating.",
+            "germanSupport gives a general transformation strategy, while strongerHint adds task-specific guidance; however, the basic help is somewhat generic."
+          ]
+        },
+        "usage": {
+          "input_tokens": 438,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 364,
+          "output_tokens_details": {
+            "reasoning_tokens": 248
+          },
+          "total_tokens": 802
+        }
+      }
+    },
+    {
+      "id": "pronoun-substitution-3",
+      "exerciseType": "pronoun-substitution",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 0,
+          "helpProgression": 2,
+          "usable": true,
+          "evidence": [
+            "germanSupport gives a general procedure without supplying «nos» or the rewritten sentence.",
+            "strongerHint adds the pronoun position before «ayudaría» but does not state the pronoun itself.",
+            "No field repeats the target sentence or answer; basic help and stronger hint have distinct roles."
+          ]
+        },
+        "usage": {
+          "input_tokens": 477,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 252,
+          "output_tokens_details": {
+            "reasoning_tokens": 155
+          },
+          "total_tokens": 729
+        }
+      }
+    },
+    {
+      "id": "grammar-choice-3",
+      "exerciseType": "grammar-choice",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 3,
+          "repetition": 0,
+          "helpProgression": 2,
+          "usable": true,
+          "evidence": [
+            "strongerHint: «El objeto indirecto plural cambia a “se” delante de un pronombre directo» combined with context «las llaves» and the options makes «se las» directly recoverable.",
+            "germanSupport is generic but does not reveal or translate the correct option.",
+            "No sentence or rule is unnecessarily repeated; grammarReminder is empty rather than duplicative."
+          ]
+        },
+        "usage": {
+          "input_tokens": 428,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 384,
+          "output_tokens_details": {
+            "reasoning_tokens": 271
+          },
+          "total_tokens": 812
+        }
+      }
+    },
+    {
+      "id": "error-correction-3",
+      "exerciseType": "error-correction",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 0,
+          "repetition": 1,
+          "helpProgression": 2,
+          "usable": true,
+          "evidence": [
+            "germanSupport clarifies that only one target-related error should be changed without revealing «escrito».",
+            "strongerHint narrows the issue to the participle ending but does not supply or translate the expected form.",
+            "instruction and germanSupport repeat the single-error/minimal-change constraint; grammarReminder is empty, so basic help adds limited new learning support."
+          ]
+        },
+        "usage": {
+          "input_tokens": 446,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 229,
+          "output_tokens_details": {
+            "reasoning_tokens": 120
+          },
+          "total_tokens": 675
+        }
+      }
+    },
+    {
+      "id": "sentence-order-3",
+      "exerciseType": "sentence-order",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "germanSupport is procedural and does not reveal the word order.",
+            "strongerHint adds a specific placement rule; with only four tokens it makes the solution easier to infer, but does not state it.",
+            "The instruction, basic support, and stronger hint have distinct roles."
+          ]
+        },
+        "usage": {
+          "input_tokens": 431,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 451,
+          "output_tokens_details": {
+            "reasoning_tokens": 359
+          },
+          "total_tokens": 882
+        }
+      }
+    },
+    {
+      "id": "complete-rule-3",
+      "exerciseType": "complete-rule",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 2,
+          "repetition": 0,
+          "helpProgression": 1,
+          "usable": true,
+          "evidence": [
+            "germanSupport is generic (“Rufe die Regel aus dem Kurs ab”) and grammarReminder is empty, so basic help does not clarify how to identify the required rule term.",
+            "strongerHint gives verb-base examples (“comprar”, “tener”, “salir”), making the expected term «infinitivo» readily recoverable.",
+            "No sentence or idea is unnecessarily repeated across the displayed fields."
+          ]
+        },
+        "usage": {
+          "input_tokens": 431,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 226,
+          "output_tokens_details": {
+            "reasoning_tokens": 109
+          },
+          "total_tokens": 657
+        }
+      }
+    },
+    {
+      "id": "guided-production-3",
+      "exerciseType": "guided-production",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 1,
+          "helpProgression": 2,
+          "usable": true,
+          "evidence": [
+            "germanSupport no revela ni traduce la respuesta; solo confirma que pueden existir varias formulaciones.",
+            "strongerHint orienta directamente a la estructura «podrías + infinitivo con pronombres», pero no proporciona el verbo ni la oración completa.",
+            "grammarReminder está vacío, por lo que falta un apoyo básico específico sobre la combinación de pronombres.",
+            "instruction, context y prompt repiten parcialmente la misma intención de pedir la devolución, aunque el contexto añade una situación útil."
+          ]
+        },
+        "usage": {
+          "input_tokens": 486,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 324,
+          "output_tokens_details": {
+            "reasoning_tokens": 191
+          },
+          "total_tokens": 810
+        }
+      }
+    },
+    {
+      "id": "dialogue-completion-3",
+      "exerciseType": "dialogue-completion",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "germanSupport clarifies that multiple natural responses are acceptable without supplying content or a translation.",
+            "strongerHint gives only a useful opening («Gracias por...»), not a complete recoverable response.",
+            "Help progresses from communicative task, to general flexibility, to a more concrete production scaffold."
+          ]
+        },
+        "usage": {
+          "input_tokens": 468,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 207,
+          "output_tokens_details": {
+            "reasoning_tokens": 112
+          },
+          "total_tokens": 675
+        }
+      }
+    },
+    {
+      "id": "appropriate-response-3",
+      "exerciseType": "appropriate-response",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 2,
+          "repetition": 1,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "germanSupport gives a non-eliminating strategy: «Vergleiche Funktion und Register aller Reaktionen».",
+            "strongerHint narrows the choice to the response pattern «expresa interés y después explica un impedimento», making the correct option readily identifiable among the options.",
+            "instruction, germanSupport, and strongerHint progress from task goal to comparison strategy to a more specific structural clue."
+          ]
+        },
+        "usage": {
+          "input_tokens": 492,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 314,
+          "output_tokens_details": {
+            "reasoning_tokens": 198
+          },
+          "total_tokens": 806
+        }
+      }
+    },
+    {
+      "id": "contextual-translation-3",
+      "exerciseType": "contextual-translation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 2,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "strongerHint revela directamente el inicio esperado: «Gracias por la invitación».",
+            "germanSupport aclara que se priorice intención y registro natural sin traducir ni completar la respuesta.",
+            "La ayuda progresa de instrucción general a orientación de registro y después a una pista más concreta; no hay repetición visible innecesaria."
+          ]
+        },
+        "usage": {
+          "input_tokens": 469,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 211,
+          "output_tokens_details": {
+            "reasoning_tokens": 105
+          },
+          "total_tokens": 680
+        }
+      }
+    },
+    {
+      "id": "reading-main-idea-3",
+      "exerciseType": "reading-main-idea",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 0,
+          "repetition": 1,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "germanSupport gives a strategy for identifying the main idea without revealing or translating the answer.",
+            "strongerHint narrows attention to the couple’s final decision but does not state the apartment, location, or wording of the answer.",
+            "instruction and prompt both ask for the main idea, creating minor but harmless repetition.",
+            "Help progresses from summarizing the whole text to focusing on the final decision."
+          ]
+        },
+        "usage": {
+          "input_tokens": 555,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 178,
+          "output_tokens_details": {
+            "reasoning_tokens": 63
+          },
+          "total_tokens": 733
+        }
+      }
+    },
+    {
+      "id": "reading-detail-3",
+      "exerciseType": "reading-detail",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 0,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "instruction and prompt clearly require locating an explicit reason in the passage.",
+            "germanSupport gives a strategy ('Suche die Textstelle') without revealing or translating the answer.",
+            "strongerHint narrows attention to Pedro's Sunday activity without supplying it; it is appropriately stronger than the basic help."
+          ]
+        },
+        "usage": {
+          "input_tokens": 538,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 205,
+          "output_tokens_details": {
+            "reasoning_tokens": 109
+          },
+          "total_tokens": 743
+        }
+      }
+    },
+    {
+      "id": "reading-reference-3",
+      "exerciseType": "reading-reference",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 0,
+          "helpProgression": 3,
+          "usable": true,
+          "evidence": [
+            "The prompt and passage provide sufficient evidence for a reading-reference task; the answer is not supplied in basic help.",
+            "germanSupport gives a general antecedent-finding strategy without naming or translating the answer.",
+            "strongerHint adds a more specific textual clue without directly stating “Nuria”; it is appropriately stronger and distinct from the basic help."
+          ]
+        },
+        "usage": {
+          "input_tokens": 478,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 303,
+          "output_tokens_details": {
+            "reasoning_tokens": 197
+          },
+          "total_tokens": 781
+        }
+      }
+    },
+    {
+      "id": "reading-order-3",
+      "exerciseType": "reading-order",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 1,
+          "repetition": 1,
+          "helpProgression": 2,
+          "usable": true,
+          "evidence": [
+            "strongerHint makes the opening fragment directly recoverable by identifying the meeting event, though it does not give the full order.",
+            "germanSupport and strongerHint both point to temporal cues, creating minor overlap.",
+            "Basic help gives a general strategy without revealing an answer; strongerHint adds a more specific sequencing step."
+          ]
+        },
+        "usage": {
+          "input_tokens": 549,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 98,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 647
+        }
+      }
+    },
+    {
+      "id": "reading-mediation-3",
+      "exerciseType": "reading-mediation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": {
+        "model": "gpt-5.6-terra",
+        "grade": {
+          "answerLeakage": 0,
+          "repetition": 2,
+          "helpProgression": 1,
+          "usable": true,
+          "evidence": [
+            "The prompt clearly specifies German and the three required content points; the Spanish passage supports them.",
+            "germanSupport gives general mediation guidance without revealing or translating the expected German response.",
+            "strongerHint largely repeats the prompt’s required structure (“estado inicial, la propuesta... y cómo terminó”), adding little new assistance.",
+            "grammarReminder is empty, so basic help is limited but does not prevent completion."
+          ]
+        },
+        "usage": {
+          "input_tokens": 615,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 276,
+          "output_tokens_details": {
+            "reasoning_tokens": 161
+          },
+          "total_tokens": 891
+        }
+      }
+    }
+  ]
+}

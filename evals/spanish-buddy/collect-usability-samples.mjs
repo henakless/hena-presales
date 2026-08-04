@@ -51,10 +51,24 @@ function groups(values, size) {
   return Array.from({ length: Math.ceil(values.length / size) }, (_, index) => values.slice(index * size, index * size + size));
 }
 
+function compatibleSourceItems(exerciseType, category) {
+  const pool = sourceItems[category];
+  if (["conjugation-dice", "conjugation-context"].includes(exerciseType)) {
+    return pool.filter((item) => item.learningType === "conjugation");
+  }
+  if (exerciseType === "complete-rule") {
+    return pool.filter((item) => item.learningType === "grammar_rule");
+  }
+  if (exerciseType === "pronoun-substitution") {
+    return pool.filter((item) => /pronomb|objeto (?:directo|indirecto)/i.test(`${item.spanish} ${item.explanation}`));
+  }
+  return pool;
+}
+
 function exerciseInput(exerciseType, variant) {
   const definition = EXERCISE_LIBRARY.find((entry) => entry.id === exerciseType);
   const category = definition.category === "reading" ? "reading" : definition.category;
-  const pool = sourceItems[category];
+  const pool = compatibleSourceItems(exerciseType, category);
   const item = pool[(ACTIVE_EXERCISE_IDS.indexOf(exerciseType) + variant) % pool.length];
   const itemId = `eval-${variant + 1}-${exerciseType}`;
   return {

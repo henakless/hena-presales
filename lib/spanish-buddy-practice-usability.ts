@@ -19,6 +19,7 @@ export type ExerciseUsabilityIssueCode =
   | "UNEXPECTED_OPTIONS"
   | "READING_CONTEXT_LENGTH"
   | "READING_QUESTION_MISSING"
+  | "ANSWER_IN_TASK_CONTEXT"
   | "REPEATED_TEXT_WITHIN_FIELD"
   | "REPEATED_TEXT_ACROSS_FIELDS"
   | "DUPLICATE_OPTIONS";
@@ -252,6 +253,22 @@ export function auditExerciseUsability(exercise: PracticeExerciseForAudit): Exer
       severity: "error",
       fields: ["prompt"],
       evidence: exercise.prompt,
+    });
+  }
+
+  if (
+    exercise.exerciseType === "sentence-order"
+    && meaningfulForDuplicate(exercise.answer)
+    && (
+      containsWholePhrase(exercise.context, exercise.answer)
+      || similarity(exercise.context, exercise.answer) >= 0.7
+    )
+  ) {
+    pushUnique(issues, {
+      code: "ANSWER_IN_TASK_CONTEXT",
+      severity: "error",
+      fields: ["context", "answer"],
+      evidence: exercise.context,
     });
   }
 

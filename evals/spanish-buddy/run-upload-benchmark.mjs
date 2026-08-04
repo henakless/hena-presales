@@ -75,6 +75,7 @@ Generated: ${report.generatedAt}
 
 - Target: ${report.baseUrl ?? "preparation-only dry run"}
 - Source: ${report.fixtureSource}
+- Concurrency: ${report.concurrency}
 - Highest successful image count: ${report.summary.highestSuccessfulImageCount ?? "not measured"}
 - Successful scenarios: ${report.summary.successfulScenarios}/${report.scenarios.length}
 - Median page extraction: ${formatDuration(report.summary.pageDurationMs.p50)}
@@ -240,18 +241,26 @@ export async function runUploadBenchmark(options) {
       let cookie = "";
       const extractionStarted = performance.now();
       if (!options.dryRun) {
-        for (const page of selected) {
-          process.stderr.write(`Uploading ${imageCount}-image scenario, page ${page.index}/${imageCount}\n`);
-          let result = await extractPage({ endpoint, page, scenarioCount: imageCount, cookie, fetchImpl: options.fetchImpl ?? fetch });
-          let attempts = 1;
-          if (!result.success && result.status >= 500) {
-            result = await extractPage({ endpoint, page, scenarioCount: imageCount, cookie: result.cookie, fetchImpl: options.fetchImpl ?? fetch });
-            attempts += 1;
+        let nextPage = 0;
+        let stopped = false;
+        const worker = async () => {
+          while (!stopped && nextPage < selected.length) {
+            const page = selected[nextPage];
+            nextPage += 1;
+            process.stderr.write(`Uploading ${imageCount}-image scenario, page ${page.index}/${imageCount}\n`);
+            let result = await extractPage({ endpoint, page, scenarioCount: imageCount, cookie, fetchImpl: options.fetchImpl ?? fetch });
+            let attempts = 1;
+            if (!result.success && result.status >= 500) {
+              result = await extractPage({ endpoint, page, scenarioCount: imageCount, cookie: result.cookie, fetchImpl: options.fetchImpl ?? fetch });
+              attempts += 1;
+            }
+            cookie = result.cookie || cookie;
+            pages.push({ page: page.index, ...result, attempts, cookie: undefined });
+            if (!result.success) stopped = true;
           }
-          cookie = result.cookie;
-          pages.push({ page: page.index, ...result, attempts, cookie: undefined });
-          if (!result.success) break;
-        }
+        };
+        await Promise.all(Array.from({ length: Math.min(options.concurrency, selected.length) }, () => worker()));
+        pages.sort((a, b) => a.page - b.page);
       } else {
         pages.push(...selected.map((page) => ({ page: page.index, success: false, status: null, durationMs: null, itemCount: null, sourceDeleted: null, error: null })));
       }
@@ -276,6 +285,7 @@ export async function runUploadBenchmark(options) {
       generatedAt: new Date().toISOString(),
       dryRun: options.dryRun,
       baseUrl: options.baseUrl ?? null,
+      concurrency: options.concurrency,
       fixtureSource: options.imageDirectory ? path.resolve(options.imageDirectory) : "synthetic 3024×4032 Spanish note photos targeting 3.5 MB each",
       counts: options.counts,
       sourceImages: prepared.map((page) => ({
@@ -312,6 +322,7 @@ if (isMain) {
     imageDirectory: valueAfter(args, "--image-dir"),
     outputPath,
     pauseMs: Math.max(0, Number(valueAfter(args, "--pause-ms") ?? 1_500)),
+    concurrency: Math.max(1, Math.min(2, Number(valueAfter(args, "--concurrency") ?? 2))),
   });
   process.stdout.write(`${JSON.stringify({ outputs, summary: report.summary }, null, 2)}\n`);
   if (live && report.summary.highestSuccessfulImageCount < Math.max(...counts)) process.exitCode = 1;

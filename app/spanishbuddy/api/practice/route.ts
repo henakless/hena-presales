@@ -95,9 +95,21 @@ function mapItem(row: ItemRow): SavedItem {
   return { ...item, learningType };
 }
 
-function compatibleItems(category: ExerciseCategory, items: SavedItem[]) {
+function compatibleItems(exerciseType: string, category: ExerciseCategory, items: SavedItem[]) {
   if (category === "vocabulary") return items.filter((item) => item.kind === "vocabulary");
-  if (category === "grammar") return items.filter((item) => item.kind === "grammar");
+  if (category === "grammar") {
+    const grammarItems = items.filter((item) => item.kind === "grammar");
+    if (["conjugation-dice", "conjugation-context"].includes(exerciseType)) {
+      return grammarItems.filter((item) => item.learningType === "conjugation");
+    }
+    if (exerciseType === "complete-rule") {
+      return grammarItems.filter((item) => item.learningType === "grammar_rule");
+    }
+    if (exerciseType === "pronoun-substitution") {
+      return grammarItems.filter((item) => /pronomb|objeto (?:directo|indirecto)/i.test(`${item.spanish} ${item.explanation}`));
+    }
+    return grammarItems;
+  }
   if (category === "communication") {
     const preferred = items.filter((item) => item.kind === "vocabulary" && ["collocation", "fixed_expression", "sentence_pattern"].includes(item.learningType));
     return preferred.length ? preferred : items.filter((item) => item.kind === "vocabulary");
@@ -266,14 +278,14 @@ export async function POST(request: Request) {
     const useCounts = new Map((usageResult.results ?? []).map((row) => [row.exercise_type, Number(row.total_uses) || 0]));
     const recentUses = new Map((recentUsageResult.results ?? []).map((row) => [`${row.item_id}:${row.exercise_type}`, Number(row.recent_uses) || 0]));
     const definitions = interleavedDefinitions(selectedTypes, useCounts)
-      .filter((definition) => compatibleItems(definition.category, items).length > 0);
+      .filter((definition) => compatibleItems(definition.id, definition.category, items).length > 0);
     if (!definitions.length) return jsonWithOwner({ error: "Estos tipos de ejercicio todavía no encajan con el contenido seleccionado." }, 422, setCookie);
 
     const plans: ExercisePlan[] = [];
     const plannedItems = new Set<string>();
     for (let index = 0; plans.length < Math.min(sessionSize, Math.max(items.length, definitions.length)); index += 1) {
       const definition = definitions[index % definitions.length];
-      const candidates = compatibleItems(definition.category, items);
+      const candidates = compatibleItems(definition.id, definition.category, items);
       const unusedCandidates = candidates.filter((item) => !plans.some((plan) => plan.item.id === item.id && plan.exerciseType === definition.id));
       if (!unusedCandidates.length) {
         if (index > sessionSize * Math.max(definitions.length, items.length)) break;

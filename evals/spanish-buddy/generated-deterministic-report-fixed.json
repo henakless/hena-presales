@@ -1,0 +1,866 @@
+{
+  "generatedAt": "2026-08-04T21:51:59.495Z",
+  "input": "/Users/maxkless/Documents/hena-ai-playground/site/evals/spanish-buddy/generated-exercises-fixed.jsonl",
+  "total": 72,
+  "usable": 66,
+  "unusable": 6,
+  "usabilityRate": 0.9166666666666666,
+  "expectationMismatches": [],
+  "failuresByIssue": {
+    "ANSWER_IN_TASK_CONTEXT": 1,
+    "READING_CONTEXT_LENGTH": 4,
+    "REPEATED_TEXT_ACROSS_FIELDS": 1
+  },
+  "byExerciseType": {
+    "active-translation": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1
+    },
+    "appropriate-response": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1
+    },
+    "collocations": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1
+    },
+    "complete-rule": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1
+    },
+    "conjugation-context": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1
+    },
+    "conjugation-dice": {
+      "total": 3,
+      "usable": 2,
+      "unusable": 1,
+      "usabilityRate": 0.6666666666666666
+    },
+    "contextual-translation": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1
+    },
+    "dialogue-completion": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1
+    },
+    "error-correction": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1
+    },
+    "grammar-choice": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1
+    },
+    "guided-production": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1
+    },
+    "lexical-contrast": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1
+    },
+    "own-sentence": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1
+    },
+    "pronoun-substitution": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1
+    },
+    "reading-detail": {
+      "total": 3,
+      "usable": 2,
+      "unusable": 1,
+      "usabilityRate": 0.6666666666666666
+    },
+    "reading-main-idea": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1
+    },
+    "reading-mediation": {
+      "total": 3,
+      "usable": 2,
+      "unusable": 1,
+      "usabilityRate": 0.6666666666666666
+    },
+    "reading-order": {
+      "total": 3,
+      "usable": 1,
+      "unusable": 2,
+      "usabilityRate": 0.3333333333333333
+    },
+    "reading-reference": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1
+    },
+    "reverse-translation": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1
+    },
+    "sentence-order": {
+      "total": 3,
+      "usable": 2,
+      "unusable": 1,
+      "usabilityRate": 0.6666666666666666
+    },
+    "sentence-transformation": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1
+    },
+    "vocabulary-gap": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1
+    },
+    "written-recall": {
+      "total": 3,
+      "usable": 3,
+      "unusable": 0,
+      "usabilityRate": 1
+    }
+  },
+  "results": [
+    {
+      "id": "written-recall-1",
+      "exerciseType": "written-recall",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "active-translation-1",
+      "exerciseType": "active-translation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "reverse-translation-1",
+      "exerciseType": "reverse-translation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "vocabulary-gap-1",
+      "exerciseType": "vocabulary-gap",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "collocations-1",
+      "exerciseType": "collocations",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "lexical-contrast-1",
+      "exerciseType": "lexical-contrast",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "own-sentence-1",
+      "exerciseType": "own-sentence",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "conjugation-dice-1",
+      "exerciseType": "conjugation-dice",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "conjugation-context-1",
+      "exerciseType": "conjugation-context",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "sentence-transformation-1",
+      "exerciseType": "sentence-transformation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "pronoun-substitution-1",
+      "exerciseType": "pronoun-substitution",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "grammar-choice-1",
+      "exerciseType": "grammar-choice",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "error-correction-1",
+      "exerciseType": "error-correction",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "sentence-order-1",
+      "exerciseType": "sentence-order",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "complete-rule-1",
+      "exerciseType": "complete-rule",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "guided-production-1",
+      "exerciseType": "guided-production",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "dialogue-completion-1",
+      "exerciseType": "dialogue-completion",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "appropriate-response-1",
+      "exerciseType": "appropriate-response",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "contextual-translation-1",
+      "exerciseType": "contextual-translation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "reading-main-idea-1",
+      "exerciseType": "reading-main-idea",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "reading-detail-1",
+      "exerciseType": "reading-detail",
+      "deterministic": {
+        "usable": false,
+        "issues": [
+          {
+            "code": "READING_CONTEXT_LENGTH",
+            "severity": "error",
+            "fields": [
+              "context"
+            ],
+            "evidence": "43 words"
+          }
+        ]
+      },
+      "model": null
+    },
+    {
+      "id": "reading-reference-1",
+      "exerciseType": "reading-reference",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "reading-order-1",
+      "exerciseType": "reading-order",
+      "deterministic": {
+        "usable": false,
+        "issues": [
+          {
+            "code": "READING_CONTEXT_LENGTH",
+            "severity": "error",
+            "fields": [
+              "context"
+            ],
+            "evidence": "38 words"
+          }
+        ]
+      },
+      "model": null
+    },
+    {
+      "id": "reading-mediation-1",
+      "exerciseType": "reading-mediation",
+      "deterministic": {
+        "usable": false,
+        "issues": [
+          {
+            "code": "READING_CONTEXT_LENGTH",
+            "severity": "error",
+            "fields": [
+              "context"
+            ],
+            "evidence": "30 words"
+          }
+        ]
+      },
+      "model": null
+    },
+    {
+      "id": "written-recall-2",
+      "exerciseType": "written-recall",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "active-translation-2",
+      "exerciseType": "active-translation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "reverse-translation-2",
+      "exerciseType": "reverse-translation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "vocabulary-gap-2",
+      "exerciseType": "vocabulary-gap",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "collocations-2",
+      "exerciseType": "collocations",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "lexical-contrast-2",
+      "exerciseType": "lexical-contrast",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "own-sentence-2",
+      "exerciseType": "own-sentence",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "conjugation-dice-2",
+      "exerciseType": "conjugation-dice",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "conjugation-context-2",
+      "exerciseType": "conjugation-context",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "sentence-transformation-2",
+      "exerciseType": "sentence-transformation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "pronoun-substitution-2",
+      "exerciseType": "pronoun-substitution",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "grammar-choice-2",
+      "exerciseType": "grammar-choice",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "error-correction-2",
+      "exerciseType": "error-correction",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "sentence-order-2",
+      "exerciseType": "sentence-order",
+      "deterministic": {
+        "usable": false,
+        "issues": [
+          {
+            "code": "ANSWER_IN_TASK_CONTEXT",
+            "severity": "error",
+            "fields": [
+              "context",
+              "answer"
+            ],
+            "evidence": "Hoy Pablo ha terminado sus deberes."
+          }
+        ]
+      },
+      "model": null
+    },
+    {
+      "id": "complete-rule-2",
+      "exerciseType": "complete-rule",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "guided-production-2",
+      "exerciseType": "guided-production",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "dialogue-completion-2",
+      "exerciseType": "dialogue-completion",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "appropriate-response-2",
+      "exerciseType": "appropriate-response",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "contextual-translation-2",
+      "exerciseType": "contextual-translation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "reading-main-idea-2",
+      "exerciseType": "reading-main-idea",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "reading-detail-2",
+      "exerciseType": "reading-detail",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "reading-reference-2",
+      "exerciseType": "reading-reference",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "reading-order-2",
+      "exerciseType": "reading-order",
+      "deterministic": {
+        "usable": false,
+        "issues": [
+          {
+            "code": "READING_CONTEXT_LENGTH",
+            "severity": "error",
+            "fields": [
+              "context"
+            ],
+            "evidence": "92 words"
+          }
+        ]
+      },
+      "model": null
+    },
+    {
+      "id": "reading-mediation-2",
+      "exerciseType": "reading-mediation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "written-recall-3",
+      "exerciseType": "written-recall",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "active-translation-3",
+      "exerciseType": "active-translation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "reverse-translation-3",
+      "exerciseType": "reverse-translation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "vocabulary-gap-3",
+      "exerciseType": "vocabulary-gap",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "collocations-3",
+      "exerciseType": "collocations",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "lexical-contrast-3",
+      "exerciseType": "lexical-contrast",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "own-sentence-3",
+      "exerciseType": "own-sentence",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "conjugation-dice-3",
+      "exerciseType": "conjugation-dice",
+      "deterministic": {
+        "usable": false,
+        "issues": [
+          {
+            "code": "REPEATED_TEXT_ACROSS_FIELDS",
+            "severity": "error",
+            "fields": [
+              "context",
+              "prompt"
+            ],
+            "evidence": "Pedro ha regalado las entradas a sus primas."
+          }
+        ]
+      },
+      "model": null
+    },
+    {
+      "id": "conjugation-context-3",
+      "exerciseType": "conjugation-context",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "sentence-transformation-3",
+      "exerciseType": "sentence-transformation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "pronoun-substitution-3",
+      "exerciseType": "pronoun-substitution",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "grammar-choice-3",
+      "exerciseType": "grammar-choice",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "error-correction-3",
+      "exerciseType": "error-correction",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "sentence-order-3",
+      "exerciseType": "sentence-order",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "complete-rule-3",
+      "exerciseType": "complete-rule",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "guided-production-3",
+      "exerciseType": "guided-production",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "dialogue-completion-3",
+      "exerciseType": "dialogue-completion",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "appropriate-response-3",
+      "exerciseType": "appropriate-response",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "contextual-translation-3",
+      "exerciseType": "contextual-translation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "reading-main-idea-3",
+      "exerciseType": "reading-main-idea",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "reading-detail-3",
+      "exerciseType": "reading-detail",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "reading-reference-3",
+      "exerciseType": "reading-reference",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "reading-order-3",
+      "exerciseType": "reading-order",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "reading-mediation-3",
+      "exerciseType": "reading-mediation",
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    }
+  ]
+}
