@@ -558,7 +558,14 @@ export default function SpanishBuddy() {
       setSourceDeleted(true);
       resetExtractionCache();
     } catch (analysisError) {
-      setError(analysisError instanceof Error ? analysisError.message : "No se ha podido analizar la lección.");
+      if (cancelRequestedRef.current) {
+        const retained = extractionCacheRef.current.results.size;
+        setError(retained
+          ? `Análisis cancelado. ${retained} ${retained === 1 ? "página queda guardada" : "páginas quedan guardadas"}; puedes continuar cuando quieras.`
+          : "Análisis cancelado.");
+      } else {
+        setError(analysisError instanceof Error ? analysisError.message : "No se ha podido analizar la lección.");
+      }
     } finally {
       setBusy(false);
       setImageProgress("");

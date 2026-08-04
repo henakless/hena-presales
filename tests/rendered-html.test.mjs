@@ -180,9 +180,9 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(pageSource, /response\.status === 413/i);
   assert.match(pageSource, /prepareLessonImage/i);
   assert.match(pageSource, /MAX_IMAGE_EDGE = 2_000/i);
-  assert.match(pageSource, /for \(let index = 0; index < inputs\.length; index \+= 1\)/i);
+  assert.match(pageSource, /Array\.from\(\{ length: Math\.min\(IMAGE_EXTRACTION_CONCURRENCY/i);
   assert.match(pageSource, /mergeExtractions/i);
-  assert.match(pageSource, /Analizando página/i);
+  assert.match(pageSource, /páginas pendientes/i);
   assert.match(pageSource, /IMAGE_EXTRACTION_CONCURRENCY = 2/i);
   assert.match(pageSource, /AbortController/i);
   assert.match(pageSource, /Continuar páginas pendientes/i);

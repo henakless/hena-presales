@@ -1,0 +1,115 @@
+{
+  "generatedAt": "2026-08-04T21:55:48.281Z",
+  "dryRun": true,
+  "baseUrl": null,
+  "concurrency": 2,
+  "fixtureSource": "/tmp/spanishbuddy-real-photos-019fcea6",
+  "counts": [
+    5
+  ],
+  "sourceImages": [
+    {
+      "index": 1,
+      "name": "page-1.jpg",
+      "sourceBytes": 148386,
+      "preparedBytes": 148386,
+      "preparationMs": 23.9
+    },
+    {
+      "index": 2,
+      "name": "page-2.jpg",
+      "sourceBytes": 165037,
+      "preparedBytes": 165037,
+      "preparationMs": 22.8
+    },
+    {
+      "index": 3,
+      "name": "page-3.jpg",
+      "sourceBytes": 165037,
+      "preparedBytes": 165037,
+      "preparationMs": 23.3
+    },
+    {
+      "index": 4,
+      "name": "page-4.jpg",
+      "sourceBytes": 238256,
+      "preparedBytes": 238256,
+      "preparationMs": 25
+    },
+    {
+      "index": 5,
+      "name": "page-5.jpg",
+      "sourceBytes": 163905,
+      "preparedBytes": 163905,
+      "preparationMs": 22
+    }
+  ],
+  "scenarios": [
+    {
+      "imageCount": 5,
+      "success": false,
+      "preparationMs": 117,
+      "extractionMs": null,
+      "totalUserFlowMs": 117,
+      "sourceBytes": 880621,
+      "preparedBytes": 880621,
+      "failure": null,
+      "pages": [
+        {
+          "page": 1,
+          "success": false,
+          "status": null,
+          "durationMs": null,
+          "itemCount": null,
+          "sourceDeleted": null,
+          "error": null
+        },
+        {
+          "page": 2,
+          "success": false,
+          "status": null,
+          "durationMs": null,
+          "itemCount": null,
+          "sourceDeleted": null,
+          "error": null
+        },
+        {
+          "page": 3,
+          "success": false,
+          "status": null,
+          "durationMs": null,
+          "itemCount": null,
+          "sourceDeleted": null,
+          "error": null
+        },
+        {
+          "page": 4,
+          "success": false,
+          "status": null,
+          "durationMs": null,
+          "itemCount": null,
+          "sourceDeleted": null,
+          "error": null
+        },
+        {
+          "page": 5,
+          "success": false,
+          "status": null,
+          "durationMs": null,
+          "itemCount": null,
+          "sourceDeleted": null,
+          "error": null
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "successfulScenarios": 0,
+    "highestSuccessfulImageCount": null,
+    "pageDurationMs": {
+      "p50": null,
+      "p95": null,
+      "max": null
+    }
+  }
+}

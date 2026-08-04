@@ -136,10 +136,11 @@ async function collectImagePaths(imageDirectory, required) {
   if (!imageDirectory) return null;
   const directory = path.resolve(imageDirectory);
   const entries = await fs.readdir(directory, { withFileTypes: true });
-  const files = entries
-    .filter((entry) => entry.isFile() && SUPPORTED_EXTENSIONS.has(path.extname(entry.name).toLocaleLowerCase()))
-    .map((entry) => path.join(directory, entry.name))
-    .sort((a, b) => a.localeCompare(b));
+  const candidates = entries
+    .filter((entry) => SUPPORTED_EXTENSIONS.has(path.extname(entry.name).toLocaleLowerCase()))
+    .map((entry) => path.join(directory, entry.name));
+  const stats = await Promise.all(candidates.map(async (file) => ({ file, stat: await fs.stat(file) })));
+  const files = stats.filter(({ stat }) => stat.isFile()).map(({ file }) => file).sort((a, b) => a.localeCompare(b));
   if (files.length < required) throw new Error(`${directory} contains ${files.length} supported images; ${required} are required.`);
   return files.slice(0, required);
 }
