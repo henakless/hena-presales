@@ -839,7 +839,7 @@ export default function SpanishBuddy() {
               <label className="sb-field"><span>Título de la lección <small>opcional</small></span><input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="p. ej. Unidad 5 · Invitaciones" maxLength={100} /></label>
               <div className="sb-upload-grid">
                 <label className="sb-upload-zone">
-                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" multiple onChange={onFiles} />
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={onFiles} />
                   <span className="sb-camera" aria-hidden="true">+</span>
                   <strong>Fotografiar o subir apuntes</strong>
                   <small>Apuntes manuscritos, páginas del libro o escaneos · hasta 6 imágenes</small>

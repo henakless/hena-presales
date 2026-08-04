@@ -171,6 +171,8 @@ test("serves Spanish Buddy at its public path", async () => {
 
   const pageSource = await readFile(new URL("../app/spanishbuddy/page.tsx", import.meta.url), "utf8");
   assert.match(pageSource, /apiUrl\("evaluate"\)/i);
+  assert.match(pageSource, /type="file"[^>]+accept="image\/jpeg,image\/png,image\/webp,image\/gif"[^>]+multiple/i);
+  assert.doesNotMatch(pageSource, /capture="(?:environment|user)"/i);
   assert.match(pageSource, /También es correcto\./i);
   assert.match(pageSource, /Casi\./i);
   assert.match(pageSource, /Marcar mi respuesta como correcta/i);
