@@ -226,6 +226,21 @@ export const GRAMMAR_TOPIC_DEFINITIONS: GrammarTopicDefinition[] = [
     match: /\b(?:verbos? como gustar|gustar.{0,30}(?:encantar|interesar)|gustar-ahnlich)\b/i,
   },
   {
+    key: "ir-vs-venir",
+    title: "Ir vs. venir",
+    summary: "El movimiento se describe desde el lugar de quien habla o escucha.",
+    definition: "Ir bedeutet Bewegung weg vom aktuellen Bezugspunkt; venir bedeutet Bewegung hin zum Ort der sprechenden oder angesprochenen Person.",
+    useCases: ["Ir: Die Bewegung führt zu einem anderen Ort.", "Venir: Die Bewegung führt hierher oder zum Ort der angesprochenen Person.", "Der gewählte Bezugspunkt kann sich im Gespräch ändern."],
+    formation: "Presente: voy, vas, va, vamos, vais, van; vengo, vienes, viene, venimos, venís, vienen. Frage dich vor der Wahl: Bewegt sich die Person hierher oder dorthin?",
+    examples: [
+      { spanish: "Voy a tu casa a las ocho.", translation: "Ich gehe um acht zu dir nach Hause." },
+      { spanish: "Perfecto, ¿vienes con Ana?", translation: "Perfekt, kommst du mit Ana her?" },
+    ],
+    commonMistakes: ["Deutsch ‘kommen’ wird nicht automatisch mit venir übersetzt; der räumliche Bezugspunkt entscheidet.", "Voy und vengo sind unregelmäßige yo-Formen."],
+    quickCheck: { prompt: "Estoy en casa y pregunto a Marta: ‘¿___ a cenar?’", answer: "Vienes" },
+    match: /\bir\b.{0,30}\bvenir\b|\bvenir\b.{0,30}\bir\b/i,
+  },
+  {
     key: "comparativos",
     title: "Comparativos",
     summary: "Compara cualidades y cantidades con más, menos y tan.",
