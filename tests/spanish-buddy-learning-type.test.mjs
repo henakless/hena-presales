@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { inferLearningType } from "../lib/spanish-buddy.ts";
+import { inferLearningType, learningTopicKey } from "../lib/spanish-buddy.ts";
 
 const vocabulary = (spanish) => ({ kind: "vocabulary", spanish, explanation: "" });
 
@@ -20,4 +20,11 @@ test("keeps verbs with governed complements as collocations", () => {
 test("separates complete expressions and grammar", () => {
   assert.equal(inferLearningType(vocabulary("Gracias por la invitación.")), "fixed_expression");
   assert.equal(inferLearningType({ kind: "grammar", spanish: "Condicional", explanation: "Terminaciones y formas irregulares" }), "conjugation");
+});
+
+test("merges conventional names for the same learning topic", () => {
+  assert.equal(learningTopicKey("El indefinido"), "indefinido");
+  assert.equal(learningTopicKey("Pretérito indefinido"), "indefinido");
+  assert.equal(learningTopicKey("Conjugación del pretérito indefinido"), "indefinido");
+  assert.notEqual(learningTopicKey("Indefinido e imperfecto"), "indefinido");
 });

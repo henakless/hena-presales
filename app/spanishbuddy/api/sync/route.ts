@@ -89,12 +89,36 @@ export async function POST(request: Request) {
       const ownedTables = [
         "spanish_buddy_lessons",
         "spanish_buddy_items",
+        "spanish_buddy_topics",
+        "spanish_buddy_item_topics",
         "spanish_buddy_attempts",
         "spanish_buddy_answer_cache",
         "spanish_buddy_ai_usage",
         "spanish_buddy_exercise_variants",
       ];
       await db.batch([
+        db.prepare(
+          `UPDATE spanish_buddy_item_topics
+           SET topic_id = (
+             SELECT target.id
+             FROM spanish_buddy_topics source
+             JOIN spanish_buddy_topics target ON target.owner_id = ? AND target.canonical_key = source.canonical_key
+             WHERE source.id = spanish_buddy_item_topics.topic_id AND source.owner_id = ?
+           )
+           WHERE owner_id = ? AND EXISTS (
+             SELECT 1
+             FROM spanish_buddy_topics source
+             JOIN spanish_buddy_topics target ON target.owner_id = ? AND target.canonical_key = source.canonical_key
+             WHERE source.id = spanish_buddy_item_topics.topic_id AND source.owner_id = ?
+           )`,
+        ).bind(targetOwnerId, ownerId, ownerId, targetOwnerId, ownerId),
+        db.prepare(
+          `DELETE FROM spanish_buddy_topics
+           WHERE owner_id = ? AND EXISTS (
+             SELECT 1 FROM spanish_buddy_topics target
+             WHERE target.owner_id = ? AND target.canonical_key = spanish_buddy_topics.canonical_key
+           )`,
+        ).bind(ownerId, targetOwnerId),
         ...ownedTables.map((table) => db.prepare(
           `UPDATE ${table} SET owner_id = ? WHERE owner_id = ?`,
         ).bind(targetOwnerId, ownerId)),

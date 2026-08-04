@@ -17,7 +17,7 @@ import { getServerRuntimeEnv } from "../../../../lib/runtime-env";
 export const runtime = "edge";
 
 const DEFAULT_SPANISH_BUDDY_MODEL = "gpt-5.6-terra";
-const SESSION_SIZE = 8;
+const MAX_SESSION_SIZE = 8;
 
 const PRACTICE_SCHEMA = {
   type: "object",
@@ -26,7 +26,7 @@ const PRACTICE_SCHEMA = {
     exercises: {
       type: "array",
       minItems: 1,
-      maxItems: SESSION_SIZE,
+      maxItems: MAX_SESSION_SIZE,
       items: {
         type: "object",
         additionalProperties: false,
@@ -219,7 +219,7 @@ function normalizeExercise(value: PracticeExercise, planned: { item: SavedItem; 
 
 export async function POST(request: Request) {
   const { ownerId, setCookie } = getOwner(request);
-  let payload: { itemIds?: unknown; selectedTypes?: unknown };
+  let payload: { itemIds?: unknown; selectedTypes?: unknown; sessionSize?: unknown };
   try {
     payload = await request.json() as typeof payload;
   } catch {
@@ -232,6 +232,10 @@ export async function POST(request: Request) {
   const selectedTypes = Array.isArray(payload.selectedTypes)
     ? [...new Set(payload.selectedTypes.filter(isActiveExerciseId))]
     : [...ACTIVE_EXERCISE_IDS];
+  const requestedSessionSize = typeof payload.sessionSize === "number" && Number.isFinite(payload.sessionSize)
+    ? Math.round(payload.sessionSize)
+    : MAX_SESSION_SIZE;
+  const sessionSize = Math.max(3, Math.min(MAX_SESSION_SIZE, requestedSessionSize));
   if (!selectedTypes.length) return jsonWithOwner({ error: "Selecciona al menos un tipo de ejercicio." }, 400, setCookie);
 
   try {
@@ -261,7 +265,7 @@ export async function POST(request: Request) {
 
     const plans: Array<{ item: SavedItem; exerciseType: string }> = [];
     const itemOffsets = new Map<string, number>();
-    for (let index = 0; plans.length < Math.min(SESSION_SIZE, Math.max(items.length, definitions.length)); index += 1) {
+    for (let index = 0; plans.length < Math.min(sessionSize, Math.max(items.length, definitions.length)); index += 1) {
       const definition = definitions[index % definitions.length];
       const candidates = compatibleItems(definition.category, items);
       const offset = itemOffsets.get(definition.id) ?? 0;
@@ -270,7 +274,7 @@ export async function POST(request: Request) {
       if (!plans.some((plan) => plan.item.id === item.id && plan.exerciseType === definition.id)) {
         plans.push({ item, exerciseType: definition.id });
       }
-      if (index > SESSION_SIZE * Math.max(definitions.length, items.length)) break;
+      if (index > sessionSize * Math.max(definitions.length, items.length)) break;
     }
 
     const cached = await Promise.all(plans.map((plan) => db.prepare(

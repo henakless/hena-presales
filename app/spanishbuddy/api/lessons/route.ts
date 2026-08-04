@@ -1,6 +1,7 @@
-import { inferLearningType, type ExtractedItem, type LearningType, type SavedItem, type SavedLesson } from "../../../../lib/spanish-buddy";
+import { inferLearningType, type ExtractedItem, type LearningTopic, type LearningType, type SavedItem, type SavedLesson } from "../../../../lib/spanish-buddy";
 import {
   ensureSpanishBuddySchema,
+  ensureSpanishBuddyTopicsForOwner,
   getOwner,
   getSpanishBuddyDatabase,
   jsonWithOwner,
@@ -32,6 +33,18 @@ type ItemRow = {
   attempts: number;
   correct_count: number;
   next_review_at: string;
+};
+
+type TopicRow = {
+  id: string;
+  canonical_key: string;
+  title: string;
+  explanation: string;
+  updated_at: string;
+  item_id: string;
+  example: string;
+  mastery: number;
+  lesson_title: string;
 };
 
 function mapItem(row: ItemRow): SavedItem {
@@ -72,7 +85,8 @@ export async function GET(request: Request) {
   try {
     const db = await getSpanishBuddyDatabase();
     await ensureSpanishBuddySchema(db);
-    const [lessonResult, itemResult] = await Promise.all([
+    await ensureSpanishBuddyTopicsForOwner(db, ownerId);
+    const [lessonResult, itemResult, topicResult] = await Promise.all([
       db.prepare(
         `SELECT id, title, summary, source_type, created_at
          FROM spanish_buddy_lessons
@@ -88,6 +102,16 @@ export async function GET(request: Request) {
          WHERE i.owner_id = ?
          ORDER BY i.next_review_at ASC, i.mastery ASC, i.created_at DESC`,
       ).bind(ownerId).all<ItemRow>(),
+      db.prepare(
+        `SELECT t.id, t.canonical_key, t.title, t.explanation, t.updated_at,
+                i.id AS item_id, i.example, i.mastery, l.title AS lesson_title
+         FROM spanish_buddy_topics t
+         JOIN spanish_buddy_item_topics it ON it.topic_id = t.id AND it.owner_id = t.owner_id
+         JOIN spanish_buddy_items i ON i.id = it.item_id AND i.owner_id = t.owner_id
+         JOIN spanish_buddy_lessons l ON l.id = i.lesson_id
+         WHERE t.owner_id = ?
+         ORDER BY t.updated_at DESC, i.created_at DESC`,
+      ).bind(ownerId).all<TopicRow>(),
     ]);
 
     const items = (itemResult.results ?? []).map(mapItem);
@@ -100,7 +124,37 @@ export async function GET(request: Request) {
       items: items.filter((item) => item.lessonId === lesson.id),
     }));
 
-    return jsonWithOwner({ lessons, items }, 200, setCookie);
+    const topicMap = new Map<string, LearningTopic>();
+    for (const row of topicResult.results ?? []) {
+      const existing = topicMap.get(row.id);
+      if (existing) {
+        if (row.example && !existing.examples.includes(row.example)) existing.examples.push(row.example);
+        if (!existing.itemIds.includes(row.item_id)) existing.itemIds.push(row.item_id);
+        if (!existing.lessonTitles.includes(row.lesson_title)) existing.lessonTitles.push(row.lesson_title);
+        continue;
+      }
+      topicMap.set(row.id, {
+        id: row.id,
+        key: row.canonical_key,
+        title: row.title,
+        explanation: row.explanation,
+        examples: row.example ? [row.example] : [],
+        itemIds: [row.item_id],
+        lessonTitles: [row.lesson_title],
+        mastery: 0,
+        updatedAt: row.updated_at,
+      });
+    }
+    const topics = [...topicMap.values()].map((topic) => {
+      const topicItems = topic.itemIds.map((id) => items.find((item) => item.id === id)).filter((item): item is SavedItem => Boolean(item));
+      return {
+        ...topic,
+        examples: topic.examples.slice(0, 4),
+        mastery: Math.round(topicItems.reduce((sum, item) => sum + item.mastery, 0) / Math.max(topicItems.length, 1)),
+      };
+    });
+
+    return jsonWithOwner({ lessons, items, topics }, 200, setCookie);
   } catch (error) {
     console.error("Spanish Buddy lessons read failed", error);
     return jsonWithOwner({ error: "No se ha podido cargar tu biblioteca." }, 500, setCookie);
@@ -168,6 +222,7 @@ export async function POST(request: Request) {
     ];
 
     await db.batch(statements);
+    await ensureSpanishBuddyTopicsForOwner(db, ownerId);
     return jsonWithOwner({ lessonId, savedItems: selected.length }, 201, setCookie);
   } catch (error) {
     console.error("Spanish Buddy lesson save failed", error);
@@ -212,6 +267,8 @@ export async function PATCH(request: Request) {
       ownerId,
     ).run();
     if (!result.meta.changes) return jsonWithOwner({ error: "No se ha encontrado este contenido." }, 404, setCookie);
+    await db.prepare("DELETE FROM spanish_buddy_item_topics WHERE owner_id = ? AND item_id = ?").bind(ownerId, id).run();
+    await ensureSpanishBuddyTopicsForOwner(db, ownerId);
     await db.prepare("DELETE FROM spanish_buddy_answer_cache WHERE owner_id = ? AND item_id = ?").bind(ownerId, id).run();
     await db.prepare(
       `DELETE FROM spanish_buddy_exercise_variants

@@ -13,12 +13,13 @@ import {
   masteryLabel,
   type ExtractedItem,
   type ExtractionResult,
+  type LearningTopic,
   type SavedItem,
   type SavedLesson,
 } from "../../lib/spanish-buddy";
 
 type View = "today" | "add" | "library" | "exercises";
-type LibraryFilter = "all" | "words" | "expressions" | "collocations" | "grammar";
+type LibraryFilter = "topics" | "all" | "words" | "expressions" | "collocations" | "grammar";
 type ExerciseFilter = "all" | ExerciseCategory;
 
 type Exercise = {
@@ -90,6 +91,7 @@ export default function SpanishBuddy() {
   const [view, setView] = useState<View>("today");
   const [lessons, setLessons] = useState<SavedLesson[]>([]);
   const [items, setItems] = useState<SavedItem[]>([]);
+  const [topics, setTopics] = useState<LearningTopic[]>([]);
   const [loadingLibrary, setLoadingLibrary] = useState(true);
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
@@ -126,7 +128,7 @@ export default function SpanishBuddy() {
   const [syncing, setSyncing] = useState(false);
   const [synced, setSynced] = useState(false);
   const [syncError, setSyncError] = useState("");
-  const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("all");
+  const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("topics");
   const [exerciseFilter, setExerciseFilter] = useState<ExerciseFilter>("all");
 
   const currentExercise = exercises[exerciseIndex];
@@ -140,6 +142,7 @@ export default function SpanishBuddy() {
       ? Math.round(items.reduce((sum, item) => sum + item.mastery, 0) / items.length)
       : 0;
   const libraryFilters: Array<{ id: LibraryFilter; label: string }> = [
+    { id: "topics", label: "Temas" },
     { id: "all", label: "Todo" },
     { id: "words", label: "Palabras" },
     { id: "expressions", label: "Expresiones" },
@@ -147,7 +150,7 @@ export default function SpanishBuddy() {
     { id: "grammar", label: "Gramática" },
   ];
 
-  function libraryCategory(item: SavedItem): Exclude<LibraryFilter, "all"> {
+  function libraryCategory(item: SavedItem): Exclude<LibraryFilter, "all" | "topics"> {
     if (item.kind === "grammar" || item.learningType === "grammar_rule" || item.learningType === "conjugation") return "grammar";
     if (item.learningType === "fixed_expression" || item.learningType === "sentence_pattern") return "expressions";
     if (item.learningType === "collocation") return "collocations";
@@ -163,15 +166,15 @@ export default function SpanishBuddy() {
   }
 
   const libraryCounts = useMemo(() => {
-    const counts: Record<LibraryFilter, number> = { all: items.length, words: 0, expressions: 0, collocations: 0, grammar: 0 };
+    const counts: Record<LibraryFilter, number> = { topics: topics.length, all: items.length, words: 0, expressions: 0, collocations: 0, grammar: 0 };
     items.forEach((item) => { counts[libraryCategory(item)] += 1; });
     return counts;
-  }, [items]);
+  }, [items, topics.length]);
 
   const filteredLessons = useMemo(() => lessons
     .map((lesson) => ({
       ...lesson,
-      items: libraryFilter === "all" ? lesson.items : lesson.items.filter((item) => libraryCategory(item) === libraryFilter),
+      items: libraryFilter === "all" ? lesson.items : libraryFilter === "topics" ? [] : lesson.items.filter((item) => libraryCategory(item) === libraryFilter),
     }))
     .filter((lesson) => lesson.items.length > 0), [lessons, libraryFilter]);
   const exerciseFilters: Array<{ id: ExerciseFilter; label: string; count: number }> = [
@@ -205,10 +208,11 @@ export default function SpanishBuddy() {
   async function loadLibrary() {
     try {
       const response = await fetch(apiUrl("lessons"), { cache: "no-store" });
-      const body = (await response.json()) as { lessons?: SavedLesson[]; items?: SavedItem[]; error?: string };
+      const body = (await response.json()) as { lessons?: SavedLesson[]; items?: SavedItem[]; topics?: LearningTopic[]; error?: string };
       if (!response.ok) throw new Error(body.error || "No se ha podido cargar tu biblioteca.");
       setLessons(body.lessons ?? []);
       setItems(body.items ?? []);
+      setTopics(body.topics ?? []);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "No se ha podido cargar tu biblioteca.");
     } finally {
@@ -432,7 +436,7 @@ export default function SpanishBuddy() {
       : [...new Set([...selectedExerciseTypes, ...categoryExerciseIds])]);
   }
 
-  async function startSession(sourceItems = items) {
+  async function startSession(sourceItems = items, sessionSize = 8) {
     if (!sourceItems.length) {
       setView("add");
       return;
@@ -451,6 +455,7 @@ export default function SpanishBuddy() {
         body: JSON.stringify({
           itemIds: sourceItems.map((item) => item.id),
           selectedTypes: selectedExerciseTypes,
+          sessionSize,
         }),
       });
       const body = await response.json() as { exercises?: Exercise[]; error?: string };
@@ -800,6 +805,7 @@ export default function SpanishBuddy() {
               <p className="sb-eyebrow">Tu base de aprendizaje</p>
               <div className="sb-stat-row"><strong>{items.length}</strong><span>palabras y reglas</span></div>
               <div className="sb-stat-row"><strong>{lessons.length}</strong><span>lecciones del curso</span></div>
+              <div className="sb-stat-row"><strong>{topics.length}</strong><span>temas para consultar</span></div>
               <div className="sb-stat-row"><strong>{items.filter((item) => item.mastery >= 62).length}</strong><span>ya dominas</span></div>
               <div className="sb-growth-meter">
                 {averageMastery !== null && (
@@ -903,7 +909,47 @@ export default function SpanishBuddy() {
               </button>
             ))}
           </nav>
-          {filteredLessons.length ? filteredLessons.map((lesson) => (
+          {libraryFilter === "topics" ? (
+            topics.length ? (
+              <section className="sb-topic-catalog" aria-label="Temas de aprendizaje">
+                <div className="sb-topic-catalog-intro">
+                  <p className="sb-eyebrow">Consulta rápida</p>
+                  <h2>Tu gramática, explicada para volver a ella.</h2>
+                  <p>Cada lección añade o enriquece estos temas. Léelos cuando necesites refrescar una regla y practica solo ese contenido.</p>
+                </div>
+                <div className="sb-topic-list">
+                  {topics.map((topic, index) => {
+                    const topicItems = topic.itemIds.map((id) => items.find((item) => item.id === id)).filter((item): item is SavedItem => Boolean(item));
+                    return (
+                      <article className="sb-topic-card" key={topic.id}>
+                        <div className="sb-topic-number">{String(index + 1).padStart(2, "0")}</div>
+                        <div className="sb-topic-copy">
+                          <div className="sb-topic-meta"><span>Tema de gramática</span><span>{topic.lessonTitles.length} {topic.lessonTitles.length === 1 ? "lección" : "lecciones"}</span></div>
+                          <h2>{topic.title}</h2>
+                          <p className="sb-topic-explanation" lang="de">{topic.explanation || "Este tema todavía necesita una explicación más completa."}</p>
+                          {topic.examples.length > 0 && (
+                            <div className="sb-topic-examples">
+                              <span>{topic.examples.length === 1 ? "Ejemplo" : "Ejemplos"}</span>
+                              {topic.examples.map((example) => <p lang="es" key={example}>{example}</p>)}
+                            </div>
+                          )}
+                          <p className="sb-topic-sources">De: {topic.lessonTitles.join(" · ")}</p>
+                        </div>
+                        <aside className="sb-topic-action">
+                          <Sunflower mastery={topic.mastery} label={`${topic.title}: ${topic.mastery}% de dominio`} />
+                          <strong>{topic.mastery}%</strong>
+                          <span>{masteryLabel(topic.mastery)}</span>
+                          <button disabled={preparingSession || !topicItems.length} onClick={() => void startSession(topicItems, 4)}>{preparingSession ? "Preparando…" : "Entrenamiento corto →"}</button>
+                        </aside>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            ) : (
+              <div className="sb-empty sb-starter-empty"><div><strong>Los temas aparecerán con tus lecciones de gramática.</strong><span>Sube apuntes sobre el indefinido, el subjuntivo u otra regla para empezar.</span></div><button onClick={() => setView("add")}>Añadir lección</button></div>
+            )
+          ) : filteredLessons.length ? filteredLessons.map((lesson) => (
             <section className="sb-library-lesson" key={lesson.id}>
               <div className="sb-library-lesson-head"><div><span>{new Date(lesson.createdAt).toLocaleDateString("es-ES")}</span><h2>{lesson.title}</h2><p>{lesson.summary}</p></div><button disabled={preparingSession} onClick={() => void startSession(lesson.items)}>{preparingSession ? "Preparando…" : "Practicar →"}</button></div>
               <div className="sb-library-items">

@@ -49,6 +49,23 @@ export async function ensureSpanishBuddySchema(db: D1Database) {
       mastery_before INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS spanish_buddy_topics (
+      id TEXT PRIMARY KEY,
+      owner_id TEXT NOT NULL,
+      canonical_key TEXT NOT NULL,
+      title TEXT NOT NULL,
+      explanation TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(owner_id, canonical_key)
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS spanish_buddy_item_topics (
+      owner_id TEXT NOT NULL,
+      item_id TEXT NOT NULL,
+      topic_id TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(owner_id, item_id, topic_id)
+    )`),
     db.prepare(`CREATE TABLE IF NOT EXISTS spanish_buddy_answer_cache (
       id TEXT PRIMARY KEY,
       owner_id TEXT NOT NULL,
@@ -90,6 +107,8 @@ export async function ensureSpanishBuddySchema(db: D1Database) {
     db.prepare("CREATE INDEX IF NOT EXISTS sb_lessons_owner_idx ON spanish_buddy_lessons(owner_id, created_at)"),
     db.prepare("CREATE INDEX IF NOT EXISTS sb_items_owner_idx ON spanish_buddy_items(owner_id, next_review_at)"),
     db.prepare("CREATE INDEX IF NOT EXISTS sb_items_lesson_idx ON spanish_buddy_items(lesson_id)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS sb_topics_owner_idx ON spanish_buddy_topics(owner_id, updated_at)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS sb_item_topics_owner_idx ON spanish_buddy_item_topics(owner_id, topic_id)"),
     db.prepare("CREATE INDEX IF NOT EXISTS sb_answer_cache_owner_idx ON spanish_buddy_answer_cache(owner_id, learner_normalized)"),
     db.prepare("CREATE INDEX IF NOT EXISTS sb_ai_usage_owner_idx ON spanish_buddy_ai_usage(owner_id, created_at)"),
     db.prepare("CREATE INDEX IF NOT EXISTS sb_exercise_variants_owner_idx ON spanish_buddy_exercise_variants(owner_id, exercise_type, use_count)"),
@@ -100,6 +119,43 @@ export async function ensureSpanishBuddySchema(db: D1Database) {
   if (!(columns.results ?? []).some((column) => column.name === "learning_type")) {
     await db.prepare("ALTER TABLE spanish_buddy_items ADD COLUMN learning_type TEXT NOT NULL DEFAULT 'word'").run();
   }
+}
+
+type UnlinkedGrammarItem = {
+  id: string;
+  spanish: string;
+  explanation: string;
+};
+
+export async function ensureSpanishBuddyTopicsForOwner(db: D1Database, ownerId: string) {
+  const { learningTopicKey } = await import("./spanish-buddy");
+  const result = await db.prepare(
+    `SELECT i.id, i.spanish, i.explanation
+     FROM spanish_buddy_items i
+     LEFT JOIN spanish_buddy_item_topics it ON it.item_id = i.id AND it.owner_id = i.owner_id
+     WHERE i.owner_id = ? AND i.kind = 'grammar' AND it.item_id IS NULL`,
+  ).bind(ownerId).all<UnlinkedGrammarItem>();
+
+  const statements = (result.results ?? []).flatMap((item) => {
+    const key = learningTopicKey(item.spanish);
+    if (!key) return [];
+    const topicId = crypto.randomUUID();
+    return [
+      db.prepare(
+        `INSERT INTO spanish_buddy_topics (id, owner_id, canonical_key, title, explanation)
+         VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(owner_id, canonical_key) DO UPDATE SET
+           title = CASE WHEN length(excluded.title) > length(title) THEN excluded.title ELSE title END,
+           explanation = CASE WHEN length(excluded.explanation) > length(explanation) THEN excluded.explanation ELSE explanation END,
+           updated_at = CURRENT_TIMESTAMP`,
+      ).bind(topicId, ownerId, key, item.spanish, item.explanation),
+      db.prepare(
+        `INSERT OR IGNORE INTO spanish_buddy_item_topics (owner_id, item_id, topic_id)
+         SELECT ?, ?, id FROM spanish_buddy_topics WHERE owner_id = ? AND canonical_key = ?`,
+      ).bind(ownerId, item.id, ownerId, key),
+    ];
+  });
+  if (statements.length) await db.batch(statements);
 }
 
 type OpenAIUsage = {

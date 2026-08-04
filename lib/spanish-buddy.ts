@@ -41,6 +41,32 @@ export type SavedLesson = {
   items: SavedItem[];
 };
 
+export type LearningTopic = {
+  id: string;
+  key: string;
+  title: string;
+  explanation: string;
+  examples: string[];
+  itemIds: string[];
+  lessonTitles: string[];
+  mastery: number;
+  updatedAt: string;
+};
+
+export function learningTopicKey(title: string) {
+  const normalized = title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es-ES")
+    .replace(/\b(?:el|la|los|las|un|una|tiempo|verbal|preterito)\b/g, " ")
+    .replace(/\b(?:gramatica|regla|uso|usos|formacion|conjugacion|forma|formas|de|del)\b/g, " ")
+    .replace(/[^a-z0-9ñ]+/g, " ")
+    .trim()
+    .replace(/\s+/g, "-");
+  if (normalized.includes("indefinido") && !normalized.includes("imperfecto")) return "indefinido";
+  return normalized.slice(0, 120);
+}
+
 export function masteryLabel(score: number) {
   if (score >= 82) return "Ya lo dominas";
   if (score >= 62) return "Lo sabes bien";

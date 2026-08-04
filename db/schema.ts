@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const spanishBuddySyncProfiles = sqliteTable("spanish_buddy_sync_profiles", {
   ownerId: text("owner_id").primaryKey(),
@@ -33,6 +33,23 @@ export const spanishBuddyItems = sqliteTable("spanish_buddy_items", {
   nextReviewAt: text("next_review_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const spanishBuddyTopics = sqliteTable("spanish_buddy_topics", {
+  id: text("id").primaryKey(),
+  ownerId: text("owner_id").notNull(),
+  canonicalKey: text("canonical_key").notNull(),
+  title: text("title").notNull(),
+  explanation: text("explanation").notNull().default(""),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [uniqueIndex("sb_topics_owner_key_idx").on(table.ownerId, table.canonicalKey)]);
+
+export const spanishBuddyItemTopics = sqliteTable("spanish_buddy_item_topics", {
+  ownerId: text("owner_id").notNull(),
+  itemId: text("item_id").notNull(),
+  topicId: text("topic_id").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [uniqueIndex("sb_item_topics_unique_idx").on(table.ownerId, table.itemId, table.topicId)]);
 
 export const spanishBuddyAttempts = sqliteTable("spanish_buddy_attempts", {
   id: text("id").primaryKey(),

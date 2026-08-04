@@ -104,6 +104,7 @@ test("server-renders the AI discovery experience", async () => {
   assert.match(html, /great, qualified lead with a proper briefing/i);
   assert.match(html, /Discovery starts before the meeting/i);
   assert.match(html, /Help create the lead that came in through the website/i);
+  assert.match(html, /this is the entire briefing we got/i);
   assert.match(html, /The AI will generate a fresh, seven-part briefing/i);
   assert.doesNotMatch(html, /OpenAI|ChatGPT|Codex/i);
   assert.match(html, /Entor Price/i);
@@ -196,6 +197,9 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(pageSource, /Información y ayuda en alemán/i);
   assert.match(pageSource, /Mostrar más ayuda/i);
   assert.match(pageSource, /Mini lección de gramática/i);
+  assert.match(pageSource, /Entrenamiento corto/i);
+  assert.match(pageSource, /Tu gramática, explicada para volver a ella/i);
+  assert.match(pageSource, /topics\?: LearningTopic\[\]/i);
   assert.match(pageSource, /Ver en alemán/i);
   assert.match(pageSource, /sb-exercise-context/i);
   assert.match(pageSource, /strongHintRevealed/i);
@@ -226,6 +230,7 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(extractionSource, /hablar con, ir a, alojarse en/i);
   assert.match(extractionSource, /create one short, natural A2-B1 Spanish example sentence/i);
   assert.match(extractionSource, /common collocation, a false friend, gender/i);
+  assert.match(extractionSource, /Name grammar concepts consistently/i);
 
   const exerciseLibrarySource = await readFile(new URL("../lib/spanish-buddy-exercises.ts", import.meta.url), "utf8");
   assert.match(exerciseLibrarySource, /Recuerdo escrito/i);
