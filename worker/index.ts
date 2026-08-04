@@ -1,11 +1,14 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import { setServerRuntimeEnv } from "../lib/runtime-env";
 import { SITE_BASE_PATH } from "../lib/site";
 
 interface Env {
   ASSETS: Fetcher;
   DB: D1Database;
+  OPENAI_API_KEY?: string;
+  OPENAI_MODEL?: string;
   BRIEFING_RATE_LIMITER?: {
     limit(options: { key: string }): Promise<{ success: boolean }>;
   };
@@ -176,6 +179,7 @@ async function enforceSyncRateLimit(request: Request, env: Env) {
 
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    setServerRuntimeEnv(env);
     const url = new URL(request.url);
 
     if (request.method === "POST" && url.pathname === `${SITE_BASE_PATH}/api/briefing`) {

@@ -5,6 +5,7 @@ import {
   jsonWithOwner,
   recordSpanishBuddyAiUsage,
 } from "../../../../lib/spanish-buddy-server";
+import { getServerRuntimeEnv } from "../../../../lib/runtime-env";
 
 export const runtime = "edge";
 
@@ -21,7 +22,7 @@ const EVALUATION_SCHEMA = {
   required: ["verdict", "feedback"],
 } as const;
 
-const SPANISH_BUDDY_MODEL = "luna";
+const DEFAULT_SPANISH_BUDDY_MODEL = "gpt-5.6-terra";
 
 type EvaluationRequest = {
   prompt?: unknown;
@@ -142,8 +143,8 @@ export async function POST(request: Request) {
     db = null;
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  const model = SPANISH_BUDDY_MODEL;
+  const apiKey = getServerRuntimeEnv("OPENAI_API_KEY");
+  const model = getServerRuntimeEnv("OPENAI_MODEL")?.trim() || DEFAULT_SPANISH_BUDDY_MODEL;
   if (!apiKey) {
     return jsonWithOwner({ error: "La comprobación semántica todavía no está configurada." }, 503, setCookie);
   }

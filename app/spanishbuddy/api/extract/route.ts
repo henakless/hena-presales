@@ -6,6 +6,7 @@ import {
   jsonWithOwner,
   recordSpanishBuddyAiUsage,
 } from "../../../../lib/spanish-buddy-server";
+import { getServerRuntimeEnv } from "../../../../lib/runtime-env";
 
 export const runtime = "edge";
 
@@ -14,7 +15,7 @@ const MAX_FILE_BYTES = 8 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 24 * 1024 * 1024;
 const MAX_NOTE_LENGTH = 12_000;
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-const SPANISH_BUDDY_MODEL = "luna";
+const DEFAULT_SPANISH_BUDDY_MODEL = "gpt-5.6-terra";
 
 const EXTRACTION_SCHEMA = {
   type: "object",
@@ -169,8 +170,8 @@ export async function POST(request: Request) {
     return jsonWithOwner({ error: "Las imágenes pueden ocupar como máximo 24 MB en total." }, 413, setCookie);
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  const model = SPANISH_BUDDY_MODEL;
+  const apiKey = getServerRuntimeEnv("OPENAI_API_KEY");
+  const model = getServerRuntimeEnv("OPENAI_MODEL")?.trim() || DEFAULT_SPANISH_BUDDY_MODEL;
   if (!apiKey) {
     return jsonWithOwner({ error: "El análisis de la lección todavía no está configurado." }, 503, setCookie);
   }

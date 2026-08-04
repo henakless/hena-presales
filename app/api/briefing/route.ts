@@ -4,6 +4,7 @@ import {
   normalizeDiscoveryQuestions,
 } from "../../../lib/briefing";
 import { COMPANIES, CONTACTS } from "../../../lib/lead-data";
+import { getServerRuntimeEnv } from "../../../lib/runtime-env";
 
 export const runtime = "edge";
 
@@ -146,8 +147,8 @@ export async function POST(request: Request) {
     return niceTry();
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  const model = process.env.OPENAI_MODEL?.trim() || "gpt-5.6-terra";
+  const apiKey = getServerRuntimeEnv("OPENAI_API_KEY");
+  const model = getServerRuntimeEnv("OPENAI_MODEL")?.trim() || "gpt-5.6-terra";
   if (!apiKey) {
     return json({ error: "The AI briefing service is not configured yet." }, 503);
   }

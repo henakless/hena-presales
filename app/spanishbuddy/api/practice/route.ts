@@ -12,10 +12,11 @@ import {
   jsonWithOwner,
   recordSpanishBuddyAiUsage,
 } from "../../../../lib/spanish-buddy-server";
+import { getServerRuntimeEnv } from "../../../../lib/runtime-env";
 
 export const runtime = "edge";
 
-const SPANISH_BUDDY_MODEL = "luna";
+const DEFAULT_SPANISH_BUDDY_MODEL = "gpt-5.6-terra";
 const SESSION_SIZE = 8;
 
 const PRACTICE_SCHEMA = {
@@ -305,8 +306,9 @@ export async function POST(request: Request) {
     }
 
     if (missingPlans.length) {
-      const apiKey = process.env.OPENAI_API_KEY;
+      const apiKey = getServerRuntimeEnv("OPENAI_API_KEY");
       if (!apiKey) return jsonWithOwner({ error: "La creación de ejercicios todavía no está configurada." }, 503, setCookie);
+      const model = getServerRuntimeEnv("OPENAI_MODEL")?.trim() || DEFAULT_SPANISH_BUDDY_MODEL;
       const requested = missingPlans.map((plan) => {
         const definition = EXERCISE_LIBRARY.find((exercise) => exercise.id === plan.exerciseType)!;
         return {
@@ -343,7 +345,7 @@ export async function POST(request: Request) {
           headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
           signal: controller.signal,
           body: JSON.stringify({
-            model: SPANISH_BUDDY_MODEL,
+            model,
             store: false,
             reasoning: { effort: "low" },
             instructions: [
@@ -378,7 +380,7 @@ export async function POST(request: Request) {
           console.error("Spanish Buddy practice generation failed", openaiResponse.status, body.error?.message);
           return jsonWithOwner({ error: "No se ha podido crear esta práctica. Inténtalo de nuevo." }, 502, setCookie);
         }
-        await recordSpanishBuddyAiUsage(db, ownerId, "practice", SPANISH_BUDDY_MODEL, body.usage);
+        await recordSpanishBuddyAiUsage(db, ownerId, "practice", model, body.usage);
         const text = outputText(body);
         if (!text) return jsonWithOwner({ error: "La práctica estaba incompleta." }, 502, setCookie);
         const parsed = JSON.parse(text) as { exercises?: PracticeExercise[] };

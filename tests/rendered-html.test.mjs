@@ -213,12 +213,12 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(pageSource, /Desconectar este dispositivo/i);
 
   const evaluatorSource = await readFile(new URL("../app/spanishbuddy/api/evaluate/route.ts", import.meta.url), "utf8");
-  assert.match(evaluatorSource, /SPANISH_BUDDY_MODEL = "luna"/i);
+  assert.match(evaluatorSource, /DEFAULT_SPANISH_BUDDY_MODEL = "gpt-5\.6-terra"/i);
   assert.match(evaluatorSource, /spanish_buddy_answer_cache/i);
   assert.match(evaluatorSource, /spanish_buddy_ai_usage/i);
 
   const extractionSource = await readFile(new URL("../app/spanishbuddy/api/extract/route.ts", import.meta.url), "utf8");
-  assert.match(extractionSource, /SPANISH_BUDDY_MODEL = "luna"/i);
+  assert.match(extractionSource, /DEFAULT_SPANISH_BUDDY_MODEL = "gpt-5\.6-terra"/i);
   assert.match(extractionSource, /acceptedAnswers/i);
   assert.match(extractionSource, /natural reference-language synonyms/i);
   assert.match(extractionSource, /hablar con, ir a, alojarse en/i);
@@ -232,7 +232,7 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(exerciseLibrarySource, /hablar con · yo · presente/i);
 
   const practiceSource = await readFile(new URL("../app/spanishbuddy/api/practice/route.ts", import.meta.url), "utf8");
-  assert.match(practiceSource, /SPANISH_BUDDY_MODEL = "luna"/i);
+  assert.match(practiceSource, /DEFAULT_SPANISH_BUDDY_MODEL = "gpt-5\.6-terra"/i);
   assert.match(practiceSource, /Every non-multiple-choice exercise requires the learner to type/i);
   assert.match(practiceSource, /spanish_buddy_exercise_variants/i);
   assert.match(practiceSource, /germanSupport/i);
@@ -268,7 +268,7 @@ test("accepts a semantically equivalent Spanish Buddy translation", async () => 
     assert.equal(String(input), "https://api.openai.com/v1/responses");
     assert.equal(init?.method, "POST");
     const requestBody = JSON.parse(String(init?.body));
-    assert.equal(requestBody.model, "luna");
+    assert.equal(requestBody.model, "gpt-5.6-terra");
     assert.equal(requestBody.store, false);
     assert.equal(requestBody.reasoning.effort, "low");
     assert.equal(requestBody.text.format.type, "json_schema");
@@ -285,7 +285,7 @@ test("accepts a semantically equivalent Spanish Buddy translation", async () => 
     assert.equal(submitted.learnerAnswer, "ich lade euch ein");
 
     return Response.json({
-      model: "luna",
+      model: "gpt-5.6-terra",
       output: [
         {
           type: "message",
