@@ -1,0 +1,183 @@
+{
+  "generatedAt": "2026-08-04T21:18:30.233Z",
+  "input": "/Users/maxkless/Documents/hena-ai-playground/site/evals/spanish-buddy/usability-cases.jsonl",
+  "total": 7,
+  "usable": 2,
+  "unusable": 5,
+  "usabilityRate": 0.2857142857142857,
+  "expectationMismatches": [],
+  "failuresByIssue": {
+    "ANSWER_IN_BASIC_HELP": 2,
+    "ANSWER_TRANSLATION_IN_BASIC_HELP": 1,
+    "DUPLICATE_OPTIONS": 1,
+    "REPEATED_TEXT_ACROSS_FIELDS": 1,
+    "REPEATED_TEXT_WITHIN_FIELD": 1
+  },
+  "byExerciseType": {
+    "active-translation": {
+      "total": 1,
+      "usable": 1,
+      "unusable": 0,
+      "usabilityRate": 1
+    },
+    "conjugation-context": {
+      "total": 2,
+      "usable": 1,
+      "unusable": 1,
+      "usabilityRate": 0.5
+    },
+    "grammar-choice": {
+      "total": 1,
+      "usable": 0,
+      "unusable": 1,
+      "usabilityRate": 0
+    },
+    "guided-production": {
+      "total": 1,
+      "usable": 0,
+      "unusable": 1,
+      "usabilityRate": 0
+    },
+    "own-sentence": {
+      "total": 1,
+      "usable": 0,
+      "unusable": 1,
+      "usabilityRate": 0
+    },
+    "reading-detail": {
+      "total": 1,
+      "usable": 0,
+      "unusable": 1,
+      "usabilityRate": 0
+    }
+  },
+  "results": [
+    {
+      "id": "clean-conjugation",
+      "exerciseType": "conjugation-context",
+      "expectedUsable": true,
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    },
+    {
+      "id": "answer-in-basic-help",
+      "exerciseType": "conjugation-context",
+      "expectedUsable": false,
+      "deterministic": {
+        "usable": false,
+        "issues": [
+          {
+            "code": "ANSWER_IN_BASIC_HELP",
+            "severity": "error",
+            "fields": [
+              "answer",
+              "germanSupport"
+            ],
+            "evidence": "hablaría"
+          }
+        ]
+      },
+      "model": null
+    },
+    {
+      "id": "translated-answer-in-basic-help",
+      "exerciseType": "reading-detail",
+      "expectedUsable": false,
+      "deterministic": {
+        "usable": false,
+        "issues": [
+          {
+            "code": "ANSWER_TRANSLATION_IN_BASIC_HELP",
+            "severity": "error",
+            "fields": [
+              "answerTranslation",
+              "germanSupport"
+            ],
+            "evidence": "Weil sie am Samstag arbeitet."
+          }
+        ]
+      },
+      "model": null
+    },
+    {
+      "id": "repeated-across-panels",
+      "exerciseType": "guided-production",
+      "expectedUsable": false,
+      "deterministic": {
+        "usable": false,
+        "issues": [
+          {
+            "code": "REPEATED_TEXT_ACROSS_FIELDS",
+            "severity": "error",
+            "fields": [
+              "germanSupport",
+              "strongerHint"
+            ],
+            "evidence": "Du bist in einem Restaurant und möchtest höflich um Wasser bitten."
+          }
+        ]
+      },
+      "model": null
+    },
+    {
+      "id": "repeated-inside-panel",
+      "exerciseType": "own-sentence",
+      "expectedUsable": false,
+      "deterministic": {
+        "usable": false,
+        "issues": [
+          {
+            "code": "REPEATED_TEXT_WITHIN_FIELD",
+            "severity": "error",
+            "fields": [
+              "germanSupport"
+            ],
+            "evidence": "Schreibe einen persönlichen Satz über Freundschaft"
+          }
+        ]
+      },
+      "model": null
+    },
+    {
+      "id": "duplicate-options-normalized",
+      "exerciseType": "grammar-choice",
+      "expectedUsable": false,
+      "deterministic": {
+        "usable": false,
+        "issues": [
+          {
+            "code": "ANSWER_IN_BASIC_HELP",
+            "severity": "error",
+            "fields": [
+              "answer",
+              "grammarReminder"
+            ],
+            "evidence": "Cuál"
+          },
+          {
+            "code": "DUPLICATE_OPTIONS",
+            "severity": "error",
+            "fields": [
+              "options"
+            ],
+            "evidence": "Cuál | Cual | Qué | Cuánto"
+          }
+        ]
+      },
+      "model": null
+    },
+    {
+      "id": "source-translation-may-repeat-german",
+      "exerciseType": "active-translation",
+      "expectedUsable": true,
+      "deterministic": {
+        "usable": true,
+        "issues": []
+      },
+      "model": null
+    }
+  ]
+}

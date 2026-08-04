@@ -56,7 +56,7 @@
 .sb-level { justify-self: end; display: flex; align-items: center; gap: 10px; padding: 0; border: 0; background: transparent; text-align: left; cursor: pointer; }
 .sb-level span { display: grid; width: 35px; height: 35px; place-items: center; border: 1px solid var(--sb-ink); border-radius: 50%; font-family: Georgia, serif; font-size: 13px; transition: transform 150ms ease, background 150ms ease; }
 .sb-level small { display: flex; flex-direction: column; color: var(--sb-muted); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
-.sb-level small b { color: var(--sb-red-dark); font-size: 7px; }
+.sb-level small b { overflow: hidden; max-width: 150px; color: var(--sb-red-dark); font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
 .sb-level small i { font-style: normal; }
 .sb-level:hover span { transform: translateY(-1px); background: var(--sb-paper); }
 .sb-level.synced span { background: #e7efda; }
@@ -380,6 +380,7 @@
 .sb-sync-dialog .sb-editor-head { margin-bottom: 25px; }
 .sb-sync-copy { margin-bottom: 24px; color: var(--sb-muted); font-size: 12px; line-height: 1.65; }
 .sb-sync-field { display: flex; flex-direction: column; gap: 8px; }
+.sb-sync-field + .sb-sync-field { margin-top: 18px; }
 .sb-sync-field > span { font-size: 8px; font-weight: 900; letter-spacing: .09em; text-transform: uppercase; }
 .sb-sync-field input { width: 100%; min-height: 50px; padding: 11px 13px; border: 1px solid var(--sb-ink); border-radius: 0; background: white; }
 .sb-sync-field small { color: var(--sb-muted); font-size: 9px; line-height: 1.5; }
@@ -393,6 +394,7 @@
 .sb-sync-connected strong { font-size: 13px; }
 .sb-sync-connected p { margin: 4px 0 0; color: var(--sb-muted); font-size: 10px; }
 .sb-sync-connected-view { display: flex; flex-direction: column; }
+.sb-sync-rekey-fields { margin-top: 24px; }
 .sb-disconnect-button { align-self: flex-start; margin-top: 24px; padding: 8px 0; border: 0; border-bottom: 1px solid var(--sb-red-dark); background: transparent; color: var(--sb-red-dark); font-size: 10px; font-weight: 850; cursor: pointer; }
 .sb-disconnect-button:disabled { opacity: .55; cursor: wait; }
 .sb-disconnect-note { max-width: 470px; margin-top: 9px; color: var(--sb-muted); font-size: 9px; line-height: 1.5; }

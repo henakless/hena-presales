@@ -1,8 +1,9 @@
 import { sql } from "drizzle-orm";
-import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const spanishBuddySyncProfiles = sqliteTable("spanish_buddy_sync_profiles", {
   ownerId: text("owner_id").primaryKey(),
+  name: text("name").notNull().default("Mi biblioteca"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
@@ -98,7 +99,34 @@ export const spanishBuddyExerciseVariants = sqliteTable("spanish_buddy_exercise_
   lessonId: text("lesson_id").notNull(),
   exerciseType: text("exercise_type").notNull(),
   payload: text("payload").notNull(),
+  itemContentHash: text("item_content_hash").notNull().default(""),
+  generatorVersion: text("generator_version").notNull().default("v1"),
+  qualityStatus: text("quality_status", { enum: ["active", "retired", "reported"] }).notNull().default("active"),
   useCount: integer("use_count").notNull().default(0),
+  lastUsedAt: text("last_used_at"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => [
+  index("sb_exercise_variants_owner_idx").on(table.ownerId, table.exerciseType, table.useCount),
+  index("sb_exercise_variants_lesson_idx").on(table.lessonId),
+]);
+
+export const spanishBuddyPracticeSessions = sqliteTable("spanish_buddy_practice_sessions", {
+  id: text("id").primaryKey(),
+  ownerId: text("owner_id").notNull(),
+  mode: text("mode").notNull().default("adaptive"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("sb_practice_sessions_owner_idx").on(table.ownerId, table.createdAt)]);
+
+export const spanishBuddyVariantUsage = sqliteTable("spanish_buddy_variant_usage", {
+  id: text("id").primaryKey(),
+  ownerId: text("owner_id").notNull(),
+  sessionId: text("session_id").notNull(),
+  variantId: text("variant_id").notNull(),
+  itemId: text("item_id").notNull(),
+  exerciseType: text("exercise_type").notNull(),
+  shownAt: text("shown_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index("sb_variant_usage_owner_idx").on(table.ownerId, table.shownAt),
+  index("sb_variant_usage_variant_idx").on(table.variantId, table.shownAt),
+]);

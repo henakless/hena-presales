@@ -125,8 +125,10 @@ export default function SpanishBuddy() {
   const [editorMode, setEditorMode] = useState<"detail" | "edit">("detail");
   const [syncOpen, setSyncOpen] = useState(false);
   const [syncPassphrase, setSyncPassphrase] = useState("");
+  const [syncName, setSyncName] = useState("Mi biblioteca");
   const [syncing, setSyncing] = useState(false);
   const [synced, setSynced] = useState(false);
+  const [libraryName, setLibraryName] = useState("");
   const [syncError, setSyncError] = useState("");
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("topics");
   const [exerciseFilter, setExerciseFilter] = useState<ExerciseFilter>("all");
@@ -229,8 +231,12 @@ export default function SpanishBuddy() {
     const timer = window.setTimeout(async () => {
       try {
         const response = await fetch(`${apiUrl("sync")}?status=1`, { cache: "no-store" });
-        const body = await response.json() as { synced?: boolean };
-        if (response.ok) setSynced(body.synced === true);
+        const body = await response.json() as { synced?: boolean; name?: string };
+        if (response.ok) {
+          setSynced(body.synced === true);
+          setLibraryName(body.name ?? "");
+          setSyncName(body.name || "Mi biblioteca");
+        }
       } catch {
         // Sync is optional; the local browser library remains fully usable.
       }
@@ -280,17 +286,23 @@ export default function SpanishBuddy() {
       setSyncError("Usa una frase de al menos 16 caracteres.");
       return;
     }
+    if (!syncName.trim()) {
+      setSyncError("Ponle un nombre a esta biblioteca.");
+      return;
+    }
     setSyncing(true);
     setSyncError("");
     try {
       const response = await fetch(apiUrl("sync"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ passphrase: syncPassphrase }),
+        body: JSON.stringify({ action: synced ? "rekey" : "connect", passphrase: syncPassphrase, name: syncName }),
       });
-      const body = await response.json() as { synced?: boolean; error?: string };
+      const body = await response.json() as { synced?: boolean; name?: string; error?: string };
       if (!response.ok || !body.synced) throw new Error(body.error || "No se ha podido sincronizar la biblioteca.");
       setSynced(true);
+      setLibraryName(body.name || syncName.trim());
+      setSyncName(body.name || syncName.trim());
       setSyncPassphrase("");
       await loadLibrary();
       setSyncOpen(false);
@@ -313,6 +325,8 @@ export default function SpanishBuddy() {
       const body = await response.json() as { synced?: boolean; error?: string };
       if (!response.ok || body.synced !== false) throw new Error(body.error || "No se ha podido desconectar este dispositivo.");
       setSynced(false);
+      setLibraryName("");
+      setSyncName("Mi biblioteca");
       setSyncOpen(false);
       setLessons([]);
       setItems([]);
@@ -754,13 +768,13 @@ export default function SpanishBuddy() {
         <div className="sb-account-tools">
           <button
             className={`sb-level ${synced ? "synced" : ""}`}
-            onClick={() => { setSyncError(""); setSyncOpen(true); }}
-            aria-label={synced ? "Biblioteca sincronizada. Abrir sincronización" : "Sincronizar biblioteca"}
+            onClick={() => { setSyncError(""); setSyncName(libraryName || "Mi biblioteca"); setSyncOpen(true); }}
+            aria-label={synced ? `${libraryName || "Biblioteca sincronizada"}. Abrir sincronización` : "Sincronizar biblioteca"}
             aria-haspopup="dialog"
             aria-expanded={syncOpen}
             aria-controls="sb-sync-dialog"
           >
-            <span>B1</span><small><b>{synced ? "Sincronizado" : "Sincronizar"}</b><i>Español de España</i></small>
+            <span>B1</span><small><b>{synced ? libraryName || "Mi biblioteca" : "Sincronizar"}</b><i>Español de España</i></small>
           </button>
         </div>
       </header>
@@ -1093,22 +1107,29 @@ export default function SpanishBuddy() {
           <form className="sb-item-editor sb-sync-dialog" onSubmit={syncLibrary}>
             <div className="sb-editor-head">
               <div><p className="sb-eyebrow">La misma biblioteca en todos tus dispositivos</p><h2 id="sb-sync-title">Sincronizar</h2></div>
-              <button type="button" onClick={() => { setSyncOpen(false); setSyncPassphrase(""); setSyncError(""); }} aria-label="Cerrar">×</button>
+              <button type="button" onClick={() => { setSyncOpen(false); setSyncPassphrase(""); setSyncName(libraryName || "Mi biblioteca"); setSyncError(""); }} aria-label="Cerrar">×</button>
             </div>
             {synced ? (
               <div className="sb-sync-connected-view">
-                <div className="sb-sync-connected"><span aria-hidden="true">✓</span><div><strong>Esta biblioteca está sincronizada.</strong><p>Usa la misma frase en tu otro dispositivo para abrirla allí.</p></div></div>
+                <div className="sb-sync-connected"><span aria-hidden="true">✓</span><div><strong>{libraryName || "Mi biblioteca"}</strong><p>Configura una frase nueva para esta biblioteca y úsala en tus otros dispositivos.</p></div></div>
+                <div className="sb-sync-rekey-fields">
+                  <label className="sb-sync-field"><span>Nombre de la biblioteca</span><input type="text" autoComplete="off" value={syncName} onChange={(event) => setSyncName(event.target.value)} maxLength={60} placeholder="p. ej. Español B1" required /></label>
+                  <label className="sb-sync-field"><span>Nueva frase de sincronización</span><input type="password" autoComplete="new-password" value={syncPassphrase} onChange={(event) => setSyncPassphrase(event.target.value)} minLength={16} maxLength={160} placeholder="p. ej. cuatro palabras que solo tú recuerdas" required /><small>Mínimo 16 caracteres. Tus lecciones y tu progreso se conservarán.</small></label>
+                </div>
                 {syncError && <p className="sb-sync-error" role="alert">{syncError}</p>}
+                <div className="sb-sync-warning"><strong>La frase anterior dejará de funcionar.</strong><span>Los otros dispositivos deberán conectarse de nuevo con la frase nueva.</span></div>
+                <button className="sb-primary sb-sync-submit" disabled={syncing || !syncName.trim() || syncPassphrase.trim().length < 16}>{syncing ? "Guardando…" : "Guardar nombre y nueva frase"}<span>→</span></button>
                 <button className="sb-disconnect-button" type="button" disabled={syncing} onClick={() => void disconnectLibrary()}>{syncing ? "Desconectando…" : "Desconectar este dispositivo"}</button>
                 <small className="sb-disconnect-note">La biblioteca sincronizada no se borrará. Podrás recuperarla introduciendo de nuevo la misma frase.</small>
               </div>
             ) : (
               <>
                 <p className="sb-sync-copy">Elige una frase larga y memorable. Tus contenidos actuales se unirán a la biblioteca vinculada con esa frase.</p>
-                <label className="sb-sync-field"><span>Frase de sincronización</span><input type="password" autoComplete="new-password" autoFocus value={syncPassphrase} onChange={(event) => setSyncPassphrase(event.target.value)} minLength={16} maxLength={160} placeholder="p. ej. cuatro palabras que solo tú recuerdas" required /><small>Mínimo 16 caracteres. Se distingue entre mayúsculas y minúsculas. La frase no se guarda.</small></label>
+                <label className="sb-sync-field"><span>Nombre de la biblioteca</span><input type="text" autoComplete="off" autoFocus value={syncName} onChange={(event) => setSyncName(event.target.value)} maxLength={60} placeholder="p. ej. Español B1" required /></label>
+                <label className="sb-sync-field"><span>Frase de sincronización</span><input type="password" autoComplete="new-password" value={syncPassphrase} onChange={(event) => setSyncPassphrase(event.target.value)} minLength={16} maxLength={160} placeholder="p. ej. cuatro palabras que solo tú recuerdas" required /><small>Mínimo 16 caracteres. Se distingue entre mayúsculas y minúsculas. La frase no se guarda.</small></label>
                 {syncError && <p className="sb-sync-error" role="alert">{syncError}</p>}
-                <div className="sb-sync-warning"><strong>Guárdala bien.</strong><span>Para este MVP no podemos recuperar ni cambiar una frase perdida.</span></div>
-                <button className="sb-primary sb-sync-submit" disabled={syncing || syncPassphrase.trim().length < 16}>{syncing ? "Sincronizando…" : "Sincronizar biblioteca"}<span>→</span></button>
+                <div className="sb-sync-warning"><strong>Guárdala bien.</strong><span>No podemos recuperar una frase perdida. Podrás cambiarla mientras esta biblioteca siga conectada en algún dispositivo.</span></div>
+                <button className="sb-primary sb-sync-submit" disabled={syncing || !syncName.trim() || syncPassphrase.trim().length < 16}>{syncing ? "Sincronizando…" : "Sincronizar biblioteca"}<span>→</span></button>
               </>
             )}
           </form>

@@ -1,0 +1,1 @@
+ALTER TABLE `spanish_buddy_sync_profiles` ADD `name` text DEFAULT 'Mi biblioteca' NOT NULL;

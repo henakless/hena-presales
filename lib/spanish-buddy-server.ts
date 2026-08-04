@@ -11,6 +11,7 @@ export async function ensureSpanishBuddySchema(db: D1Database) {
   await db.batch([
     db.prepare(`CREATE TABLE IF NOT EXISTS spanish_buddy_sync_profiles (
       owner_id TEXT PRIMARY KEY,
+      name TEXT NOT NULL DEFAULT 'Mi biblioteca',
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`),
     db.prepare(`CREATE TABLE IF NOT EXISTS spanish_buddy_lessons (
@@ -100,9 +101,28 @@ export async function ensureSpanishBuddySchema(db: D1Database) {
       lesson_id TEXT NOT NULL,
       exercise_type TEXT NOT NULL,
       payload TEXT NOT NULL,
+      item_content_hash TEXT NOT NULL DEFAULT '',
+      generator_version TEXT NOT NULL DEFAULT 'v1',
+      quality_status TEXT NOT NULL DEFAULT 'active',
       use_count INTEGER NOT NULL DEFAULT 0,
+      last_used_at TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS spanish_buddy_practice_sessions (
+      id TEXT PRIMARY KEY,
+      owner_id TEXT NOT NULL,
+      mode TEXT NOT NULL DEFAULT 'adaptive',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS spanish_buddy_variant_usage (
+      id TEXT PRIMARY KEY,
+      owner_id TEXT NOT NULL,
+      session_id TEXT NOT NULL,
+      variant_id TEXT NOT NULL,
+      item_id TEXT NOT NULL,
+      exercise_type TEXT NOT NULL,
+      shown_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`),
     db.prepare("CREATE INDEX IF NOT EXISTS sb_lessons_owner_idx ON spanish_buddy_lessons(owner_id, created_at)"),
     db.prepare("CREATE INDEX IF NOT EXISTS sb_items_owner_idx ON spanish_buddy_items(owner_id, next_review_at)"),
@@ -113,11 +133,29 @@ export async function ensureSpanishBuddySchema(db: D1Database) {
     db.prepare("CREATE INDEX IF NOT EXISTS sb_ai_usage_owner_idx ON spanish_buddy_ai_usage(owner_id, created_at)"),
     db.prepare("CREATE INDEX IF NOT EXISTS sb_exercise_variants_owner_idx ON spanish_buddy_exercise_variants(owner_id, exercise_type, use_count)"),
     db.prepare("CREATE INDEX IF NOT EXISTS sb_exercise_variants_lesson_idx ON spanish_buddy_exercise_variants(lesson_id)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS sb_practice_sessions_owner_idx ON spanish_buddy_practice_sessions(owner_id, created_at)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS sb_variant_usage_owner_idx ON spanish_buddy_variant_usage(owner_id, shown_at)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS sb_variant_usage_variant_idx ON spanish_buddy_variant_usage(variant_id, shown_at)"),
   ]);
 
+  const profileColumns = await db.prepare("PRAGMA table_info(spanish_buddy_sync_profiles)").all<{ name: string }>();
+  if (!(profileColumns.results ?? []).some((column) => column.name === "name")) {
+    await db.prepare("ALTER TABLE spanish_buddy_sync_profiles ADD COLUMN name TEXT NOT NULL DEFAULT 'Mi biblioteca'").run();
+  }
   const columns = await db.prepare("PRAGMA table_info(spanish_buddy_items)").all<{ name: string }>();
   if (!(columns.results ?? []).some((column) => column.name === "learning_type")) {
     await db.prepare("ALTER TABLE spanish_buddy_items ADD COLUMN learning_type TEXT NOT NULL DEFAULT 'word'").run();
+  }
+  const variantColumns = await db.prepare("PRAGMA table_info(spanish_buddy_exercise_variants)").all<{ name: string }>();
+  const variantColumnNames = new Set((variantColumns.results ?? []).map((column) => column.name));
+  const missingVariantColumns = [
+    ["item_content_hash", "TEXT NOT NULL DEFAULT ''"],
+    ["generator_version", "TEXT NOT NULL DEFAULT 'v1'"],
+    ["quality_status", "TEXT NOT NULL DEFAULT 'active'"],
+    ["last_used_at", "TEXT"],
+  ].filter(([name]) => !variantColumnNames.has(name));
+  for (const [name, definition] of missingVariantColumns) {
+    await db.prepare(`ALTER TABLE spanish_buddy_exercise_variants ADD COLUMN ${name} ${definition}`).run();
   }
 }
 

@@ -215,8 +215,14 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(syncSource, /crypto\.subtle\.digest/i);
   assert.match(syncSource, /spanish_buddy_sync_profiles/i);
   assert.match(syncSource, /action === "disconnect"/i);
+  assert.match(syncSource, /action === "rekey"/i);
+  assert.match(syncSource, /Esa frase ya pertenece a otra biblioteca/i);
+  assert.match(syncSource, /spanish_buddy_practice_sessions/i);
   assert.doesNotMatch(syncSource, /INSERT[^\n]+passphrase/i);
   assert.match(pageSource, /Desconectar este dispositivo/i);
+  assert.match(pageSource, /Nombre de la biblioteca/i);
+  assert.match(pageSource, /Guardar nombre y nueva frase/i);
+  assert.match(pageSource, /libraryName/i);
 
   const evaluatorSource = await readFile(new URL("../app/spanishbuddy/api/evaluate/route.ts", import.meta.url), "utf8");
   assert.match(evaluatorSource, /DEFAULT_SPANISH_BUDDY_MODEL = "gpt-5\.6-terra"/i);
@@ -239,15 +245,26 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(exerciseLibrarySource, /hablar con · yo · presente/i);
 
   const practiceSource = await readFile(new URL("../app/spanishbuddy/api/practice/route.ts", import.meta.url), "utf8");
-  assert.match(practiceSource, /DEFAULT_SPANISH_BUDDY_MODEL = "gpt-5\.6-terra"/i);
-  assert.match(practiceSource, /Every non-multiple-choice exercise requires the learner to type/i);
   assert.match(practiceSource, /spanish_buddy_exercise_variants/i);
+  assert.match(practiceSource, /spanish_buddy_variant_usage/i);
+  assert.match(practiceSource, /last_used_at < datetime\('now', '-7 days'\)/i);
+  assert.match(practiceSource, /weightedItem/i);
+  assert.match(practiceSource, /scheduleSpanishBuddyExerciseRefill/i);
   assert.match(practiceSource, /germanSupport/i);
   assert.match(practiceSource, /grammarReminder/i);
   assert.match(practiceSource, /strongerHint/i);
   assert.match(practiceSource, /answerTranslation/i);
-  assert.match(practiceSource, /Never use underscores, blanks, dice metaphors/i);
-  assert.match(practiceSource, /Never repeat the instruction inside prompt or context/i);
+  const exerciseCacheSource = await readFile(new URL("../lib/spanish-buddy-exercise-cache.ts", import.meta.url), "utf8");
+  assert.match(exerciseCacheSource, /DEFAULT_SPANISH_BUDDY_MODEL = "gpt-5\.6-terra"/i);
+  assert.match(exerciseCacheSource, /Every non-multiple-choice exercise requires the learner to type/i);
+  assert.match(exerciseCacheSource, /Never use underscores, blanks, dice metaphors/i);
+  assert.match(exerciseCacheSource, /Never repeat the instruction inside prompt or context/i);
+  assert.match(exerciseCacheSource, /seedDeterministicExerciseCache/i);
+  assert.match(exerciseCacheSource, /getRequestExecutionContext/i);
+
+  const lessonSource = await readFile(new URL("../app/spanishbuddy/api/lessons/route.ts", import.meta.url), "utf8");
+  assert.match(lessonSource, /warmSpanishBuddyExerciseCache/i);
+  assert.match(lessonSource, /quality_status = 'retired'/i);
 
   const attemptSource = await readFile(new URL("../app/spanishbuddy/api/attempts/route.ts", import.meta.url), "utf8");
   assert.match(attemptSource, /action === "override"/i);

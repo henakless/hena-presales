@@ -6,6 +6,7 @@ import {
   getSpanishBuddyDatabase,
   jsonWithOwner,
 } from "../../../../lib/spanish-buddy-server";
+import { warmSpanishBuddyExerciseCache } from "../../../../lib/spanish-buddy-exercise-cache";
 
 export const runtime = "edge";
 
@@ -154,6 +155,9 @@ export async function GET(request: Request) {
       };
     });
 
+    // Backfill starter pools for lessons created before cache warming existed.
+    await warmSpanishBuddyExerciseCache(db, ownerId, items);
+
     return jsonWithOwner({ lessons, items, topics }, 200, setCookie);
   } catch (error) {
     console.error("Spanish Buddy lessons read failed", error);
@@ -191,18 +195,19 @@ export async function POST(request: Request) {
     const db = await getSpanishBuddyDatabase();
     await ensureSpanishBuddySchema(db);
     const lessonId = crypto.randomUUID();
+    const preparedItems = selected.map((item) => ({ item, id: crypto.randomUUID() }));
     const statements = [
       db.prepare(
         `INSERT INTO spanish_buddy_lessons (id, owner_id, title, summary, source_type)
          VALUES (?, ?, ?, ?, ?)`,
       ).bind(lessonId, ownerId, title, summary, sourceType),
-      ...selected.map((item) =>
+      ...preparedItems.map(({ item, id }) =>
         db.prepare(
           `INSERT INTO spanish_buddy_items
            (id, owner_id, lesson_id, kind, learning_type, spanish, translation, explanation, example, accepted_answers, provenance)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         ).bind(
-          crypto.randomUUID(),
+          id,
           ownerId,
           lessonId,
           item.kind,
@@ -223,6 +228,24 @@ export async function POST(request: Request) {
 
     await db.batch(statements);
     await ensureSpanishBuddyTopicsForOwner(db, ownerId);
+    await warmSpanishBuddyExerciseCache(db, ownerId, preparedItems.map(({ item, id }) => ({
+      id,
+      lessonId,
+      lessonTitle: title,
+      kind: item.kind,
+      learningType: item.learningType || inferLearningType(item),
+      spanish: item.spanish.trim().slice(0, 180),
+      translation: String(item.translation ?? "").trim().slice(0, 300),
+      explanation: String(item.explanation ?? "").trim().slice(0, 700),
+      example: String(item.example ?? "").trim().slice(0, 400),
+      acceptedAnswers: [...new Set((Array.isArray(item.acceptedAnswers) ? item.acceptedAnswers : [])
+        .map((value) => String(value).trim().slice(0, 300)).filter(Boolean))].slice(0, 5),
+      provenance: item.provenance === "suggested" ? "suggested" : "course",
+      mastery: 0,
+      attempts: 0,
+      correctCount: 0,
+      nextReviewAt: new Date().toISOString(),
+    })));
     return jsonWithOwner({ lessonId, savedItems: selected.length }, 201, setCookie);
   } catch (error) {
     console.error("Spanish Buddy lesson save failed", error);
@@ -271,9 +294,19 @@ export async function PATCH(request: Request) {
     await ensureSpanishBuddyTopicsForOwner(db, ownerId);
     await db.prepare("DELETE FROM spanish_buddy_answer_cache WHERE owner_id = ? AND item_id = ?").bind(ownerId, id).run();
     await db.prepare(
-      `DELETE FROM spanish_buddy_exercise_variants
-       WHERE owner_id = ? AND lesson_id = (SELECT lesson_id FROM spanish_buddy_items WHERE id = ? AND owner_id = ?)`,
-    ).bind(ownerId, id, ownerId).run();
+      `UPDATE spanish_buddy_exercise_variants
+       SET quality_status = 'retired', updated_at = CURRENT_TIMESTAMP
+       WHERE owner_id = ? AND item_id = ?`,
+    ).bind(ownerId, id).run();
+    const refreshed = await db.prepare(
+      `SELECT i.id, i.lesson_id, l.title AS lesson_title, i.kind, i.learning_type, i.spanish,
+              i.translation, i.explanation, i.example, i.accepted_answers, i.provenance,
+              i.mastery, i.attempts, i.correct_count, i.next_review_at
+       FROM spanish_buddy_items i
+       JOIN spanish_buddy_lessons l ON l.id = i.lesson_id
+       WHERE i.id = ? AND i.owner_id = ?`,
+    ).bind(id, ownerId).first<ItemRow>();
+    if (refreshed) await warmSpanishBuddyExerciseCache(db, ownerId, [mapItem(refreshed)]);
     return jsonWithOwner({ item: { ...payload, id, kind, learningType, spanish } }, 200, setCookie);
   } catch (error) {
     console.error("Spanish Buddy item update failed", error);
