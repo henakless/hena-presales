@@ -55,9 +55,20 @@ export function inferLearningType(item: Pick<ExtractedItem, "kind" | "spanish" |
       ? "conjugation"
       : "grammar_rule";
   }
-  const words = item.spanish.trim().split(/\s+/).length;
-  if (words <= 2) return words === 1 ? "word" : "collocation";
-  return /[.…?¿!¡]$/.test(item.spanish.trim()) ? "fixed_expression" : "sentence_pattern";
+  const spanish = item.spanish.trim();
+  const words = spanish.split(/\s+/);
+  if (words.length === 1) return "word";
+
+  // Articles and adjective complements are part of a dictionary headword, not
+  // a collocation: "la sencillez", "el/la carterista", "redes sociales".
+  // Reserve collocations for lexical combinations learners must retain
+  // together, especially verbs with their governed preposition or complement.
+  const firstWord = words[0].toLocaleLowerCase("es-ES").replace(/[^a-záéíóúüñ/]/g, "");
+  const startsWithInfinitive = /(?:ar|er|ir|arse|erse|irse)$/.test(firstWord);
+  if (startsWithInfinitive) return "collocation";
+  if (words.length === 2) return "word";
+
+  return /[.…?¿!¡]$/.test(spanish) ? "fixed_expression" : "sentence_pattern";
 }
 
 export const EXAMPLE_NOTES = [

@@ -4,7 +4,7 @@ import {
   isActiveExerciseId,
   type ExerciseCategory,
 } from "../../../../lib/spanish-buddy-exercises";
-import type { LearningType, SavedItem } from "../../../../lib/spanish-buddy";
+import { inferLearningType, type LearningType, type SavedItem } from "../../../../lib/spanish-buddy";
 import {
   ensureSpanishBuddySchema,
   getOwner,
@@ -125,7 +125,7 @@ function acceptedAnswers(value: string) {
 }
 
 function mapItem(row: ItemRow): SavedItem {
-  return {
+  const item = {
     id: row.id,
     lessonId: row.lesson_id,
     lessonTitle: row.lesson_title,
@@ -142,6 +142,12 @@ function mapItem(row: ItemRow): SavedItem {
     correctCount: row.correct_count,
     nextReviewAt: row.next_review_at,
   };
+  const inferred = inferLearningType(item);
+  const learningType = (row.kind === "grammar" && row.learning_type === "word")
+    || (row.kind === "vocabulary" && row.learning_type === "word" && inferred !== "word")
+    ? inferred
+    : row.learning_type || inferred;
+  return { ...item, learningType };
 }
 
 function compatibleItems(category: ExerciseCategory, items: SavedItem[]) {
