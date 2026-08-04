@@ -27,7 +27,6 @@ export const EXERCISE_PRESETS: Array<{ id: string; name: string; description: st
   { id: "quick", name: "Rápido y fácil", description: "Opciones y huecos, sin escribir demasiado.", modes: ["multiple-choice", "fill-gap"] },
   { id: "public", name: "En público", description: "Práctica silenciosa sin escuchar ni hablar.", modes: ["multiple-choice", "fill-gap", "writing", "reading"] },
   { id: "hands-free", name: "Manos libres", description: "Solo comprensión auditiva y expresión oral.", modes: ["listening", "speaking"] },
-  { id: "full", name: "A fondo", description: "Todos los formatos de ejercicio disponibles.", modes: EXERCISE_MODES.map((mode) => mode.id) },
 ];
 
 export const EXERCISE_CATEGORIES: Array<{ id: ExerciseCategory; name: string; description: string }> = [

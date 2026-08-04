@@ -18,7 +18,7 @@ test("practice presets cover the intended activity modes", () => {
   assert.deepEqual(modesFor("quick"), ["multiple-choice", "fill-gap"]);
   assert.deepEqual(modesFor("public"), ["multiple-choice", "fill-gap", "writing", "reading"]);
   assert.deepEqual(modesFor("hands-free"), ["listening", "speaking"]);
-  assert.deepEqual(new Set(modesFor("full")), new Set(EXERCISE_MODES.map((mode) => mode.id)));
+  assert.equal(modesFor("full"), undefined);
 });
 
 test("multiple-choice is an explicit contract for the three selectable exercise types", () => {

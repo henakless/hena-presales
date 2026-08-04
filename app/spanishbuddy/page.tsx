@@ -551,12 +551,12 @@ export default function SpanishBuddy() {
     const presetExerciseIds = EXERCISE_LIBRARY
       .filter((exercise) => exercise.status === "active" && modes.includes(exercise.mode))
       .map((exercise) => exercise.id);
-    const presetIsSelected = presetExerciseIds.length > 0
+    const presetIsSelected = presetExerciseIds.length === selectedExerciseTypes.length
       && presetExerciseIds.every((id) => selectedExerciseTypes.includes(id));
 
     updateExerciseSelection(presetIsSelected
-      ? selectedExerciseTypes.filter((id) => !presetExerciseIds.includes(id))
-      : [...new Set([...selectedExerciseTypes, ...presetExerciseIds])]);
+      ? []
+      : presetExerciseIds);
   }
 
   async function startSession(sourceItems = items, sessionSize = 8) {
@@ -1119,7 +1119,7 @@ export default function SpanishBuddy() {
           <section className="sb-practice-presets" aria-labelledby="sb-practice-presets-title">
             <div className="sb-practice-presets-head">
               <div><p className="sb-eyebrow">Combinaciones rápidas</p><h2 id="sb-practice-presets-title">¿Qué te apetece ahora?</h2></div>
-              <p>Pulsa otra vez una combinación activa para quitar sus ejercicios. Tus ajustes individuales se conservan.</p>
+              <p>Elige un punto de partida y ajusta después cualquier ejercicio individual. Pulsa otra vez la combinación activa para vaciarla.</p>
             </div>
             <div className="sb-practice-preset-grid">
               {EXERCISE_PRESETS.map((preset) => {
@@ -1127,7 +1127,9 @@ export default function SpanishBuddy() {
                   .filter((exercise) => exercise.status === "active" && preset.modes.includes(exercise.mode))
                   .map((exercise) => exercise.id);
                 const selectedCount = presetExerciseIds.filter((id) => selectedExerciseTypes.includes(id)).length;
-                const selected = presetExerciseIds.length > 0 && selectedCount === presetExerciseIds.length;
+                const selected = presetExerciseIds.length > 0
+                  && selectedCount === presetExerciseIds.length
+                  && selectedExerciseTypes.length === presetExerciseIds.length;
                 const unavailable = presetExerciseIds.length === 0;
                 return (
                   <button

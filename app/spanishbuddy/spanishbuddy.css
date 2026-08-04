@@ -235,7 +235,7 @@
 .sb-practice-presets-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 380px); gap: 48px; align-items: end; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--sb-ink); }
 .sb-practice-presets-head h2 { margin: 7px 0 0; font-family: Georgia, serif; font-size: 32px; font-weight: 400; }
 .sb-practice-presets-head > p { margin: 0; color: var(--sb-muted); font-size: 11px; line-height: 1.6; }
-.sb-practice-preset-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.sb-practice-preset-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .sb-practice-preset { min-height: 210px; padding: 22px; border: 1px solid var(--sb-line); background: var(--sb-paper); color: var(--sb-ink); text-align: left; cursor: pointer; transition: border-color .16s ease, background .16s ease, box-shadow .16s ease, transform .16s ease; }
 .sb-practice-preset:hover:not(:disabled) { border-color: var(--sb-red); background: #fff8f4; }
 .sb-practice-preset.selected { border: 2px solid var(--sb-red); background: #fff8f4; box-shadow: 4px 4px 0 var(--sb-red); transform: translate(-1px, -1px); }
