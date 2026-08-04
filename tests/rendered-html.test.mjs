@@ -202,6 +202,8 @@ test("serves Spanish Buddy at its public path", async () => {
   assert.match(pageSource, /EXERCISE_LIBRARY/i);
   assert.match(pageSource, /Deseleccionar todos/i);
   assert.match(pageSource, /selectedExerciseTypes/i);
+  assert.match(pageSource, /toggleExerciseCategory/i);
+  assert.match(pageSource, /Seleccionar.*todos los ejercicios de/i);
   assert.match(pageSource, /apiUrl\("practice"\)/i);
   assert.match(pageSource, /Información y ayuda en alemán/i);
   assert.match(pageSource, /Mostrar más ayuda/i);
