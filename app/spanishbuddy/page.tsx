@@ -13,6 +13,7 @@ import {
   EXAMPLE_NOTES,
   MAX_LESSON_ITEMS,
   masteryLabel,
+  type CurriculumTopic,
   type ExtractedItem,
   type ExtractionResult,
   type LearningTopic,
@@ -20,7 +21,7 @@ import {
   type SavedLesson,
 } from "../../lib/spanish-buddy";
 
-type View = "today" | "add" | "library" | "exercises";
+type View = "today" | "add" | "library" | "levels" | "exercises";
 type LibraryFilter = "topics" | "all" | "words" | "expressions" | "grammar";
 
 type Exercise = {
@@ -171,6 +172,7 @@ export default function SpanishBuddy() {
   const [lessons, setLessons] = useState<SavedLesson[]>([]);
   const [items, setItems] = useState<SavedItem[]>([]);
   const [topics, setTopics] = useState<LearningTopic[]>([]);
+  const [curriculum, setCurriculum] = useState<CurriculumTopic[]>([]);
   const [selectedTopic, setSelectedTopic] = useState<LearningTopic | null>(null);
   const [topicAnswerRevealed, setTopicAnswerRevealed] = useState(false);
   const [loadingLibrary, setLoadingLibrary] = useState(true);
@@ -219,6 +221,7 @@ export default function SpanishBuddy() {
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("topics");
   const [topicQuery, setTopicQuery] = useState("");
   const [topicSort, setTopicSort] = useState<"recent" | "weak" | "az">("recent");
+  const [topicLevel, setTopicLevel] = useState<"all" | LearningTopic["cefrLevel"]>("all");
 
   const currentExercise = exercises[exerciseIndex];
   const dueItems = useMemo(
@@ -230,6 +233,17 @@ export default function SpanishBuddy() {
     : items.length
       ? Math.round(items.reduce((sum, item) => sum + item.mastery, 0) / items.length)
       : 0;
+  const curriculumLevels = useMemo(() => (["A1", "A2", "B1", "B2", "C1", "C2"] as const).map((level) => {
+    const levelTopics = curriculum.filter((topic) => topic.cefrLevel === level);
+    return {
+      level,
+      topics: levelTopics,
+      mastery: Math.round(levelTopics.reduce((sum, topic) => sum + topic.mastery, 0) / Math.max(levelTopics.length, 1)),
+      learned: levelTopics.filter((topic) => topic.learned).length,
+      mastered: levelTopics.filter((topic) => topic.mastery >= 82).length,
+    };
+  }), [curriculum]);
+  const curriculumMastery = Math.round(curriculum.reduce((sum, topic) => sum + topic.mastery, 0) / Math.max(curriculum.length, 1));
   const libraryFilters: Array<{ id: LibraryFilter; label: string }> = [
     { id: "topics", label: "Temas" },
     { id: "all", label: "Todo" },
@@ -265,15 +279,16 @@ export default function SpanishBuddy() {
     .filter((lesson) => lesson.items.length > 0), [lessons, libraryFilter]);
   const visibleTopics = useMemo(() => {
     const query = topicQuery.trim().toLocaleLowerCase("es-ES");
-    const filtered = query
-      ? topics.filter((topic) => `${topic.title} ${topic.summary}`.toLocaleLowerCase("es-ES").includes(query))
-      : [...topics];
+    const filtered = topics.filter((topic) => (
+      (topicLevel === "all" || topic.cefrLevel === topicLevel)
+      && (!query || `${topic.title} ${topic.summary}`.toLocaleLowerCase("es-ES").includes(query))
+    ));
     return filtered.sort((left, right) => {
       if (topicSort === "weak") return left.mastery - right.mastery || left.title.localeCompare(right.title, "es");
       if (topicSort === "az") return left.title.localeCompare(right.title, "es");
       return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
     });
-  }, [topicQuery, topicSort, topics]);
+  }, [topicLevel, topicQuery, topicSort, topics]);
   function completeExercisePrompt(exercise: Exercise) {
     return [exercise.instruction, exercise.context, exercise.prompt].filter(Boolean).join("\n\n");
   }
@@ -304,11 +319,12 @@ export default function SpanishBuddy() {
   async function loadLibrary() {
     try {
       const response = await fetch(apiUrl("lessons"), { cache: "no-store" });
-      const body = (await response.json()) as { lessons?: SavedLesson[]; items?: SavedItem[]; topics?: LearningTopic[]; error?: string };
+      const body = (await response.json()) as { lessons?: SavedLesson[]; items?: SavedItem[]; topics?: LearningTopic[]; curriculum?: CurriculumTopic[]; error?: string };
       if (!response.ok) throw new Error(body.error || "No se ha podido cargar tu biblioteca.");
       setLessons(body.lessons ?? []);
       setItems(body.items ?? []);
       setTopics(body.topics ?? []);
+      setCurriculum(body.curriculum ?? []);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "No se ha podido cargar tu biblioteca.");
     } finally {
@@ -769,7 +785,7 @@ export default function SpanishBuddy() {
       const answerResult: AnswerResult = localVerdict === "almost" ? "almost" : "correct";
       setResult(answerResult);
       setAnswerFeedback(answerResult === "correct"
-        ? { title: localVerdict === "exact" ? "Exacto." : "También es correcto.", message: currentExercise.answer }
+        ? { title: localVerdict === "exact" ? "Exacto." : "También es correcto.", message: "La respuesta coincide con la referencia." }
         : { title: "Casi.", message: "La respuesta se entiende; revisa el acento o la ortografía." });
       setRevealed(true);
       void recordAttempt(answerResult);
@@ -926,7 +942,7 @@ export default function SpanishBuddy() {
     setResult(correct ? "correct" : "incorrect");
     setAnswerFeedback({
       title: correct ? "Marcada como correcta." : "Solución aceptada.",
-      message: correct ? "Tu formulación cuenta en esta repetición." : currentExercise.answer,
+      message: correct ? "Tu formulación cuenta en esta repetición." : "Consulta la respuesta de referencia.",
     });
     void recordAttempt(correct ? "correct" : "incorrect");
   }
@@ -938,7 +954,7 @@ export default function SpanishBuddy() {
     setResult(correct ? "correct" : "incorrect");
     setAnswerFeedback({
       title: correct ? "Exacto." : "Todavía no.",
-      message: correct ? currentExercise.answer : `Solución: ${currentExercise.answer}`,
+      message: correct ? "Has elegido la opción correcta." : "Compara tu elección con la opción marcada.",
     });
     setRevealed(true);
     void recordAttempt(correct ? "correct" : "incorrect");
@@ -988,6 +1004,7 @@ export default function SpanishBuddy() {
           <button className={view === "today" ? "active" : ""} onClick={() => setView("today")}>Hoy</button>
           <button className={view === "add" ? "active" : ""} onClick={() => setView("add")}>Nueva lección</button>
           <button className={view === "library" ? "active" : ""} onClick={() => setView("library")}>Biblioteca</button>
+          <button className={view === "levels" ? "active" : ""} onClick={() => setView("levels")}>Niveles</button>
           <button className={view === "exercises" ? "active" : ""} onClick={() => setView("exercises")}>Ejercicios</button>
         </nav>
         <div className="sb-account-tools">
@@ -1162,6 +1179,7 @@ export default function SpanishBuddy() {
                 </div>
                 <div className="sb-topic-tools">
                   <label><span>Buscar un tema</span><input type="search" value={topicQuery} onChange={(event) => setTopicQuery(event.target.value)} placeholder="p. ej. indefinido" /></label>
+                  <label><span>Nivel MCER</span><select value={topicLevel} onChange={(event) => setTopicLevel(event.target.value as typeof topicLevel)}><option value="all">Todos</option>{(["A1", "A2", "B1", "B2", "C1", "C2"] as const).map((level) => <option value={level} key={level}>{level}</option>)}</select></label>
                   <label><span>Ordenar</span><select value={topicSort} onChange={(event) => setTopicSort(event.target.value as typeof topicSort)}><option value="recent">Más recientes</option><option value="weak">Necesitan repaso</option><option value="az">A–Z</option></select></label>
                 </div>
                 <div className="sb-topic-list">
@@ -1169,7 +1187,7 @@ export default function SpanishBuddy() {
                     <article className="sb-topic-index-card" key={topic.id}>
                       <span className="sb-topic-index-number">{String(index + 1).padStart(2, "0")}</span>
                       <div className="sb-topic-index-copy">
-                        <div className="sb-topic-meta"><span>Tema de gramática</span><span>Actualizado {new Date(topic.updatedAt).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}</span></div>
+                        <div className="sb-topic-meta"><span><strong className={`sb-cefr-badge sb-cefr-${topic.cefrLevel.toLocaleLowerCase()}`}>{topic.cefrLevel}</strong> Tema de gramática</span><span>Actualizado {new Date(topic.updatedAt).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}</span></div>
                         <h2>{topic.title}</h2>
                         <p>{topic.summary}</p>
                         <small>{topic.lessonTitles.length} {topic.lessonTitles.length === 1 ? "lección conectada" : "lecciones conectadas"}</small>
@@ -1181,7 +1199,7 @@ export default function SpanishBuddy() {
                       <button className="sb-topic-open" onClick={() => openLearningTopic(topic)}>Abrir repaso <span>→</span></button>
                     </article>
                   ))}
-                  {!visibleTopics.length && <div className="sb-empty">No hay ningún tema que coincida con “{topicQuery}”.</div>}
+                  {!visibleTopics.length && <div className="sb-empty">No hay ningún tema que coincida con los filtros seleccionados.</div>}
                 </div>
               </section>
             ) : (
@@ -1206,6 +1224,66 @@ export default function SpanishBuddy() {
           )) : lessons.length ? (
             <div className="sb-empty sb-starter-empty"><div><strong>Aún no hay contenido en esta sección.</strong><span>Elige otra sección o añade una nueva lección.</span></div><button onClick={() => setLibraryFilter("all")}>Ver todo</button></div>
           ) : <div className="sb-empty sb-starter-empty"><div><strong>Tu biblioteca está lista para la primera lección.</strong><span>Sube tus apuntes o empieza con un ejemplo.</span></div><button onClick={() => setView("add")}>Añadir lección</button></div>}
+        </div>
+      )}
+
+      {view === "levels" && (
+        <div className="sb-shell sb-levels-shell">
+          <section className="sb-levels-hero">
+            <div>
+              <p className="sb-eyebrow">Tu ruta de español</p>
+              <h1>Dominio por <em>niveles.</em></h1>
+              <p>Todos los temas del programa aparecen aquí, también los que aún no has encontrado en tus lecciones. La flor crece con tu dominio real.</p>
+            </div>
+            <aside className="sb-levels-overall">
+              <Sunflower mastery={curriculumMastery} label={`Dominio general del programa: ${curriculumMastery}%`} />
+              <div><strong>{curriculumMastery}%</strong><span>dominio general</span><small>{curriculum.filter((topic) => topic.learned).length} de {curriculum.length} temas encontrados</small></div>
+            </aside>
+          </section>
+
+          {loadingLibrary ? <div className="sb-empty">Preparando tu ruta de aprendizaje…</div> : (
+            <div className="sb-level-groups">
+              {curriculumLevels.map((group) => (
+                <section className={`sb-level-group ${group.topics.length ? "" : "is-empty"}`} key={group.level} aria-labelledby={`sb-level-${group.level}`}>
+                  <header className="sb-level-group-header">
+                    <div className={`sb-level-mark sb-cefr-${group.level.toLocaleLowerCase()}`}>{group.level}</div>
+                    <div className="sb-level-group-title">
+                      <p className="sb-eyebrow">Nivel MCER</p>
+                      <h2 id={`sb-level-${group.level}`}>{group.level}</h2>
+                      <span>{group.topics.length ? `${group.mastered} dominados · ${group.learned} encontrados · ${group.topics.length} en total` : "Currículo todavía sin temas definidos"}</span>
+                    </div>
+                    <div className="sb-level-group-mastery">
+                      <Sunflower mastery={group.mastery} label={`${group.level}: ${group.mastery}% de dominio`} />
+                      <strong>{group.mastery}%</strong>
+                    </div>
+                  </header>
+
+                  {group.topics.length ? (
+                    <div className="sb-level-topic-list">
+                      {group.topics.map((curriculumTopic) => {
+                        const learnedTopic = topics.find((topic) => topic.key === curriculumTopic.key);
+                        const prerequisiteTitles = curriculumTopic.prerequisiteKeys
+                          .map((key) => curriculum.find((topic) => topic.key === key)?.title)
+                          .filter((title): title is string => Boolean(title));
+                        return (
+                          <article className={`sb-level-topic ${curriculumTopic.learned ? "is-learned" : "is-missing"}`} key={curriculumTopic.key}>
+                            <Sunflower mastery={curriculumTopic.mastery} label={`${curriculumTopic.title}: ${curriculumTopic.learned ? `${curriculumTopic.mastery}% de dominio` : "por aprender"}`} />
+                            <div className="sb-level-topic-copy">
+                              <span>{curriculumTopic.learned ? masteryLabel(curriculumTopic.mastery) : "Por aprender"}</span>
+                              <h3>{curriculumTopic.title}</h3>
+                              <p>{curriculumTopic.summary}</p>
+                              {prerequisiteTitles.length > 0 && <small>Antes: {prerequisiteTitles.join(" · ")}</small>}
+                            </div>
+                            {learnedTopic ? <button onClick={() => openLearningTopic(learnedTopic)}>Abrir repaso <span>→</span></button> : <span className="sb-level-topic-lock">Aún no visto</span>}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  ) : <p className="sb-level-empty-copy">Este nivel se añadirá cuando ampliemos el currículo de mini lecciones.</p>}
+                </section>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -1320,7 +1398,7 @@ export default function SpanishBuddy() {
         <div className="sb-topic-detail-backdrop" role="dialog" aria-modal="true" aria-labelledby="sb-topic-detail-title">
           <article className="sb-topic-detail">
             <header className="sb-topic-detail-header">
-              <div><p className="sb-eyebrow">Repaso de 2 minutos</p><h2 id="sb-topic-detail-title">{selectedTopic.title}</h2><p>{selectedTopic.summary}</p></div>
+              <div><p className="sb-eyebrow"><strong className={`sb-cefr-badge sb-cefr-${selectedTopic.cefrLevel.toLocaleLowerCase()}`}>{selectedTopic.cefrLevel}</strong> Repaso de 2 minutos</p><h2 id="sb-topic-detail-title">{selectedTopic.title}</h2><p>{selectedTopic.summary}</p><small className="sb-topic-level-note">Nivel de esta mini lección: {selectedTopic.levelRationale}</small></div>
               <button onClick={() => setSelectedTopic(null)} aria-label="Cerrar repaso">×</button>
             </header>
 
@@ -1482,7 +1560,7 @@ export default function SpanishBuddy() {
                 ) : (
                   <div className="sb-submitted-answer"><small>Tu respuesta</small><strong>{answer}</strong></div>
                 )}
-                {revealed && answerFeedback && <div className={`sb-feedback ${needsManualReview ? "review" : result}`}><span>{result === "correct" ? "✓" : result === "almost" ? "≈" : needsManualReview ? "?" : "→"}</span><div><strong>{answerFeedback.title}</strong><p>{answerFeedback.message}</p>{result && <div className="sb-reference-block"><p className="sb-reference">Respuesta de referencia: {currentExercise.answer}</p><button type="button" aria-expanded={answerTranslationOpen} onClick={() => setAnswerTranslationOpen((value) => !value)}>{answerTranslationOpen ? "Ocultar alemán" : "Ver en alemán"}</button>{answerTranslationOpen && <p className="sb-answer-translation" lang="de">{currentExercise.answerTranslation}</p>}</div>}{needsManualReview && <div className="sb-review-choice"><button onClick={() => resolveManualReview(true)}>Marcar como correcta</button><button onClick={() => resolveManualReview(false)}>Usar la referencia</button></div>}</div></div>}
+                {revealed && answerFeedback && <div className={`sb-feedback ${needsManualReview ? "review" : result}`}><span>{result === "correct" ? "✓" : result === "almost" ? "≈" : needsManualReview ? "?" : "→"}</span><div><strong>{answerFeedback.title}</strong><p>{answerFeedback.message}</p>{result && !currentExercise.options?.length && <div className="sb-reference-block"><p className="sb-reference">Respuesta de referencia: {currentExercise.answer}</p>{currentExercise.answerTranslation.localeCompare(currentExercise.answer, undefined, { sensitivity: "base" }) !== 0 && <><button type="button" aria-expanded={answerTranslationOpen} onClick={() => setAnswerTranslationOpen((value) => !value)}>{answerTranslationOpen ? "Ocultar alemán" : "Ver en alemán"}</button>{answerTranslationOpen && <p className="sb-answer-translation" lang="de">{currentExercise.answerTranslation}</p>}</>}</div>}{needsManualReview && <div className="sb-review-choice"><button onClick={() => resolveManualReview(true)}>Marcar como correcta</button><button onClick={() => resolveManualReview(false)}>Usar la referencia</button></div>}</div></div>}
                 {result === "incorrect" && answerJudgedByModel && <div className="sb-override-option"><span>¿La evaluación no encaja?</span><button disabled={recordingAttempt || overridingAnswer} onClick={markJudgedAnswerCorrect}>{overridingAnswer ? "Guardando…" : recordingAttempt ? "Espera un momento…" : "Marcar mi respuesta como correcta"}</button></div>}
                 {result && strongHintRevealed && <p className="sb-assisted-note">Con ayuda · esta respuesta aporta menos evidencia de dominio.</p>}
                 {result && <button className="sb-next" disabled={overridingAnswer} onClick={nextExercise}>{exerciseIndex + 1 === exercises.length ? "Ver resultado" : "Continuar"} →</button>}

@@ -1,4 +1,6 @@
-import { inferLearningType, MAX_LESSON_ITEMS, resolveLearningType, type ExtractedItem, type LearningTopic, type LearningType, type SavedItem, type SavedLesson } from "../../../../lib/spanish-buddy";
+import { inferLearningType, MAX_LESSON_ITEMS, resolveLearningType, type CurriculumTopic, type ExtractedItem, type LearningTopic, type LearningType, type SavedItem, type SavedLesson } from "../../../../lib/spanish-buddy";
+import { SPANISH_GRAMMAR_CURRICULUM } from "../../../../lib/spanish-buddy-curriculum";
+import type { CEFRLevel } from "../../../../lib/spanish-buddy-topics";
 import {
   ensureSpanishBuddySchema,
   ensureSpanishBuddyTopicsForOwner,
@@ -40,6 +42,10 @@ type ItemRow = {
 type TopicRow = {
   id: string;
   canonical_key: string;
+  cefr_level: CEFRLevel;
+  curriculum_order: number;
+  prerequisite_keys: string;
+  level_rationale: string;
   title: string;
   explanation: string;
   summary: string;
@@ -143,7 +149,8 @@ export async function GET(request: Request) {
          ORDER BY i.next_review_at ASC, i.mastery ASC, i.created_at DESC`,
       ).bind(ownerId).all<ItemRow>(),
       db.prepare(
-        `SELECT t.id, t.canonical_key, t.title, t.explanation, t.summary, t.definition,
+        `SELECT t.id, t.canonical_key, t.cefr_level, t.curriculum_order, t.prerequisite_keys,
+                t.level_rationale, t.title, t.explanation, t.summary, t.definition,
                 t.use_cases, t.formation, t.examples AS topic_examples, t.common_mistakes,
                 t.quick_check, t.updated_at, i.id AS item_id, i.explanation AS item_explanation,
                 i.example AS item_example, i.mastery, l.title AS lesson_title, l.created_at AS lesson_created_at
@@ -186,6 +193,10 @@ export async function GET(request: Request) {
       topicMap.set(row.id, {
         id: row.id,
         key: row.canonical_key,
+        cefrLevel: row.cefr_level,
+        curriculumOrder: row.curriculum_order,
+        prerequisiteKeys: parseStringArray(row.prerequisite_keys),
+        levelRationale: row.level_rationale,
         title: row.title,
         summary: row.summary,
         explanation: row.explanation,
@@ -211,11 +222,27 @@ export async function GET(request: Request) {
         mastery: Math.round(topicItems.reduce((sum, item) => sum + item.mastery, 0) / Math.max(topicItems.length, 1)),
       };
     });
+    const topicsByKey = new Map(topics.map((topic) => [topic.key, topic]));
+    const curriculum: CurriculumTopic[] = SPANISH_GRAMMAR_CURRICULUM
+      .map((definition) => {
+        const learnedTopic = topicsByKey.get(definition.key);
+        return {
+          key: definition.key,
+          title: definition.title,
+          summary: definition.summary,
+          cefrLevel: definition.cefrLevel,
+          curriculumOrder: definition.curriculumOrder,
+          prerequisiteKeys: definition.prerequisiteKeys,
+          learned: Boolean(learnedTopic),
+          mastery: learnedTopic?.mastery ?? 0,
+        };
+      })
+      .sort((left, right) => left.curriculumOrder - right.curriculumOrder);
 
     // Backfill starter pools for lessons created before cache warming existed.
     await warmSpanishBuddyExerciseCache(db, ownerId, items);
 
-    return jsonWithOwner({ lessons, items, topics }, 200, setCookie);
+    return jsonWithOwner({ lessons, items, topics, curriculum }, 200, setCookie);
   } catch (error) {
     console.error("Spanish Buddy lessons read failed", error);
     return jsonWithOwner({ error: "No se ha podido cargar tu biblioteca." }, 500, setCookie);

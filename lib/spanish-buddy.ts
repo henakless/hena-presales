@@ -1,4 +1,4 @@
-import type { TopicExample, TopicQuickCheck } from "./spanish-buddy-topics";
+import type { CEFRLevel, TopicExample, TopicQuickCheck } from "./spanish-buddy-topics";
 
 export type KnowledgeKind = "vocabulary" | "grammar";
 export type LearningType = "word" | "collocation" | "fixed_expression" | "sentence_pattern" | "grammar_rule" | "conjugation";
@@ -48,6 +48,10 @@ export type SavedLesson = {
 export type LearningTopic = {
   id: string;
   key: string;
+  cefrLevel: CEFRLevel;
+  curriculumOrder: number;
+  prerequisiteKeys: string[];
+  levelRationale: string;
   title: string;
   summary: string;
   explanation: string;
@@ -62,6 +66,17 @@ export type LearningTopic = {
   lessonTitles: string[];
   mastery: number;
   updatedAt: string;
+};
+
+export type CurriculumTopic = {
+  key: string;
+  title: string;
+  summary: string;
+  cefrLevel: CEFRLevel;
+  curriculumOrder: number;
+  prerequisiteKeys: string[];
+  learned: boolean;
+  mastery: number;
 };
 
 export function learningTopicKey(title: string) {

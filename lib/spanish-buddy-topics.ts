@@ -8,8 +8,14 @@ export type TopicQuickCheck = {
   answer: string;
 };
 
+export type CEFRLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
+
 export type GrammarTopicDefinition = {
   key: string;
+  cefrLevel: CEFRLevel;
+  curriculumOrder: number;
+  prerequisiteKeys: string[];
+  levelRationale: string;
   title: string;
   summary: string;
   definition: string;
@@ -21,6 +27,8 @@ export type GrammarTopicDefinition = {
   match: RegExp;
 };
 
+type GrammarTopicContent = Omit<GrammarTopicDefinition, "cefrLevel" | "curriculumOrder" | "prerequisiteKeys" | "levelRationale">;
+
 export type GrammarTopicSource = {
   spanish: string;
   translation?: string;
@@ -29,9 +37,9 @@ export type GrammarTopicSource = {
 
 export type TopicComponentRole = "concept" | "use" | "formation" | "exception" | "example" | "contrast";
 
-export const TOPIC_CONTENT_VERSION = "v2";
+export const TOPIC_CONTENT_VERSION = "v3";
 
-export const GRAMMAR_TOPIC_DEFINITIONS: GrammarTopicDefinition[] = [
+const GRAMMAR_TOPIC_CONTENT: GrammarTopicContent[] = [
   {
     key: "indefinido-vs-imperfecto",
     title: "Indefinido vs. imperfecto",
@@ -258,6 +266,30 @@ export const GRAMMAR_TOPIC_DEFINITIONS: GrammarTopicDefinition[] = [
     match: /\b(?:comparativ|comparaciones|mas.{0,20}que|tan.{0,20}como)\b/i,
   },
 ];
+
+const TOPIC_CURRICULUM: Record<string, Pick<GrammarTopicDefinition, "cefrLevel" | "curriculumOrder" | "prerequisiteKeys" | "levelRationale">> = {
+  "verbos-como-gustar": { cefrLevel: "A1", curriculumOrder: 10, prerequisiteKeys: [], levelRationale: "Estructura básica para expresar gustos e intereses personales." },
+  "ir-vs-venir": { cefrLevel: "A1", curriculumOrder: 20, prerequisiteKeys: [], levelRationale: "Contraste básico de movimiento y punto de referencia." },
+  "pronombres-reflexivos": { cefrLevel: "A1", curriculumOrder: 30, prerequisiteKeys: [], levelRationale: "Formas frecuentes para hablar de rutinas y acciones cotidianas." },
+  comparativos: { cefrLevel: "A2", curriculumOrder: 110, prerequisiteKeys: [], levelRationale: "Comparación de cualidades y cantidades en situaciones habituales." },
+  "preterito-perfecto": { cefrLevel: "A2", curriculumOrder: 120, prerequisiteKeys: [], levelRationale: "Pasado conectado con el presente, especialmente relevante en el uso peninsular." },
+  "preterito-indefinido": { cefrLevel: "A2", curriculumOrder: 130, prerequisiteKeys: [], levelRationale: "Relato de acciones terminadas en un tiempo pasado ya cerrado." },
+  "preterito-imperfecto": { cefrLevel: "A2", curriculumOrder: 140, prerequisiteKeys: [], levelRationale: "Descripción, hábito y trasfondo en el pasado." },
+  "ser-vs-estar": { cefrLevel: "A2", curriculumOrder: 150, prerequisiteKeys: [], levelRationale: "El contraste completo amplía los usos básicos introducidos en A1." },
+  "por-vs-para": { cefrLevel: "A2", curriculumOrder: 160, prerequisiteKeys: [], levelRationale: "Distinción funcional de causa, medio, destino y finalidad." },
+  "indefinido-vs-imperfecto": { cefrLevel: "B1", curriculumOrder: 210, prerequisiteKeys: ["preterito-indefinido", "preterito-imperfecto"], levelRationale: "Combina los pasados para estructurar narraciones con acción y trasfondo." },
+  "futuro-simple": { cefrLevel: "B1", curriculumOrder: 220, prerequisiteKeys: [], levelRationale: "Incluye predicción y el valor modal de probabilidad en el presente." },
+  condicional: { cefrLevel: "B1", curriculumOrder: 230, prerequisiteKeys: ["futuro-simple"], levelRationale: "Forma y usos de cortesía, consejo, hipótesis y posterioridad en el pasado." },
+  "pronombres-de-objeto": { cefrLevel: "B1", curriculumOrder: 240, prerequisiteKeys: [], levelRationale: "El repaso incluye combinación de pronombres, orden y sustitución de le/les por se." },
+  "presente-de-subjuntivo": { cefrLevel: "B1", curriculumOrder: 250, prerequisiteKeys: [], levelRationale: "Modo esencial para deseo, valoración, duda, influencia y finalidad." },
+  imperativo: { cefrLevel: "B1", curriculumOrder: 260, prerequisiteKeys: ["presente-de-subjuntivo", "pronombres-de-objeto"], levelRationale: "La lección completa incluye imperativo negativo y colocación de pronombres." },
+};
+
+export const GRAMMAR_TOPIC_DEFINITIONS: GrammarTopicDefinition[] = GRAMMAR_TOPIC_CONTENT.map((topic) => {
+  const curriculum = TOPIC_CURRICULUM[topic.key];
+  if (!curriculum) throw new Error(`Missing curriculum metadata for grammar topic: ${topic.key}`);
+  return { ...topic, ...curriculum };
+});
 
 function normalizedTopicSource(source: GrammarTopicSource) {
   return [source.spanish, source.translation, source.explanation]

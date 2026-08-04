@@ -62,6 +62,10 @@ export async function ensureSpanishBuddySchema(db: D1Database) {
       id TEXT PRIMARY KEY,
       owner_id TEXT NOT NULL,
       canonical_key TEXT NOT NULL,
+      cefr_level TEXT NOT NULL DEFAULT 'A1',
+      curriculum_order INTEGER NOT NULL DEFAULT 0,
+      prerequisite_keys TEXT NOT NULL DEFAULT '[]',
+      level_rationale TEXT NOT NULL DEFAULT '',
       title TEXT NOT NULL,
       explanation TEXT NOT NULL DEFAULT '',
       summary TEXT NOT NULL DEFAULT '',
@@ -167,6 +171,10 @@ export async function ensureSpanishBuddySchema(db: D1Database) {
   const topicColumns = await db.prepare("PRAGMA table_info(spanish_buddy_topics)").all<{ name: string }>();
   const topicColumnNames = new Set((topicColumns.results ?? []).map((column) => column.name));
   const missingTopicColumns = [
+    ["cefr_level", "TEXT NOT NULL DEFAULT 'A1'"],
+    ["curriculum_order", "INTEGER NOT NULL DEFAULT 0"],
+    ["prerequisite_keys", "TEXT NOT NULL DEFAULT '[]'"],
+    ["level_rationale", "TEXT NOT NULL DEFAULT ''"],
     ["summary", "TEXT NOT NULL DEFAULT ''"],
     ["definition", "TEXT NOT NULL DEFAULT ''"],
     ["use_cases", "TEXT NOT NULL DEFAULT '[]'"],
@@ -210,13 +218,18 @@ type StoredTopicLink = { item_id: string; canonical_key: string; role: string };
 function topicInsertStatement(db: D1Database, ownerId: string, topic: GrammarTopicDefinition, id: string) {
   return db.prepare(
     `INSERT INTO spanish_buddy_topics
-     (id, owner_id, canonical_key, title, explanation, summary, definition, use_cases, formation,
-      examples, common_mistakes, quick_check, status, content_version)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     (id, owner_id, canonical_key, cefr_level, curriculum_order, prerequisite_keys, level_rationale,
+      title, explanation, summary, definition, use_cases, formation, examples, common_mistakes,
+      quick_check, status, content_version)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).bind(
     id,
     ownerId,
     topic.key,
+    topic.cefrLevel,
+    topic.curriculumOrder,
+    JSON.stringify(topic.prerequisiteKeys),
+    topic.levelRationale,
     topic.title,
     topic.definition,
     topic.summary,
@@ -234,10 +247,15 @@ function topicInsertStatement(db: D1Database, ownerId: string, topic: GrammarTop
 function topicUpdateStatement(db: D1Database, ownerId: string, topic: GrammarTopicDefinition) {
   return db.prepare(
     `UPDATE spanish_buddy_topics
-     SET title = ?, explanation = ?, summary = ?, definition = ?, use_cases = ?, formation = ?,
+     SET cefr_level = ?, curriculum_order = ?, prerequisite_keys = ?, level_rationale = ?,
+         title = ?, explanation = ?, summary = ?, definition = ?, use_cases = ?, formation = ?,
          examples = ?, common_mistakes = ?, quick_check = ?, status = ?, content_version = ?, updated_at = CURRENT_TIMESTAMP
      WHERE owner_id = ? AND canonical_key = ?`,
   ).bind(
+    topic.cefrLevel,
+    topic.curriculumOrder,
+    JSON.stringify(topic.prerequisiteKeys),
+    topic.levelRationale,
     topic.title,
     topic.definition,
     topic.summary,
