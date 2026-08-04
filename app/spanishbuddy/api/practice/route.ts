@@ -1,6 +1,7 @@
 import {
   ACTIVE_EXERCISE_IDS,
   EXERCISE_LIBRARY,
+  exerciseModeUsesOptions,
   isActiveExerciseId,
   type ExerciseCategory,
 } from "../../../../lib/spanish-buddy-exercises";
@@ -188,8 +189,10 @@ function normalizeExercise(value: PracticeExercise, planned: { item: SavedItem; 
     else options.push(answer);
   }
   const matchingAnswers = options.filter((option) => option.toLocaleLowerCase("es") === answer.toLocaleLowerCase("es"));
-  if (definition.mode === "multiple-choice" && (options.length !== 4 || matchingAnswers.length !== 1)) return null;
-  if (definition.mode !== "multiple-choice" && options.length > 0) return null;
+  const usesOptions = exerciseModeUsesOptions(definition.mode);
+  if (usesOptions && (options.length !== 4 || matchingAnswers.length !== 1)) return null;
+  if (!usesOptions && options.length > 0) return null;
+  if (definition.mode === "fill-gap" && !/_{2,}/.test(`${value.context}\n${prompt}`)) return null;
   const exercise = applyExerciseUsabilityGuardrails({
     itemId: planned.item.id,
     exerciseType: planned.exerciseType,
@@ -324,13 +327,16 @@ export async function POST(request: Request) {
       }
       if (exercises.some((entry) => entry.item.id === plan.item.id && entry.exercise.exerciseType === plan.exerciseType)) continue;
 
-      const fallback = normalizeExercise(deterministicPracticeExercise(plan, items) as PracticeExercise, plan);
+      const deterministicFallback = deterministicPracticeExercise(plan, items);
+      const fallback = deterministicFallback
+        ? normalizeExercise(deterministicFallback as PracticeExercise, plan)
+        : null;
       if (!fallback) continue;
       const cacheId = crypto.randomUUID();
       await db.prepare(
         `INSERT INTO spanish_buddy_exercise_variants
          (id, owner_id, item_id, lesson_id, exercise_type, payload, item_content_hash, generator_version)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'deterministic-v3')`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'deterministic-v4')`,
       ).bind(cacheId, ownerId, plan.item.id, plan.item.lessonId, plan.exerciseType, JSON.stringify(fallback), hashes.get(plan.item.id)).run();
       exercises.push({ exercise: fallback, item: plan.item, cacheId });
       if (!refillPlans.some((entry) => entry.item.id === plan.item.id && entry.exerciseType === plan.exerciseType)) refillPlans.push(plan);

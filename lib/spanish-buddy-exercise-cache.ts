@@ -1,13 +1,13 @@
 import { getRequestExecutionContext } from "vinext/shims/request-context";
 
-import { ACTIVE_EXERCISE_IDS, EXERCISE_LIBRARY } from "./spanish-buddy-exercises";
+import { ACTIVE_EXERCISE_IDS, EXERCISE_LIBRARY, exerciseModeUsesOptions } from "./spanish-buddy-exercises";
 import { getServerRuntimeEnv } from "./runtime-env";
 import type { SavedItem } from "./spanish-buddy";
 import { recordSpanishBuddyAiUsage } from "./spanish-buddy-server";
 import { applyExerciseUsabilityGuardrails, auditExerciseUsability } from "./spanish-buddy-practice-usability";
 import { createSpanishBuddyPracticeSchema, SPANISH_BUDDY_PRACTICE_INSTRUCTIONS } from "./spanish-buddy-practice-contract.mjs";
 
-export const SPANISH_BUDDY_GENERATOR_VERSION = "practice-v3";
+export const SPANISH_BUDDY_GENERATOR_VERSION = "practice-v4";
 const DEFAULT_SPANISH_BUDDY_MODEL = "gpt-5.6-terra";
 const MAX_GENERATION_BATCH = 8;
 
@@ -77,8 +77,10 @@ export function normalizePracticeExercise(value: PracticeExercise, plan: Exercis
     else options.push(answer);
   }
   const matchingAnswers = options.filter((option) => option.toLocaleLowerCase("es") === answer.toLocaleLowerCase("es"));
-  if (definition.mode === "multiple-choice" && (options.length !== 4 || matchingAnswers.length !== 1)) return null;
-  if (definition.mode !== "multiple-choice" && options.length > 0) return null;
+  const usesOptions = exerciseModeUsesOptions(definition.mode);
+  if (usesOptions && (options.length !== 4 || matchingAnswers.length !== 1)) return null;
+  if (!usesOptions && options.length > 0) return null;
+  if (definition.mode === "fill-gap" && !/_{2,}/.test(`${value.context}\n${prompt}`)) return null;
   const exercise = applyExerciseUsabilityGuardrails({
     itemId: plan.item.id,
     exerciseType: plan.exerciseType,
@@ -116,9 +118,43 @@ function starterTypes(item: SavedItem) {
   return ["active-translation", "reverse-translation", "own-sentence"];
 }
 
-export function deterministicPracticeExercise(plan: ExercisePlan, distractorItems: SavedItem[] = []): PracticeExercise {
+export function deterministicPracticeExercise(plan: ExercisePlan, distractorItems: SavedItem[] = []): PracticeExercise | null {
   const { item } = plan;
   const definition = EXERCISE_LIBRARY.find((entry) => entry.id === plan.exerciseType);
+  // A generic fallback cannot invent a meaningful grammatical or pragmatic
+  // contrast. Serving fewer exercises is preferable to presenting unrelated
+  // lesson fields as selectable answers.
+  if (!definition || definition.mode === "multiple-choice") return null;
+  if (definition.mode === "fill-gap") {
+    const answer = item.spanish.trim();
+    const example = item.example.trim();
+    const answerIndex = example.toLocaleLowerCase("es").indexOf(answer.toLocaleLowerCase("es"));
+    if (!answer || answerIndex < 0) return null;
+    const prompt = `${example.slice(0, answerIndex)}___${example.slice(answerIndex + answer.length)}`;
+    const options = [...new Set([
+      answer,
+      ...distractorItems
+        .filter((candidate) => candidate.id !== item.id && candidate.kind === item.kind)
+        .map((candidate) => candidate.spanish.trim()),
+    ].filter(Boolean))].slice(0, 4);
+    if (options.length !== 4) return null;
+    return {
+      itemId: item.id,
+      exerciseType: plan.exerciseType,
+      label: definition.name,
+      instruction: "Elige la opción que completa el hueco.",
+      context: "",
+      prompt,
+      answer,
+      answerTranslation: item.translation || item.explanation || answer,
+      options,
+      acceptedAnswers: [],
+      gradingFocus: "Solo una opción debe completar la frase de forma natural y correcta.",
+      germanSupport: "",
+      grammarReminder: "",
+      strongerHint: item.translation || item.explanation || "Achte auf den gesamten Satz.",
+    };
+  }
   const spanishAnswer = item.example || item.spanish;
   const isSpanishProduction = plan.exerciseType === "active-translation";
   const isSentenceProduction = ["own-sentence", "guided-production", "dialogue-completion"].includes(plan.exerciseType);
@@ -214,17 +250,18 @@ export async function seedDeterministicExerciseCache(db: D1Database, ownerId: st
   })));
   const statements = hashedItems.flatMap(({ item, contentHash }) => starterTypes(item).flatMap((exerciseType) => {
     const plan = { item, exerciseType };
-    const exercise = normalizePracticeExercise(deterministicPracticeExercise(plan, items), plan);
+    const fallback = deterministicPracticeExercise(plan, items);
+    const exercise = fallback ? normalizePracticeExercise(fallback, plan) : null;
     if (!exercise) return [];
     const payload = JSON.stringify(exercise);
     return [db.prepare(
       `INSERT INTO spanish_buddy_exercise_variants
        (id, owner_id, item_id, lesson_id, exercise_type, payload, item_content_hash, generator_version)
-       SELECT ?, ?, ?, ?, ?, ?, ?, 'deterministic-v3'
+       SELECT ?, ?, ?, ?, ?, ?, ?, 'deterministic-v4'
        WHERE NOT EXISTS (
          SELECT 1 FROM spanish_buddy_exercise_variants
          WHERE owner_id = ? AND item_id = ? AND exercise_type = ? AND item_content_hash = ?
-           AND generator_version = 'deterministic-v3' AND quality_status = 'active'
+           AND generator_version = 'deterministic-v4' AND quality_status = 'active'
        )`,
     ).bind(
       crypto.randomUUID(), ownerId, item.id, item.lessonId, exerciseType, payload, contentHash,

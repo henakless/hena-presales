@@ -408,6 +408,10 @@ export const ACTIVE_EXERCISE_IDS = EXERCISE_LIBRARY
   .filter((exercise) => exercise.status === "active")
   .map((exercise) => exercise.id);
 
+export function exerciseModeUsesOptions(mode: ExerciseMode) {
+  return mode === "multiple-choice" || mode === "fill-gap";
+}
+
 export function isActiveExerciseId(value: unknown): value is string {
   return typeof value === "string" && ACTIVE_EXERCISE_IDS.includes(value);
 }

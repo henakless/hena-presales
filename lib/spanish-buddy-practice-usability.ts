@@ -16,7 +16,10 @@ export type ExerciseUsabilityIssueCode =
   | "ANSWER_IN_BASIC_HELP"
   | "ANSWER_TRANSLATION_IN_BASIC_HELP"
   | "INVALID_MULTIPLE_CHOICE_OPTIONS"
+  | "NON_SPANISH_MULTIPLE_CHOICE_CONTENT"
+  | "INCONSISTENT_MULTIPLE_CHOICE_OPTIONS"
   | "UNEXPECTED_OPTIONS"
+  | "FILL_GAP_MISSING"
   | "READING_CONTEXT_LENGTH"
   | "READING_QUESTION_MISSING"
   | "ANSWER_IN_TASK_CONTEXT"
@@ -37,7 +40,11 @@ export type ExerciseUsabilityAudit = {
 };
 
 const SOURCE_TRANSLATION_EXERCISES = new Set(["active-translation", "contextual-translation"]);
-const MULTIPLE_CHOICE_EXERCISES = new Set(["lexical-contrast", "grammar-choice", "appropriate-response"]);
+const SELECTION_EXERCISES = new Set([
+  "lexical-contrast", "grammar-choice", "appropriate-response",
+  "vocabulary-gap", "collocations", "conjugation-context", "complete-rule", "dialogue-completion",
+]);
+const FILL_GAP_EXERCISES = new Set(["vocabulary-gap", "collocations", "conjugation-context", "complete-rule", "dialogue-completion"]);
 const READING_EXERCISES = new Set(["reading-main-idea", "reading-detail", "reading-reference", "reading-order", "reading-mediation"]);
 const READING_QUESTION_EXERCISES = new Set(["reading-main-idea", "reading-detail", "reading-reference"]);
 const DISPLAY_FIELDS = ["instruction", "context", "prompt", "germanSupport", "grammarReminder", "strongerHint"] as const;
@@ -111,6 +118,13 @@ function similarity(left: string, right: string) {
 function meaningfulForDuplicate(value: string) {
   const normalized = normalizeComparable(value);
   return normalized.length >= 18 && normalized.split(" ").length >= 4;
+}
+
+function looksGerman(value: string) {
+  const normalized = ` ${normalizeComparable(value)} `;
+  const markers = [" der ", " die ", " das ", " den ", " dem ", " des ", " ein ", " eine ", " einen ", " einem ", " einer ", " und ", " oder ", " mit ", " für ", " uber ", " sind ", " ist ", " werden ", " meistens ", " diesen ", " welche ", " welcher ", " welches "];
+  const markerCount = markers.filter((marker) => normalized.includes(marker)).length;
+  return /[äöüß]/i.test(value) || markerCount >= 2;
 }
 
 function containsWholePhrase(container: string, phrase: string) {
@@ -215,7 +229,7 @@ export function auditExerciseUsability(exercise: PracticeExerciseForAudit): Exer
     });
   }
 
-  if (MULTIPLE_CHOICE_EXERCISES.has(exercise.exerciseType)) {
+  if (SELECTION_EXERCISES.has(exercise.exerciseType)) {
     const normalizedAnswer = normalizeComparable(exercise.answer);
     const answerCount = normalizedOptions.filter((option) => option === normalizedAnswer).length;
     if (normalizedOptions.length !== 4 || answerCount !== 1) {
@@ -226,12 +240,44 @@ export function auditExerciseUsability(exercise: PracticeExerciseForAudit): Exer
         evidence: `${exercise.options.length} options; answer appears ${answerCount} times`,
       });
     }
+    const germanFields = [
+      ...(looksGerman(exercise.answer) ? ["answer"] : []),
+      ...exercise.options.flatMap((option, index) => looksGerman(option) ? [`options[${index}]`] : []),
+    ];
+    if (germanFields.length) {
+      pushUnique(issues, {
+        code: "NON_SPANISH_MULTIPLE_CHOICE_CONTENT",
+        severity: "error",
+        fields: germanFields,
+        evidence: germanFields.join(", "),
+      });
+    }
+    const optionWordCounts = exercise.options.map((option) => normalizeComparable(option).split(" ").filter(Boolean).length);
+    const shortestOption = Math.min(...optionWordCounts);
+    const longestOption = Math.max(...optionWordCounts);
+    if (shortestOption > 0 && shortestOption <= 5 && longestOption >= 10 && longestOption / shortestOption >= 3) {
+      pushUnique(issues, {
+        code: "INCONSISTENT_MULTIPLE_CHOICE_OPTIONS",
+        severity: "error",
+        fields: ["options"],
+        evidence: `${shortestOption}-${longestOption} words per option`,
+      });
+    }
   } else if (normalizedOptions.length) {
     pushUnique(issues, {
       code: "UNEXPECTED_OPTIONS",
       severity: "error",
       fields: ["options", "exerciseType"],
       evidence: exercise.exerciseType,
+    });
+  }
+
+  if (FILL_GAP_EXERCISES.has(exercise.exerciseType) && !/_{2,}/.test(`${exercise.context}\n${exercise.prompt}`)) {
+    pushUnique(issues, {
+      code: "FILL_GAP_MISSING",
+      severity: "error",
+      fields: ["context", "prompt"],
+      evidence: exercise.prompt,
     });
   }
 

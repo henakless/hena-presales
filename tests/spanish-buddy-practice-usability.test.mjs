@@ -52,6 +52,51 @@ test("requires four unique options containing one correct answer for multiple ch
   assert.ok(audit.issues.some((issue) => issue.code === "INVALID_MULTIPLE_CHOICE_OPTIONS"));
 });
 
+test("accepts a fill-gap exercise with one blank and four selectable answers", () => {
+  const audit = auditExerciseUsability({
+    ...applyExerciseUsabilityGuardrails(baseExercise),
+    exerciseType: "vocabulary-gap",
+    instruction: "Elige la opción que completa el hueco.",
+    prompt: "Cuando no tengo nada que hacer, siento ___.",
+    answer: "aburrimiento",
+    answerTranslation: "Langeweile",
+    options: ["aburrimiento", "entusiasmo", "cansancio", "hambre"],
+  });
+  assert.equal(audit.usable, true, JSON.stringify(audit.issues, null, 2));
+});
+
+test("rejects a fill-gap exercise without a visible gap or four choices", () => {
+  const audit = auditExerciseUsability({
+    ...applyExerciseUsabilityGuardrails(baseExercise),
+    exerciseType: "vocabulary-gap",
+    prompt: "el aburrimiento",
+    answer: "Langeweile",
+    answerTranslation: "Langeweile",
+    options: [],
+  });
+  assert.ok(audit.issues.some((issue) => issue.code === "FILL_GAP_MISSING"));
+  assert.ok(audit.issues.some((issue) => issue.code === "INVALID_MULTIPLE_CHOICE_OPTIONS"));
+});
+
+test("rejects German lesson explanations and mismatched shapes as Spanish answer options", () => {
+  const audit = auditExerciseUsability({
+    ...applyExerciseUsabilityGuardrails(baseExercise),
+    exerciseType: "grammar-choice",
+    context: "¿Dónde está la farmacia?",
+    prompt: "¿Qué? ¿Quién? ¿Cómo? ¿Dónde? ¿Cuándo? ¿Cuánto?",
+    answer: "Fragewörter für Informationen über Dinge, Personen, Art und Weise, Ort, Zeit und Menge.",
+    answerTranslation: "Fragewörter für Informationen über Dinge, Personen, Art und Weise, Ort, Zeit und Menge.",
+    options: [
+      "Fragewörter für Informationen über Dinge, Personen, Art und Weise, Ort, Zeit und Menge.",
+      "Substantive mit diesen Endungen sind meistens feminin und stehen mit la.",
+      "Substantive mit diesen Endungen sind meistens maskulin und stehen mit el. Bei Personen kann das Geschlecht variieren.",
+      "Nuestra amistad dura muchos años.",
+    ],
+  });
+  assert.ok(audit.issues.some((issue) => issue.code === "NON_SPANISH_MULTIPLE_CHOICE_CONTENT"));
+  assert.ok(audit.issues.some((issue) => issue.code === "INCONSISTENT_MULTIPLE_CHOICE_OPTIONS"));
+});
+
 test("requires a full reading context and an explicit comprehension question", () => {
   const audit = auditExerciseUsability({
     ...applyExerciseUsabilityGuardrails(baseExercise),

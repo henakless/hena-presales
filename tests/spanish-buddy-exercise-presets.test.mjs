@@ -6,6 +6,7 @@ import {
   EXERCISE_LIBRARY,
   EXERCISE_MODES,
   EXERCISE_PRESETS,
+  exerciseModeUsesOptions,
 } from "../lib/spanish-buddy-exercises.ts";
 
 test("every Spanish Buddy exercise has a supported primary activity mode", () => {
@@ -19,6 +20,12 @@ test("practice presets cover the intended activity modes", () => {
   assert.deepEqual(modesFor("public"), ["multiple-choice", "fill-gap", "writing", "reading"]);
   assert.deepEqual(modesFor("hands-free"), ["listening", "speaking"]);
   assert.equal(modesFor("full"), undefined);
+});
+
+test("quick and easy never requires a typed answer", () => {
+  const quick = EXERCISE_PRESETS.find((preset) => preset.id === "quick");
+  assert.ok(quick);
+  assert.ok(quick.modes.every(exerciseModeUsesOptions));
 });
 
 test("multiple-choice is an explicit contract for the three selectable exercise types", () => {
