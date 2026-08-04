@@ -10,7 +10,7 @@ const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 
 const localBindingConfig = {
   main: "./worker/index.ts",
-  compatibility_flags: ["nodejs_compat_v2"],
+  compatibility_flags: isCodexSeatbeltSandbox ? ["nodejs_compat_v2"] : [],
   // D1 is declared in .openai/hosting.json for Sites and in wrangler.jsonc
   // for the custom-domain Cloudflare Worker. Do not add a second placeholder
   // binding here because Wrangler merges this config with wrangler.jsonc.
