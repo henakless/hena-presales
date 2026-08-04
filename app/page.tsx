@@ -437,7 +437,7 @@ export default function Home() {
             <div className="panel-label"><span>C</span> Read the room</div>
             <aside className="briefing-handoff-note" aria-label="A note about the limited lead briefing">
               <span>And yes—this is the entire briefing we got.</span>
-              <b aria-hidden="true">↙</b>
+              <b aria-hidden="true" />
             </aside>
             <div className="selection-review-grid">
               <article>
@@ -729,15 +729,19 @@ export default function Home() {
               from someone who does:
             </blockquote>
             <p className="reference-attribution">
-              <strong>Mario Platt</strong><span>· Chief Information Security Officer at LastPass</span>
+              <a href="https://www.linkedin.com/in/marioplatt" target="_blank" rel="noreferrer">
+                <strong>Mario Platt</strong><span>· Chief Information Security Officer at LastPass</span>
+              </a>
             </p>
-            <span className="reference-arrow" aria-hidden="true">→</span>
+            <span className="reference-arrow" aria-hidden="true" />
           </div>
           <figure className="reference-proof">
-            <img
-              src={`${SITE_BASE_PATH}/mario-platt-linkedin-reference.jpg`}
-              alt="LinkedIn screenshot of Mario Platt recommending Hena Kless"
-            />
+            <a href="https://www.linkedin.com/in/marioplatt" target="_blank" rel="noreferrer" aria-label="View Mario Platt on LinkedIn">
+              <img
+                src={`${SITE_BASE_PATH}/mario-platt-linkedin-reference.jpg`}
+                alt="LinkedIn screenshot of Mario Platt recommending Hena Kless"
+              />
+            </a>
           </figure>
         </aside>
       </section>
